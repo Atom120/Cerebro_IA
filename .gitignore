@@ -1,0 +1,11 @@
+# Estado local de Obsidian (no se sincroniza)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/plugins/*/main.js
+.obsidian/plugins/*/styles.css
+.obsidian/plugins/*/manifest.json
+.trash/
+.DS_Store
+Thumbs.db
+desktop.ini

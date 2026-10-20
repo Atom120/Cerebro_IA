@@ -1,0 +1,14 @@
+{
+  "commitMessage": "vault: {{date}} ({{numFiles}} archivos)",
+  "autoCommitMessage": "auto: {{date}} ({{numFiles}} archivos)",
+  "commitDateFormat": "YYYY-MM-DD HH:mm",
+  "autoSaveInterval": 10,
+  "autoPushInterval": 0,
+  "autoPullInterval": 10,
+  "autoPullOnBoot": true,
+  "disablePush": false,
+  "pullBeforePush": true,
+  "syncMethod": "merge",
+  "differentIntervalCommitAndPush": false,
+  "showStatusBar": true
+}
