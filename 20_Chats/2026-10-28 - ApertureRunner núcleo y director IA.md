@@ -22,15 +22,21 @@ tags: [chat, apertureRunner, mod, cpp, python, ia]
 - Director: `claude-opus-5-5`, esfuerzo `low`, `fallbacks: "default"`, llamadas sin historial (evita problemas de historial editado). Trampas con lista blanca y límite de frecuencia.
 - Correcciones a la especificación: el portal mide 32×54 su de media apertura; #E60012 lineal es (0.791, 0, 0.006); no se fijan 82 huesos ni 42 estados.
 
+- No se probó el director con la API real: el equipo no tiene `ANTHROPIC_API_KEY` ni perfil de `ant`. La clave solo sirve para que el director genere frases; nada más la necesita.
+- El sub-prompt de Persona 1 ya estaba cubierto por el núcleo C++. No se hacen los `.cs` ni `FireBluePortal`/`FireOrangePortal`: en el mod los portales los coloca el propio juego, y reimplementarlos sería recrear Portal.
+- **Cambio de alcance:** sin GLaDOS hablando y sin simular todo el juego. Solo una cámara: el mapa original de Portal 1 `testchmb_a_01` (cámaras 02 y 03), dentro del juego real (opción A). No se recrea el nivel en Unity.
+- Portal y Mirror's Edge no están instalados en el equipo, así que el plugin y el hook quedan bloqueados.
+
 ## Código, comandos o archivos clave
 - `core\build.bat`: compila y prueba con MSVC.
 - `director\.venv\Scripts\python -m unittest test_director -v`
 - `director\.venv\Scripts\python glados_parkour_director.py --dry-run`, con HUD en http://127.0.0.1:5055/
 
 ## Pendientes
-- [ ] Probar el director con la API real (cuesta dinero por frase).
+- [ ] Instalar Portal (Steam) y Mirror's Edge.
+- [ ] Comprobar si el Portal 1 instalado es de 32 o 64 bits y qué rama del motor usa.
+- [ ] Plugin de servidor para Portal 1: leer los portales y la geometría de `testchmb_a_01`.
 - [ ] Hook UE3: implementar `IGuestPawnAdapter` con el SDK de `MirrorsEdge.exe`.
-- [ ] Plugin Source: escribir `PortalPairState`, exportar brushes y aplicar `DirectorCommand`.
 - [ ] Decidir el punto de calibración entre ambos mundos.
 - [ ] No ejecutar `openclaude skills install rehan-remade/universal-modder` sin revisarlo.
 
