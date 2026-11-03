@@ -1,5 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #include "server_plugin.h"
+#include "movement_hook.h"
+#include <cstdarg>
 #include <cstdio>
 #include <cstring>
 
@@ -10,6 +12,9 @@
 
 namespace ar {
 
+typedef void (*MsgFn)(const char* fmt, ...);
+static MsgFn s_pfnMsg = nullptr;
+
 ApertureRunnerServerPlugin& ApertureRunnerServerPlugin::Instance() {
     static ApertureRunnerServerPlugin instance;
     return instance;
@@ -19,11 +24,35 @@ const char* ApertureRunnerServerPlugin::GetPluginDescription() {
     return "ApertureRunner: Mirror's Edge movement in Portal 1 (testchmb_a_00)";
 }
 
-bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn /*interfaceFactory*/, source::CreateInterfaceFn /*gameServerFactory*/) {
+void ApertureRunnerServerPlugin::LogMsg(const char* fmt, ...) {
+    char buffer[1024];
+    va_list args;
+    va_start(args, fmt);
+    std::vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+
+#ifdef _WIN32
+    if (s_pfnMsg) {
+        s_pfnMsg("%s", buffer);
+    }
+    OutputDebugStringA(buffer);
+#endif
+    std::printf("%s", buffer);
+}
+
+bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn /*interfaceFactory*/, source::CreateInterfaceFn gameServerFactory) {
     if (is_loaded_) return true;
 
-    char banner[256];
-    std::snprintf(banner, sizeof(banner),
+#ifdef _WIN32
+    if (!s_pfnMsg) {
+        HMODULE hTier0 = GetModuleHandleA("tier0.dll");
+        if (hTier0) {
+            s_pfnMsg = reinterpret_cast<MsgFn>(GetProcAddress(hTier0, "Msg"));
+        }
+    }
+#endif
+
+    LogMsg(
         "\n======================================================\n"
         " [ApertureRunner] Plugin VSP cargado con exito.\n"
         " Target Engine : Portal 1 (Build %u, Win32/x86)\n"
@@ -31,10 +60,21 @@ bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn /*interfaceFacto
         "======================================================\n\n",
         kPortalBuildId);
 
-#ifdef _WIN32
-    OutputDebugStringA(banner);
-#endif
-    std::printf("%s", banner);
+    // Z2/Z3: Obtener GameMovement001 y enganchar ProcessMovement en passthrough
+    if (gameServerFactory) {
+        int returnCode = 0;
+        void* iface = gameServerFactory(source::kGameMovementVersion, &returnCode);
+        if (iface && returnCode == 0) {
+            auto* pGM = static_cast<source::IGameMovement*>(iface);
+            if (MovementHook::Install(pGM)) {
+                LogMsg("[ApertureRunner] IGameMovement::ProcessMovement hookeado exitosamente en passthrough (Hito H1).\n");
+            } else {
+                LogMsg("[ApertureRunner] AVISO: No se pudo instalar el hook en GameMovement001.\n");
+            }
+        } else {
+            LogMsg("[ApertureRunner] AVISO: GameMovement001 no disponible en gameServerFactory.\n");
+        }
+    }
 
     is_loaded_ = true;
     return true;
@@ -42,7 +82,13 @@ bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn /*interfaceFacto
 
 void ApertureRunnerServerPlugin::Unload() {
     if (!is_loaded_) return;
-    std::printf("[ApertureRunner] Plugin descargado.\n");
+
+    if (MovementHook::IsHooked()) {
+        MovementHook::Uninstall();
+        LogMsg("[ApertureRunner] VTable de IGameMovement restaurada al original.\n");
+    }
+
+    LogMsg("[ApertureRunner] Plugin descargado limpiamente.\n");
     is_loaded_ = false;
 }
 
@@ -50,19 +96,19 @@ void ApertureRunnerServerPlugin::LevelInit(const char* pMapName) {
     if (pMapName) {
         std::strncpy(current_map_, pMapName, sizeof(current_map_) - 1);
         current_map_[sizeof(current_map_) - 1] = '\0';
-        std::printf("[ApertureRunner] LevelInit: %s\n", current_map_);
+        LogMsg("[ApertureRunner] LevelInit: %s\n", current_map_);
     }
 }
 
 void ApertureRunnerServerPlugin::ServerActivate(void* /*pEdictList*/, int /*edictCount*/, int /*clientMax*/) {
-    std::printf("[ApertureRunner] ServerActivate listo en mapa %s\n", current_map_);
+    LogMsg("[ApertureRunner] ServerActivate listo en mapa %s\n", current_map_);
 }
 
 void ApertureRunnerServerPlugin::GameFrame(bool /*simulating*/) {
 }
 
 void ApertureRunnerServerPlugin::LevelShutdown() {
-    std::printf("[ApertureRunner] LevelShutdown en mapa %s\n", current_map_);
+    LogMsg("[ApertureRunner] LevelShutdown en mapa %s\n", current_map_);
     current_map_[0] = '\0';
 }
 

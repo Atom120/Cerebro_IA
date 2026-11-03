@@ -23,6 +23,7 @@
 - Zarek: Z2 (interfaces y datamaps), luego Z3/Z4. Peña: P1, P2, P4. Gonzalo: G1, G3. Antonio: A1, A2. Benja: B3, y grabar trazas reales de ME con `--record` (B2b) para Peña.
 - **Regla**: nada se sube directo a `main`; todo va por rama y PR (el commit `f53db1c` se subió directo).
 - Sebas: integración semanal cuando exista Z3 (S3).
+- **Z3 (Zarek)**: Implementado el hook de vtable de `IGameMovement::ProcessMovement` en passthrough puro (`movement_hook.h/.cpp`), obtención de `GameMovement001` vía `gameServerFactory`, logging en consola de Source con `tier0.dll!Msg`, y arnés autónomo con mock dinámico de `IGameMovement` en `test_plugin_load.exe`. Compilación Win32/x86 y 100% de tests aprobados (4/4). Rama `zarek/Z3-hook-passthrough`. Listo para cerrar el **Hito H1** ("La DLL vive") con la checklist B1 de Benja.
 
 ---
 

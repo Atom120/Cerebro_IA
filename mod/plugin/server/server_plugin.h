@@ -33,6 +33,9 @@ public:
     bool IsEnabled() const { return enabled_; }
     void SetEnabled(bool enabled) { enabled_ = enabled; }
 
+    // Enrutador de mensajes: imprime en consola de Source (tier0.dll Msg), OutputDebugString y stdout
+    static void LogMsg(const char* fmt, ...);
+
 private:
     ApertureRunnerServerPlugin() = default;
     ~ApertureRunnerServerPlugin() = default;

@@ -1,5 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS 1
 #include "source_interfaces.h"
-#include <cassert>
 #include <cstdio>
 #include <cstring>
 
@@ -7,6 +7,37 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
+
+// Mock de CPortalGameMovement para validar el hook de vtable en un entorno headless
+class MockGameMovement : public ar::source::IGameMovement {
+public:
+    int process_movement_calls = 0;
+    void* last_player = nullptr;
+    void* last_move = nullptr;
+
+    ~MockGameMovement() override = default;
+
+    void ProcessMovement(void* pPlayer, void* pMove) override {
+        ++process_movement_calls;
+        last_player = pPlayer;
+        last_move = pMove;
+    }
+
+    void StartTrackPredictionErrors(void* /*pPlayer*/) override {}
+    void FinishTrackPredictionErrors(void* /*pPlayer*/) override {}
+    void DiffPrint(const char* /*fmt*/, ...) override {}
+};
+
+static MockGameMovement g_mockGameMovement;
+
+static void* MockGameServerFactory(const char* pName, int* pReturnCode) {
+    if (pName && std::strcmp(pName, ar::source::kGameMovementVersion) == 0) {
+        if (pReturnCode) *pReturnCode = 0;
+        return &g_mockGameMovement;
+    }
+    if (pReturnCode) *pReturnCode = 1;
+    return nullptr;
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -50,22 +81,68 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Validar ciclo de vida completo
-    bool ok = plugin->Load(nullptr, nullptr);
+    // 1. Registrar estado original de la vtable del mock
+    void** pVTable = *reinterpret_cast<void***>(&g_mockGameMovement);
+    void* originalSlot1 = pVTable[1];
+
+    // 2. Simular carga pasando MockGameServerFactory
+    bool ok = plugin->Load(nullptr, MockGameServerFactory);
     if (!ok) {
         std::fprintf(stderr, "[test_plugin_load] Error: plugin->Load() retorno false\n");
         FreeLibrary(hModule);
         return 1;
     }
 
+    // 3. Verificar que la ranura 1 de la vtable fue hookeada
+    void* hookedSlot1 = pVTable[1];
+    if (hookedSlot1 == originalSlot1) {
+        std::fprintf(stderr, "[test_plugin_load] Error: La vtable de IGameMovement no fue modificada por el hook\n");
+        FreeLibrary(hModule);
+        return 1;
+    }
+
+    // 4. Invocar ProcessMovement a traves del mock (debe pasar por Hooked_ProcessMovement y delegar al mock)
+    int dummyPlayer = 0x1234;
+    int dummyMove = 0x5678;
+    g_mockGameMovement.ProcessMovement(&dummyPlayer, &dummyMove);
+
+    if (g_mockGameMovement.process_movement_calls != 1 ||
+        g_mockGameMovement.last_player != &dummyPlayer ||
+        g_mockGameMovement.last_move != &dummyMove) {
+        std::fprintf(stderr, "[test_plugin_load] Error: La llamada passthrough fallo o no paso los argumentos esperados\n");
+        FreeLibrary(hModule);
+        return 1;
+    }
+
+    // 5. Ciclo de eventos en mapa
     plugin->LevelInit("testchmb_a_00");
     plugin->ServerActivate(nullptr, 0, 1);
     plugin->GameFrame(true);
+
+    // Invocar varios ticks mas
+    for (int i = 0; i < 10; ++i) {
+        g_mockGameMovement.ProcessMovement(&dummyPlayer, &dummyMove);
+    }
+    if (g_mockGameMovement.process_movement_calls != 11) {
+        std::fprintf(stderr, "[test_plugin_load] Error: Se esperaban 11 llamadas de movimiento, se obtuvieron %d\n",
+                     g_mockGameMovement.process_movement_calls);
+        FreeLibrary(hModule);
+        return 1;
+    }
+
     plugin->LevelShutdown();
+
+    // 6. Descarga y verificacion de desenganche limpio
     plugin->Unload();
+    void* restoredSlot1 = pVTable[1];
+    if (restoredSlot1 != originalSlot1) {
+        std::fprintf(stderr, "[test_plugin_load] Error: La vtable no fue restaurada tras Unload()\n");
+        FreeLibrary(hModule);
+        return 1;
+    }
 
     FreeLibrary(hModule);
-    std::printf("[test_plugin_load] Exito: aperture_runner.dll exporta CreateInterface y cumple la ABI ISERVERPLUGINCALLBACKS003.\n");
+    std::printf("[test_plugin_load] Exito rotundo: Hook de ProcessMovement en passthrough validado (Hito H1 listo).\n");
     return 0;
 #else
     std::printf("Test omitido en sistemas no-Windows.\n");

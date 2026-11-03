@@ -46,4 +46,16 @@ public:
 
 inline constexpr const char* kServerPluginCallbacksVersion = "ISERVERPLUGINCALLBACKS003";
 
+// Source 2013 SP IGameMovement interface (slot 0: destructor virtual, slot 1: ProcessMovement)
+class IGameMovement {
+public:
+    virtual ~IGameMovement() {}
+    virtual void ProcessMovement(void* pPlayer, void* pMove) = 0;
+    virtual void StartTrackPredictionErrors(void* pPlayer) = 0;
+    virtual void FinishTrackPredictionErrors(void* pPlayer) = 0;
+    virtual void DiffPrint(const char* fmt, ...) = 0;
+};
+
+inline constexpr const char* kGameMovementVersion = "GameMovement001";
+
 }  // namespace ar::source
