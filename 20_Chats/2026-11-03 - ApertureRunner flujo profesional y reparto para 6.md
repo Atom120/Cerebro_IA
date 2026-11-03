@@ -73,6 +73,12 @@ tags: [chat, apertureRunner, mod, investigacion, equipo, antigravity, gemini, so
 - Una prueba comprueba que el manifiesto y `SequenceName()` coinciden. Pruebas x86: 77 de contratos y 174 del núcleo, todas OK.
 - S0: los 16 agentes del plan están en `.agents/agents/`, y hay dos skills: `build-x86` y `launch-portal-test` (copia la DLL y el `.vdf` a `portal/addons` y abre `testchmb_a_00`).
 
+## S4: revisión e integración de PRs (misma sesión)
+- Integrados en `main` los PRs #1 (B2, telemetría de ME), #2 (B1, checklist de `testchmb_a_00`), #3 (B4, skills portal-me archivadas) y #4 (Z1, DLL VSP `aperture_runner.dll`). Build x86: 4/4 pruebas OK.
+- Correcciones del líder: en Z1, `DisableThreadLibraryCalls(hinstDLL)`; en B2, aviso de que los 9 CSV son sintéticos (generados con nuestras propias constantes) y no sirven para ajustar el movimiento.
+- Benja subió `f53db1c` directo a `main` (13 skills de universal-modder y módulos de la ruta archivada). Se recordó la regla: todo va por rama y PR.
+- Lección: `git pull --rebase` después de `git merge --no-ff` aplana los merges y cambia los SHA, así que GitHub no marca los PRs como fusionados. Si `main` ya está al día, hay que subir sin rebase, o fusionar desde GitHub.
+
 ## Relacionado
 - [[Inicio]]
 - [[PLAN_EQUIPO]]
