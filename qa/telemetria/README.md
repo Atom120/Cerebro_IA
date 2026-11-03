@@ -27,6 +27,9 @@
 
 ---
 
+> [!WARNING]
+> **Revisión de Sebas (S4, 2026-11-03):** los 9 CSV actuales son **sintéticos**. Los genera `--generate-reference` a partir de las mismas constantes de `ar::me_reference`; no se grabaron en el juego. Sirven para probar el formato y las herramientas, pero **no para ajustar el movimiento** (sería circular). Peña (P5) solo debe ajustar con trazas grabadas en vivo con `--record` (`*_live.csv`).
+
 ## 2. Formato de los Archivos CSV
 
 Todos los archivos CSV en esta carpeta tienen la cabecera:

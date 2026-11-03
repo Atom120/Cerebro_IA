@@ -14,10 +14,15 @@
 - S2: contratos v1 en `mod/include/ar/` y `docs/contratos/asset_manifest.json`.
 - Integración de las **13 skills + CLI `um` de `universal-modder`** en `.agents/skills/` y `.agents/tools/universal-modder/bin/um.cmd`, e implementación completa de los 4 módulos de referencia de `portal-me-true-ingame-v2` (`src/common/ipc_true_ingame_v2.h`, `src/true_ingame_v2/`, `levels/edge_p_true_ingame_v2/`).
 - **Z1 (Zarek)**: Implementada la DLL de servidor x86 `aperture_runner.dll` (`IServerPluginCallbacks` v003), banner para Portal 1 build 19017868, descriptor `addons/aperture_runner.vdf` y arnés de pruebas de carga dinámica autónoma (`test_plugin_load.exe`). Compilación Win32/x86 con MSVC 2026 y 100% de tests aprobados (3/3). Rama `zarek/Z1-dll-carga`.
+- **S4 (Sebas)**: PRs #1 (B2), #2 (B1), #3 (B4) y #4 (Z1) revisados e integrados en `main`. Build x86: 4/4 pruebas OK (`test_contracts`, `test_core`, `test_plugin_load`, `test_me_telemetry`). Correcciones de revisión:
+  - Z1: `DisableThreadLibraryCalls` recibe ahora `hinstDLL` (antes `nullptr`).
+  - B2: los 9 CSV de `qa/telemetria/` son **sintéticos** (salen de `--generate-reference` con las constantes de `ar::me_reference`). Se añadió un aviso en su README: no sirven para ajustar el movimiento hasta que haya trazas grabadas en vivo.
+  - Pendiente de Z1: probarla dentro de Portal con `launch-portal-test` (`plugin_print`). `printf` no sale en la consola de Source; en Z2 conviene usar `Msg`/`ConColorMsg` de `tier0.dll`.
 
 ## Próximos Pasos (semana 1)
-- Zarek: PR de Z1 a Sebas -> continuar con Z2 (interfaces y datamaps) y Z3/Z4. Peña: P1, P2, P4. Gonzalo: G1, G3. Antonio: A1, A2. Benja: **B1**, B2, B4.
-- Sebas: revisar PRs (S4) e integración semanal cuando exista Z3 (S3).
+- Zarek: Z2 (interfaces y datamaps), luego Z3/Z4. Peña: P1, P2, P4. Gonzalo: G1, G3. Antonio: A1, A2. Benja: B3, y grabar trazas reales de ME con `--record` (B2b) para Peña.
+- **Regla**: nada se sube directo a `main`; todo va por rama y PR (el commit `f53db1c` se subió directo).
+- Sebas: integración semanal cuando exista Z3 (S3).
 
 ---
 
