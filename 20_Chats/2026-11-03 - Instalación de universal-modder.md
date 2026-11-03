@@ -37,7 +37,7 @@ claude plugin update universal-modder@universal-modder   # para actualizar
 ## Pendientes
 - [x] Reiniciar Claude Code para que carguen las skills, el hook y el MCP.
 - [x] Instalar **ffmpeg**.
-- [ ] Definir la variable `BLENDER` (ver arriba).
+- [x] Definir la variable `BLENDER` (variable de usuario de Windows; `um` ya encuentra Blender 5.0).
 - [ ] Si se quieren assets con fal: crear API key y definir `FAL_KEY` (o `um fal key set`), nunca en el repo.
 
 ## Relacionado
