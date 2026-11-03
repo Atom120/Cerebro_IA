@@ -28,10 +28,17 @@ claude plugin update universal-modder@universal-modder   # para actualizar
 - Ruta instalada: `C:\Users\Cleve\.claude\plugins\cache\universal-modder\universal-modder\<versión>`.
 - Ejemplo de uso: «Mod Terraria: añade un lanzamisiles teledirigido…» o «¿Qué motor usa `C:\Games\Foo`?».
 
+## Estado del equipo (2026-11-03)
+- OK: git, uv, Python 3.13, Node, .NET SDK 10, Visual Studio 2022 y 18 (Community), Blender 3.6 y 5.0, **ffmpeg 9.0.2** (instalado con `winget install Gyan.FFmpeg`).
+- Blender no está en el PATH y `um render3d` solo busca `C:\Program Files\Blender Foundation\Blender\blender.exe` → hay que definir `BLENDER=C:\Program Files\Blender Foundation\Blender 5.0\blender.exe`.
+- Faltan (solo según el juego): Java JDK (mods de Minecraft Java), ILSpy (juegos .NET/Unity), Ghidra (código nativo).
+- Juegos detectados con `um scan --list`: ARC Raiders, Deadlock (anticheat, online: no moddear), Minecraft Bedrock y Java.
+
 ## Pendientes
-- [ ] Reiniciar Claude Code para que carguen las skills, el hook y el MCP.
-- [ ] Instalar **ffmpeg** (falta; lo usan vídeos y grabación). Blender solo si se renderiza 3D → sprites.
-- [ ] Si se quieren assets con fal: crear API key y guardarla con `um fal key set` (no en el repo).
+- [x] Reiniciar Claude Code para que carguen las skills, el hook y el MCP.
+- [x] Instalar **ffmpeg**.
+- [ ] Definir la variable `BLENDER` (ver arriba).
+- [ ] Si se quieren assets con fal: crear API key y definir `FAL_KEY` (o `um fal key set`), nunca en el repo.
 
 ## Relacionado
 - [[Inicio]]
