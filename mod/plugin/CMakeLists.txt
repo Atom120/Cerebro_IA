@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.20)
 add_library(aperture_runner SHARED
     main.cpp
     server/server_plugin.cpp
+    server/movement_hook.cpp
 )
 
 target_link_libraries(aperture_runner PRIVATE ar_contracts)
