@@ -62,6 +62,17 @@ tags: [chat, apertureRunner, mod, investigacion, equipo, antigravity, gemini, so
 - Se actualizó la memoria compartida (`HANDOFF`, `MEMORY`, `DECISIONS` y `SESSIONS`) para que los agentes de todos lean el plan nuevo.
 - Unidades: el movimiento usa ÷2.54 (escala de personaje). El 1.905 de `LESSONS.md` es la escala de arquitectura.
 
+## S0–S2 (misma sesión)
+- S1: el núcleo se copió a `mod/core/`, con CMake Win32 (`mod/CMakeLists.txt`, que detecta solo el `CMakeLists.txt` de cada dueño), `moduild.bat` y CI en GitHub Actions (windows-latest, Win32).
+- S2: contratos v1 en `mod/include/ar/`:
+  - `units.h`: unidades, build 19017868, valores de Faith de ME.
+  - `trace_provider.h`: `ITraceProvider` con `TraceHitKind`. Solo se hace wallrun sobre World o StaticProp.
+  - `faith_movement.h`: `IFaithMovement` sin estado; `FaithState` copiable de 196 bytes, para que la predicción de Source rebobine; 24 `FaithAnimState`, cuyos nombres son los `$sequence`; botones semánticos.
+  - `testing/box_world.h`.
+  - `asset_manifest.json`.
+- Una prueba comprueba que el manifiesto y `SequenceName()` coinciden. Pruebas x86: 77 de contratos y 174 del núcleo, todas OK.
+- S0: los 16 agentes del plan están en `.agents/agents/`, y hay dos skills: `build-x86` y `launch-portal-test` (copia la DLL y el `.vdf` a `portal/addons` y abre `testchmb_a_00`).
+
 ## Relacionado
 - [[Inicio]]
 - [[PLAN_EQUIPO]]

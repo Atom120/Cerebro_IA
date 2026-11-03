@@ -8,9 +8,14 @@
 - **Estado general**: **Cambio de dirección (ADR-006).** El proyecto ahora es *Mirror's Edge dentro de Portal*: Faith en el primer mapa de Portal 1 (`testchmb_a_00`). **El plan, el reparto por persona, las dependencias y los agentes están en [`PLAN_EQUIPO.md`](../../PLAN_EQUIPO.md). Léelo antes de proponer cambios y trabaja solo en las tareas y carpetas de tu persona.**
 - **Equipo**: Sebas (líder/integración), Zarek (plugin servidor), Peña (movimiento de Faith), Gonzalo (cliente y cámara), Antonio (assets de Faith), Benja (telemetría ME, contrato del mapa y QA).
 
+## Hecho (2026-11-03)
+- S0: 16 agentes en `.agents/agents/` y skills `build-x86` y `launch-portal-test`.
+- S1: `mod/` con el núcleo (`mod/core/`), CMake Win32, `moduild.bat` y CI (`.github/workflows/mod-build.yml`). Pruebas: 77 de contratos y 174 del núcleo, todas OK en x86.
+- S2: contratos v1 en `mod/include/ar/` y `docs/contratos/asset_manifest.json`.
+
 ## Próximos Pasos (semana 1)
-- Sebas: S0 (agentes en `.agents/agents/`), S1 (`mod/` + CMake + CI), **S2 (contratos, prioridad máxima)**.
-- Zarek: Z1, Z2. Peña: P1, P2. Gonzalo: G1, G3. Antonio: A1, A2. Benja: **B1**, B2, B4.
+- Zarek: Z1, Z2, Z3, Z4. Peña: P1, P2, P4. Gonzalo: G1, G3. Antonio: A1, A2. Benja: **B1**, B2, B4.
+- Sebas: revisar PRs (S4) e integración semanal cuando exista Z3 (S3).
 
 ---
 

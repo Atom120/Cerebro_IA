@@ -1,0 +1,37 @@
+{
+  "contract": "asset_manifest",
+  "version": 1,
+  "owner": "Sebas",
+  "notes": [
+    "Contrato entre el extractor (Antonio, A1-A4) y el render (Gonzalo, G4).",
+    "Todo se genera en el PC de cada usuario desde su propia copia de Mirror's Edge. Nada de esto se sube al repo.",
+    "Los nombres de 'sequences' deben coincidir con SequenceName() de mod/include/ar/faith_movement.h (lo comprueba la prueba de contratos de cada lado)."
+  ],
+  "install_root": "<Portal>/portal/custom/aperture_runner",
+  "source_files_me": {
+    "cooked_pc": "<MirrorsEdge>/TdGame/CookedPC",
+    "body_1p": "Characters/CH_TKY_Crim_Fixer_1P.upk",
+    "anims_1p": "Animations/AS_C1P_Unarmed.upk"
+  },
+  "models": {
+    "arms_1p": {
+      "path": "models/aperture_runner/faith_arms.mdl",
+      "use": "viewmodel en primera persona (brazos)",
+      "max_bones": 128,
+      "attachments": ["camera"]
+    },
+    "body_1p": {
+      "path": "models/aperture_runner/faith_body.mdl",
+      "use": "cuerpo y piernas visibles al mirar abajo",
+      "max_bones": 128,
+      "attachments": ["camera"]
+    }
+  },
+  "sequences": [
+    "idle", "walk", "run", "sprint", "crouch", "crouch_walk", "jump", "fall",
+    "fall_uncontrolled", "coil", "land_soft", "land_hard", "skill_roll", "slide",
+    "wallrun_left", "wallrun_right", "wallrun_jump", "wallclimb", "wallclimb_turn",
+    "wallclimb_jump", "ledge_hang", "ledge_climb_up", "vault", "turn_180"
+  ],
+  "units": "Source: 1 su = 2.54 cm, mano derecha, Z arriba. Convertir desde UE3 con /2.54 e invertir Y."
+}

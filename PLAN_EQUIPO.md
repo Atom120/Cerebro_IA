@@ -11,6 +11,10 @@ tags: [plan, equipo, apertureRunner, antigravity]
 > Cada persona tiene sus tareas, sus agentes de Antigravity y la lista de qué puede hacer ya y qué tiene que esperar.
 > Informe técnico completo (en inglés, con fuentes): https://app.notion.com/p/40d1d50b074681eda477ce985f070297
 
+> **Estado (2026-11-03): S0, S1 y S2 están hechos y en `main`.**
+> - Los contratos v1 están en `mod/include/ar/`: `faith_movement.h`, `trace_provider.h`, `units.h` y `testing/box_world.h` (un mundo de cajas para probar sin el juego). Ya no hace falta inventar stubs de S2: usa los headers reales.
+> - Compilar y probar: `moduild.bat`. Los agentes están en `.agents/agents/` y las skills `build-x86` y `launch-portal-test` en `.agents/skills/`.
+
 ---
 
 ## 0. Qué vamos a hacer (en 1 minuto)
@@ -125,7 +129,7 @@ flowchart LR
 5. **Si vas a lanzar varios agentes a la vez**, crea el proyecto en **"New worktree"** para que no se pisen.
 6. Copia `config/paths.example.json` a `config/paths.local.json` y pon tus rutas de Portal y Mirror's Edge. Ese archivo no se sube.
 7. Al abrir un chat, Antigravity ya lee `AGENTS.md`, `.agents/memory/HANDOFF.md` y `LESSONS.md`. No configures nada en `~/.gemini/`: todo lo compartido vive en el repo.
-8. **Tus agentes:** están en tu sección como bloques de texto. Sebas los sube a `.agents/agents/` en la tarea S0. Si todavía no están, crea tú el archivo `.agents/agents/<nombre>.md` copiando el bloque, y súbelo en tu primer PR.
+8. **Tus agentes** ya están en `.agents/agents/` (los mismos bloques de tu sección).
    - Para usarlos, pídele al agente principal *"usa el subagente `<nombre>` para…"*.
    - No pongas `tools:` en el archivo: un nombre de herramienta mal escrito deja colgado al subagente.
 9. **Agente común para todos:** `reviewer`. Pásalo antes de cada PR: *"usa el subagente reviewer sobre mi rama"*.
@@ -445,11 +449,11 @@ Escribe el informe en qa/resultados/<hito>.md. Si algo falla, abre un issue con 
 
 | Persona | Empieza ya (🟢) | Espera a… |
 |---|---|---|
-| Sebas | S0, S1, **S2** | — |
-| Zarek | Z1, Z2 | S2 para Z3 y Z4 (empieza Z3 con firma provisional) |
-| Peña | P1 con header borrador, P2 | S1 para P4; B2 para P5 |
-| Gonzalo | G1, G3 con `FaithState` borrador | Z3 + P2 para G2; A3 para G4 |
-| Antonio | A1, A2 con nombres provisionales | — |
+| Sebas | ~~S0, S1, S2~~ (hechos) → S4 revisar PRs | Z3 para S3 |
+| Zarek | Z1, Z2, Z3, Z4 (contratos ya en `main`) | P2 para Z5 |
+| Peña | P1, P2, P4 (`core/` ya en `mod/`) | B2 para P5 |
+| Gonzalo | G1, G3 | Z3 + P2 para G2; A3 para G4 |
+| Antonio | A1, A2 (nombres finales en `asset_manifest.json`) | — |
 | Benja | **B1**, B2, B4 | Z3 para B3 |
 
 ---

@@ -1,0 +1,23 @@
+name: mod-build
+
+on:
+  push:
+    branches: [main]
+    paths: ["mod/**", ".github/workflows/mod-build.yml"]
+  pull_request:
+    paths: ["mod/**", ".github/workflows/mod-build.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-x86:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure (Win32, the architecture of Portal)
+        run: cmake -S mod -B build/x86 -A Win32
+      - name: Build
+        run: cmake --build build/x86 --config Release
+      - name: Test
+        run: ctest --test-dir build/x86 -C Release --output-on-failure
