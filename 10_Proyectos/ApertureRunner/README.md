@@ -19,7 +19,7 @@ tags: [proyecto, apertureRunner, mod, cpp, python]
 ## Plan de equipo
 - Reparto, dependencias y agentes: [[PLAN_EQUIPO]] (ADR-006 en `.agents/memory/DECISIONS.md`).
 - Equipo: Sebas (líder), Zarek, Peña, Gonzalo, Antonio, Benja.
-- Código nuevo en `mod/` dentro de este repo (núcleo copiado de `aperture-runner-mashup`, que queda solo como copia local antigua). Contratos v1 en `mod/include/ar/`; compilar con `moduild.bat`. Trabajo anterior de Benja (Portal dentro de ME) archivado como referencia.
+- Código nuevo en `mod/` dentro de este repo (núcleo copiado de `aperture-runner-mashup`, que queda solo como copia local antigua). Contratos v1 en `mod/include/ar/`; compilar con `mod\build.bat`. Trabajo anterior de Benja (Portal dentro de ME) archivado como referencia.
 
 ## Investigación 2026-11-03
 - El primer mapa real de Portal 1 es `testchmb_a_00` (cámaras 00-01, sin pistola de portales); falta confirmar si sustituye a `testchmb_a_01`.

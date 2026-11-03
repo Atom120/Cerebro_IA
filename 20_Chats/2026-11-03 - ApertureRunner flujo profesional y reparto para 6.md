@@ -63,7 +63,7 @@ tags: [chat, apertureRunner, mod, investigacion, equipo, antigravity, gemini, so
 - Unidades: el movimiento usa ÷2.54 (escala de personaje). El 1.905 de `LESSONS.md` es la escala de arquitectura.
 
 ## S0–S2 (misma sesión)
-- S1: el núcleo se copió a `mod/core/`, con CMake Win32 (`mod/CMakeLists.txt`, que detecta solo el `CMakeLists.txt` de cada dueño), `moduild.bat` y CI en GitHub Actions (windows-latest, Win32).
+- S1: el núcleo se copió a `mod/core/`, con CMake Win32 (`mod/CMakeLists.txt`, que detecta solo el `CMakeLists.txt` de cada dueño), `mod\build.bat` y CI en GitHub Actions (windows-latest, Win32).
 - S2: contratos v1 en `mod/include/ar/`:
   - `units.h`: unidades, build 19017868, valores de Faith de ME.
   - `trace_provider.h`: `ITraceProvider` con `TraceHitKind`. Solo se hace wallrun sobre World o StaticProp.

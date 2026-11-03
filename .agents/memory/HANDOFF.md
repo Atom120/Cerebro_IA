@@ -10,7 +10,7 @@
 
 ## Hecho (2026-11-03)
 - S0: 16 agentes en `.agents/agents/` y skills `build-x86` y `launch-portal-test`.
-- S1: `mod/` con el núcleo (`mod/core/`), CMake Win32, `moduild.bat` y CI (`.github/workflows/mod-build.yml`). Pruebas: 77 de contratos y 174 del núcleo, todas OK en x86.
+- S1: `mod/` con el núcleo (`mod/core/`), CMake Win32, `mod\build.bat` y CI (`.github/workflows/mod-build.yml`). Pruebas: 77 de contratos y 174 del núcleo, todas OK en x86.
 - S2: contratos v1 en `mod/include/ar/` y `docs/contratos/asset_manifest.json`.
 
 ## Próximos Pasos (semana 1)

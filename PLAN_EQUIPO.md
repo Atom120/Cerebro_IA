@@ -13,7 +13,7 @@ tags: [plan, equipo, apertureRunner, antigravity]
 
 > **Estado (2026-11-03): S0, S1 y S2 están hechos y en `main`.**
 > - Los contratos v1 están en `mod/include/ar/`: `faith_movement.h`, `trace_provider.h`, `units.h` y `testing/box_world.h` (un mundo de cajas para probar sin el juego). Ya no hace falta inventar stubs de S2: usa los headers reales.
-> - Compilar y probar: `moduild.bat`. Los agentes están en `.agents/agents/` y las skills `build-x86` y `launch-portal-test` en `.agents/skills/`.
+> - Compilar y probar: `mod\build.bat`. Los agentes están en `.agents/agents/` y las skills `build-x86` y `launch-portal-test` en `.agents/skills/`.
 
 ---
 
