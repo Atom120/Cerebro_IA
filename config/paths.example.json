@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Copia este archivo a config/paths.local.json en cada computadora. paths.local.json está ignorado por Git para evitar conflictos de rutas entre dispositivos.",
+  "device_role": "full_stack | geometry_only | backend_source | frontend_ue3",
+  "paths": {
+    "mirrors_edge_root": "C:/Program Files (x86)/Steam/steamapps/common/mirrors edge",
+    "mirrors_edge_exe": "C:/Program Files (x86)/Steam/steamapps/common/mirrors edge/Binaries/MirrorsEdge.exe",
+    "mirrors_edge_cooked_pc": "C:/Program Files (x86)/Steam/steamapps/common/mirrors edge/TdGame/CookedPC",
+    "portal_root": "C:/Program Files (x86)/Steam/steamapps/common/Portal",
+    "portal_exe": "C:/Program Files (x86)/Steam/steamapps/common/Portal/hl2.exe",
+    "source_sdk_bin": "C:/Program Files (x86)/Steam/steamapps/common/Portal/bin",
+    "umodel_exe": "tools/umodel/umodel.exe"
+  }
+}

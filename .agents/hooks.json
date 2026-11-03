@@ -1,0 +1,12 @@
+{
+  "colab-session-start": {
+    "enabled": true,
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "node ./scripts/session-start.js",
+        "timeout": 10
+      }
+    ]
+  }
+}

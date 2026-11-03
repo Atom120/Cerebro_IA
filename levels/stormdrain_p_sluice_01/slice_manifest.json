@@ -1,0 +1,168 @@
+{
+  "workflow_id": "portal-mirrors-edge-stormdrain",
+  "slice_id": "stormdrain_p_sluice_01",
+  "title": "Mirror's Edge Cap. 2: Jacknife (Stormdrain_p) - Sección Única: La Gran Esclusa Vertical",
+  "scope_constraint": "Limitado estrictamente a la cámara de la primera Gran Esclusa Vertical del canal de tormentas (Stormdrain_p), delimitada al norte y al sur por barreras Emancipation Grill (Fizzlers).",
+  "engines": {
+    "frontend_visual": {
+      "game": "Mirror's Edge (2008)",
+      "engine": "Unreal Engine 3 (DICE Branch)",
+      "map_package": "TdGame/CookedPC/Maps/Stormdrain/Stormdrain_p.umap",
+      "coordinate_system": "Left-Handed Z-Up (+X Forward, +Y Right, +Z Up)",
+      "unit_name": "Unreal Units (UU)",
+      "cm_per_unit": 1.0,
+      "rotation_units_per_360": 65536
+    },
+    "backend_simulation": {
+      "game": "Portal (2007)",
+      "engine": "Source Engine (Orange Box / Source 2007)",
+      "proxy_map_name": "me_stormdrain_sluice_01",
+      "coordinate_system": "Right-Handed Z-Up (+X Forward, +Y Left, +Z Up)",
+      "unit_name": "Hammer Units (HU)",
+      "cm_per_unit": 1.905,
+      "rotation_units_per_360": 360.0
+    }
+  },
+  "conversion_constants": {
+    "hu_to_uu": 1.905,
+    "uu_to_hu": 0.5249343832020997,
+    "deg_to_uru": 182.04444444444445,
+    "uru_to_deg": 0.0054931640625,
+    "invert_y_axis": true,
+    "invert_pitch": true,
+    "invert_yaw": true
+  },
+  "anchor_origin": {
+    "description": "Punto de anclaje común en el fondo suroeste de la Gran Esclusa de hormigón en Stormdrain_p",
+    "mirrors_edge_uu": { "x": -4500.0, "y": 12800.0, "z": -1600.0 },
+    "portal_hu": { "x": 0.0, "y": 0.0, "z": 0.0 }
+  },
+  "player_spawn": {
+    "description": "Cornisa de entrada elevada en el extremo oeste de la esclusa (lista para saltar al pozo o disparar hacia la rampa a 45 grados)",
+    "mirrors_edge_uu": { "x": -4195.2, "y": 11276.0, "z": -457.0, "pitch_uru": 0, "yaw_uru": 0, "roll_uru": 0 },
+    "portal_hu": { "x": 160.0, "y": 800.0, "z": 600.0, "pitch_deg": 0.0, "yaw_deg": 0.0, "roll_deg": 0.0 }
+  },
+  "interactive_entities": {
+    "companion_cube": {
+      "id": "stormdrain_companion_cube_01",
+      "source_classname": "prop_weighted_cube",
+      "description": "Cubo de Compañía sincronizado por IPC que el jugador debe transportar mediante flinging hacia la pasarela superior este",
+      "spawn_local_uu": { "x": 450.0, "y": -1524.0, "z": 1180.0 },
+      "spawn_portal_hu": { "x": 236.22, "y": 800.0, "z": 619.42 }
+    },
+    "heavy_floor_button": {
+      "id": "stormdrain_exit_button_01",
+      "source_classname": "prop_floor_button",
+      "description": "Super-Botón de piso de Aperture en la plataforma superior este; al activarse dispara el evento Kismet que abre la compuerta de Stormdrain_p",
+      "location_local_uu": { "x": 4600.0, "y": -1524.0, "z": 1100.0 },
+      "location_portal_hu": { "x": 2414.7, "y": 800.0, "z": 577.43 },
+      "target_ue3_kismet_event": "OpenSluiceExitGate_01"
+    },
+    "emancipation_grills": [
+      {
+        "id": "fizzler_north_boundary",
+        "source_classname": "prop_portal_cleanser",
+        "description": "Barrera Emancipation Grill norte que desintegra cubos y resetea portales si el jugador intenta salir de la sección",
+        "bounds_local_uu": {
+          "min": { "x": 0.0, "y": -16.0, "z": 0.0 },
+          "max": { "x": 5200.0, "y": 0.0, "z": 2400.0 }
+        }
+      },
+      {
+        "id": "fizzler_south_boundary",
+        "source_classname": "prop_portal_cleanser",
+        "description": "Barrera Emancipation Grill sur que sella el canal de drenaje",
+        "bounds_local_uu": {
+          "min": { "x": 0.0, "y": -3048.0, "z": 0.0 },
+          "max": { "x": 5200.0, "y": -3032.0, "z": 2400.0 }
+        }
+      }
+    ]
+  },
+  "bounding_box_local_uu": {
+    "min": { "x": 0.0, "y": -3048.0, "z": -64.0 },
+    "max": { "x": 5200.0, "y": 0.0, "z": 2400.0 },
+    "note": "Volumen cerrado de la Gran Esclusa de Stormdrain_p (52 m de largo x 30.48 m de ancho x 24 m de alto)."
+  },
+  "proxy_brushes": [
+    {
+      "id": "sluice_basin_floor",
+      "shape": "box",
+      "description": "Piso inferior del pozo de drenaje de hormigón blanco (superficie de entrada para caída libre vertical)",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_floor001a",
+      "bounds_local_uu": {
+        "min": { "x": 0.0, "y": -3048.0, "z": -64.0 },
+        "max": { "x": 5200.0, "y": 0.0, "z": 0.0 }
+      }
+    },
+    {
+      "id": "west_spawn_ledge",
+      "shape": "box",
+      "description": "Cornisa elevada oeste donde inicia el jugador junto al Cubo de Compañía (altura Z = 1143 UU = 600 HU)",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_floor001a",
+      "bounds_local_uu": {
+        "min": { "x": 0.0, "y": -2200.0, "z": 1100.0 },
+        "max": { "x": 700.0, "y": -800.0, "z": 1143.0 }
+      }
+    },
+    {
+      "id": "sluice_angled_fling_ramp_45",
+      "shape": "wedge_45_plus_x",
+      "description": "Panel monolítico de hormigón inclinado a 45 grados mirando hacia +X/+Z. Permite catapultar (Angled Fling) a Chell y al Cubo de Compañía a través del abismo central.",
+      "surface_type": "portalable_angled_45",
+      "source_material": "concrete/concrete_modular_wall001a",
+      "normal_local_me_lh": { "x": 0.70710678, "y": 0.0, "z": 0.70710678 },
+      "normal_source_rh": { "x": 0.70710678, "y": 0.0, "z": 0.70710678 },
+      "bounds_local_uu": {
+        "min": { "x": 900.0, "y": -2100.0, "z": 0.0 },
+        "max": { "x": 1500.0, "y": -900.0, "z": 600.0 }
+      }
+    },
+    {
+      "id": "upper_exit_catwalk_east",
+      "shape": "box",
+      "description": "Plataforma superior este (meta del salto parabólico con portales) donde se ubica el botón pesado y la puerta de salida",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_floor001a",
+      "bounds_local_uu": {
+        "min": { "x": 4000.0, "y": -2400.0, "z": 1060.0 },
+        "max": { "x": 5200.0, "y": -600.0, "z": 1100.0 }
+      }
+    },
+    {
+      "id": "sluice_high_wall_west",
+      "shape": "box",
+      "description": "Muro vertical oeste de 24 metros de altura para ganar altura adicional por encadenamiento de portales (Double Fling)",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_wall001a",
+      "bounds_local_uu": {
+        "min": { "x": 0.0, "y": -3048.0, "z": 0.0 },
+        "max": { "x": 48.0, "y": 0.0, "z": 2400.0 }
+      }
+    },
+    {
+      "id": "sluice_high_wall_east",
+      "shape": "box",
+      "description": "Muro vertical este detrás de la plataforma de salida",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_wall001a",
+      "bounds_local_uu": {
+        "min": { "x": 5152.0, "y": -3048.0, "z": 0.0 },
+        "max": { "x": 5200.0, "y": 0.0, "z": 2400.0 }
+      }
+    },
+    {
+      "id": "stormdrain_green_metal_girders",
+      "shape": "box",
+      "description": "Vigas metálicas verdes características de Stormdrain_p en el centro del pozo (bloquean línea de visión directa y no admiten portales)",
+      "surface_type": "noportal",
+      "source_material": "metal/metalwall048b",
+      "bounds_local_uu": {
+        "min": { "x": 2500.0, "y": -3048.0, "z": 1500.0 },
+        "max": { "x": 2700.0, "y": 0.0, "z": 1900.0 }
+      }
+    }
+  ]
+}

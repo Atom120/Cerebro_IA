@@ -6,6 +6,49 @@
 .obsidian/plugins/*/styles.css
 .obsidian/plugins/*/manifest.json
 .trash/
+
+# OS & Editor temporary files
 .DS_Store
 Thumbs.db
 desktop.ini
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# Environment & Local Secrets (Never commit credentials across accounts)
+.env
+.env.*
+!.env.example
+*.local.json
+*.secret*
+
+# Node / Python / Common Build caches (if added later)
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+dist/
+build/
+
+# Game Binaries & Raw Extracted Assets (Do not commit heavy proprietary files)
+*.upk
+*.umap
+*.bsp
+!levels/edge_p_lean_slice/me_edge_lean_slice.bsp
+*.prt
+*.lin
+*.psk
+*.psa
+*.dll
+*.lib
+*.exp
+*.pdb
+*.exe
+levels/*/raw_extracted/
+
+# Keep Antigravity workspace customizations & shared memory tracked!
+!.agents/
+!.agents/**
+!AGENTS.md

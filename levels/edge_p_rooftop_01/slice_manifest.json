@@ -1,0 +1,111 @@
+{
+  "slice_id": "edge_p_rooftop_01",
+  "title": "Mirror's Edge Prologue (Edge_p) - Sección 1: Azotea Inicial de Entrenamiento",
+  "scope_constraint": "Limitado estrictamente a la primera azotea del nivel Edge_p (antes del primer salto de edificio con Celeste).",
+  "engines": {
+    "frontend_visual": {
+      "game": "Mirror's Edge (2008)",
+      "engine": "Unreal Engine 3 (DICE Branch)",
+      "map_package": "TdGame/CookedPC/Maps/Edge/Edge_p.umap",
+      "coordinate_system": "Left-Handed Z-Up (+X Forward, +Y Right, +Z Up)",
+      "unit_name": "Unreal Units (UU)",
+      "cm_per_unit": 1.0,
+      "rotation_units_per_360": 65536
+    },
+    "backend_simulation": {
+      "game": "Portal (2007)",
+      "engine": "Source Engine (Orange Box / Source 2007)",
+      "proxy_map_name": "me_edge_rooftop_01",
+      "coordinate_system": "Right-Handed Z-Up (+X Forward, +Y Left, +Z Up)",
+      "unit_name": "Hammer Units (HU)",
+      "cm_per_unit": 1.905,
+      "rotation_units_per_360": 360.0
+    }
+  },
+  "conversion_constants": {
+    "hu_to_uu": 1.905,
+    "uu_to_hu": 0.5249343832020997,
+    "deg_to_uru": 182.04444444444445,
+    "uru_to_deg": 0.0054931640625,
+    "invert_y_axis": true,
+    "invert_pitch": true,
+    "invert_yaw": true
+  },
+  "anchor_origin": {
+    "description": "Punto de anclaje común (Esquina suroeste del piso principal de la azotea inicial en Edge_p)",
+    "mirrors_edge_uu": { "x": -14200.0, "y": 8400.0, "z": 3200.0 },
+    "portal_hu": { "x": 0.0, "y": 0.0, "z": 0.0 }
+  },
+  "player_spawn": {
+    "description": "Posición inicial de Faith/Chell frente a la puerta de acceso de la azotea",
+    "mirrors_edge_uu": { "x": -13819.0, "y": 8209.5, "z": 3210.0, "pitch_uru": 0, "yaw_uru": 16384, "roll_uru": 0 },
+    "portal_hu": { "x": 200.0, "y": 100.0, "z": 5.2493, "pitch_deg": 0.0, "yaw_deg": -90.0, "roll_deg": 0.0 }
+  },
+  "bounding_box_local_uu": {
+    "min": { "x": 0.0, "y": -2800.0, "z": -100.0 },
+    "max": { "x": 3600.0, "y": 0.0, "z": 1200.0 },
+    "note": "Si el jugador sale de este volumen (ej. cae al vacío de la calle), el puente IPC dispara un respawn inmediato al player_spawn."
+  },
+  "proxy_brushes": [
+    {
+      "id": "rooftop_main_floor",
+      "description": "Piso principal de concreto blanco de la azotea",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_floor001a",
+      "bounds_local_uu": {
+        "min": { "x": 0.0, "y": -2800.0, "z": -32.0 },
+        "max": { "x": 3600.0, "y": 0.0, "z": 0.0 }
+      }
+    },
+    {
+      "id": "elevator_tower_wall_north",
+      "description": "Muro vertical blanco de la torre del ascensor (ideal para lanzar portales altos y hacer flinging)",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_wall001a",
+      "bounds_local_uu": {
+        "min": { "x": 1400.0, "y": -400.0, "z": 0.0 },
+        "max": { "x": 2200.0, "y": -360.0, "z": 950.0 }
+      }
+    },
+    {
+      "id": "rooftop_west_wall",
+      "description": "Pared lateral blanca de concreto al oeste",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_wall001a",
+      "bounds_local_uu": {
+        "min": { "x": 0.0, "y": -2800.0, "z": 0.0 },
+        "max": { "x": 40.0, "y": 0.0, "z": 500.0 }
+      }
+    },
+    {
+      "id": "rooftop_east_wall_angled",
+      "description": "Pared blanca frontal este para pruebas de portales enfrentados (infinite loop / momentum)",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_wall001a",
+      "bounds_local_uu": {
+        "min": { "x": 3560.0, "y": -2800.0, "z": 0.0 },
+        "max": { "x": 3600.0, "y": 0.0, "z": 500.0 }
+      }
+    },
+    {
+      "id": "hvac_metal_block_center",
+      "description": "Unidad central de aire acondicionado metálica (no admite portales, sirve de obstáculo de salto)",
+      "surface_type": "noportal",
+      "source_material": "metal/metalwall048b",
+      "bounds_local_uu": {
+        "min": { "x": 1100.0, "y": -1600.0, "z": 0.0 },
+        "max": { "x": 1700.0, "y": -1100.0, "z": 180.0 }
+      }
+    },
+    {
+      "id": "perimeter_fence_south",
+      "description": "Valla metálica perimetral sur que delimita la sección única del nivel",
+      "surface_type": "noportal",
+      "source_material": "metal/metalwall048b",
+      "bounds_local_uu": {
+        "min": { "x": 0.0, "y": -2800.0, "z": 0.0 },
+        "max": { "x": 3600.0, "y": -2760.0, "z": 320.0 }
+      }
+    }
+  ]
+}

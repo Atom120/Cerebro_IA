@@ -1,0 +1,129 @@
+{
+  "workflow_id": "portal-me-lean-slice",
+  "slice_id": "edge_p_lean_slice",
+  "title": "Vertical Slice Ultraligero: Azotea Inicial de Edge_p + Rampa de Salto a 45°",
+  "design_goal": "Máxima velocidad de desarrollo: 1 solo nivel de carga instantánea (Edge_p), 5 sólidos esenciales (incluyendo la rampa roja a 45° de la azotea), 0 Kismet, 0 Source SDK y 1 único puente externo sin inyección de DLLs.",
+  "conversion_constants": {
+    "hu_to_uu": 1.905,
+    "uu_to_hu": 0.5249343832020997,
+    "deg_to_uru": 182.04444444444445,
+    "invert_y_axis": true,
+    "invert_pitch": true,
+    "invert_yaw": true
+  },
+  "anchor_origin": {
+    "description": "Esquina suroeste del piso principal de la primera azotea de Edge_p",
+    "mirrors_edge_uu": { "x": -14200.0, "y": 8400.0, "z": 3200.0 },
+    "portal_hu": { "x": 0.0, "y": 0.0, "z": 0.0 }
+  },
+  "player_spawn": {
+    "description": "Punto de spawn calibrado con Edge_p.umap (soportando el origen del slice y los checkpoints reales de Edge_p)",
+    "mirrors_edge_uu": { "x": -13819.0, "y": 8209.5, "z": 3210.0, "pitch_uru": 0, "yaw_uru": 16384, "roll_uru": 0 },
+    "portal_hu": { "x": 200.0, "y": 100.0, "z": 5.25, "pitch_deg": 0.0, "yaw_deg": -90.0, "roll_deg": 0.0 },
+    "edge_p_umap_real_checkpoints": {
+      "PlayerStart_Rooftop1": { "x": 32208.5, "y": -4811.3, "z": 15261.2, "floor_z": 15180.0, "yaw_uru": 32768 },
+      "1Pt1_1AnimStart": { "x": 32376.5, "y": -7201.8, "z": 15313.8, "yaw_uru": 32768 },
+      "1Pt1_2AnimMid": { "x": 30980.6, "y": -7491.2, "z": 15264.3, "yaw_uru": 32768 },
+      "1Pt1_3AnimJump": { "x": 26392.9, "y": -3700.4, "z": 12717.3, "yaw_uru": 32768 },
+      "1Pt1_4PlayerStart_FreeControl": { "x": 19309.4, "y": -3009.5, "z": 8520.0, "yaw_uru": 33456 },
+      "1Pt1_5ZiplineStart": { "x": 11441.5, "y": -2967.0, "z": 7817.3, "yaw_uru": 32768 }
+    }
+  },
+  "verified_binary_offsets": {
+    "mirrors_edge_gog_1_01": {
+      "exe_path": "C:/Program Files/GOG Galaxy/Games/Mirror's Edge/Binaries/MirrorsEdge.exe",
+      "image_base": "0x00400000",
+      "aslr_enabled": false,
+      "timestamp": "0x4965FFF1",
+      "gengine_va": "0x01FF8B20",
+      "gworld_va": "0x01FFBCA4",
+      "gobjobjects_va": "0x0204A35C",
+      "gnames_va": "0x0204E7D8",
+      "uengine_gameplayers_data_offset": "0x2BC",
+      "ulocalplayer_actor_offset": "0x40",
+      "acontroller_pawn_offset": "0x1C0",
+      "aactor_physics_offset": "0x6B",
+      "aactor_location_offset": "0xE8",
+      "aactor_rotation_offset": "0xF4",
+      "aactor_velocity_offset": "0x100",
+      "aactor_collocation_offset": "0x13C"
+    },
+    "portal_steam_2025": {
+      "client_dll_path": "C:/Program Files (x86)/Steam/steamapps/common/Portal/portal/bin/client.dll",
+      "timestamp": "0x68362D89",
+      "main_view_origin_rva": "0x0050F484",
+      "main_view_angles_rva": "0x0050F490",
+      "local_player_ptr_rva": "0x004D78F0",
+      "m_vecVelocity_offset": "0xF0",
+      "m_vecAbsOrigin_offset": "0x25C",
+      "m_vecOrigin_offset": "0x28C"
+    }
+  },
+  "ue3_native_setup": {
+    "description": "Reemplaza el hook de UObject::ProcessEvent por el comando nativo Ghost de UE3 en TdInput.ini",
+    "config_file": "Documents/EA Games/Mirror's Edge/TdGame/Config/TdInput.ini",
+    "binding_line": "Bindings=(Name=\"F10\",Command=\"Ghost | FOV 90\",Control=False,Shift=False,Alt=False)"
+  },
+  "bounding_box_local_uu": {
+    "min": { "x": 0.0, "y": -2800.0, "z": -100.0 },
+    "max": { "x": 4200.0, "y": 0.0, "z": 1200.0 }
+  },
+  "proxy_brushes": [
+    {
+      "id": "rooftop_floor",
+      "shape": "box",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_floor001a",
+      "description": "Piso principal de la azotea (recibe el portal de entrada para caída vertical)",
+      "bounds_local_uu": {
+        "min": { "x": 0.0, "y": -2800.0, "z": -32.0 },
+        "max": { "x": 2600.0, "y": 0.0, "z": 0.0 }
+      }
+    },
+    {
+      "id": "elevator_tower_wall",
+      "shape": "box",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_wall001a",
+      "description": "Muro alto de la torre del ascensor para ganar altura inicial con portales",
+      "bounds_local_uu": {
+        "min": { "x": 1200.0, "y": -400.0, "z": 0.0 },
+        "max": { "x": 2000.0, "y": -360.0, "z": 950.0 }
+      }
+    },
+    {
+      "id": "rooftop_red_jump_ramp_45",
+      "shape": "wedge_45_plus_x",
+      "surface_type": "portalable_angled_45",
+      "source_material": "concrete/concrete_modular_wall001a",
+      "description": "La rampa inclinada del borde de la azotea de Edge_p (convertida en superficie portaleable a 45° para cruzar a la azotea vecina)",
+      "normal_source_rh": { "x": 0.70710678, "y": 0.0, "z": 0.70710678 },
+      "bounds_local_uu": {
+        "min": { "x": 2300.0, "y": -1600.0, "z": 0.0 },
+        "max": { "x": 2600.0, "y": -1000.0, "z": 300.0 }
+      }
+    },
+    {
+      "id": "target_across_street_roof",
+      "shape": "box",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_floor001a",
+      "description": "Azotea de aterrizaje al otro lado de la calle (meta del Vertical Slice tras el salto parabólico con portales)",
+      "bounds_local_uu": {
+        "min": { "x": 3400.0, "y": -2200.0, "z": 100.0 },
+        "max": { "x": 4200.0, "y": -400.0, "z": 140.0 }
+      }
+    },
+    {
+      "id": "hvac_obstacle_noportal",
+      "shape": "box",
+      "surface_type": "noportal",
+      "source_material": "metal/metalwall048b",
+      "description": "Bloque metálico central de aire acondicionado (no portaleable)",
+      "bounds_local_uu": {
+        "min": { "x": 900.0, "y": -1600.0, "z": 0.0 },
+        "max": { "x": 1400.0, "y": -1100.0, "z": 180.0 }
+      }
+    }
+  ]
+}

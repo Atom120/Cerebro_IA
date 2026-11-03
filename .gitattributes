@@ -1,0 +1,22 @@
+# Auto detect text files and perform LF normalization across Windows/macOS/Linux
+* text=auto
+
+# Force LF for Markdown, JSON, C/C++ source, VMF maps, and Shell scripts
+*.md text eol=lf
+*.json text eol=lf
+*.sh text eol=lf
+*.h text eol=lf
+*.hpp text eol=lf
+*.c text eol=lf
+*.cpp text eol=lf
+*.vmf text eol=lf
+*.js text eol=lf
+
+# Force CRLF for Windows PowerShell and Batch scripts
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Conflict-free automatic merging for append-only shared agent logs
+.agents/memory/LESSONS.md text eol=lf merge=union
+.agents/memory/SESSIONS.md text eol=lf merge=union
