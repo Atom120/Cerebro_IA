@@ -50,7 +50,7 @@
 
 ## ADR-005: Post-Mortem de `primer-intento` y Arquitectura de `segundo-intento` (Opción 1: True In-Game Pass-Through en Mirror's Edge)
 - **Fecha**: 2026-11-02
-- **Estado**: Aceptado (Rama `segundo-intento`)
+- **Estado**: Archivado el 2026-11-03, reemplazado por ADR-006 (se conserva como referencia; antes: Aceptado en la rama `segundo-intento`)
 - **Contexto**: Al evaluar en vivo el resultado de `primer-intento` (`ADR-004`), se detectó que el mod se desvió de la intención original y de las referencias reales en internet: en vez de incluir al personaje/arma/portales de *Portal* dentro del mundo de *Mirror's Edge* en una sola experiencia unificada, solo copiaba coordenadas `(X, Y, Z)` obligando al usuario a jugar en la ventana de *Portal* (una caja gris) mientras miraba *Mirror's Edge* en otra ventana sin ver la Portal Gun ni los portales.
 - **Fallos de Razonamiento Identificados en `primer-intento`**:
   1. **Confundir simplicidad arquitectónica (Lean) con eliminar el valor visual/jugable central**: Recortar el overlay D3D9 y el reenvío de inputs dejó al proyecto sin su característica principal (ver la Portal Gun, a Chell y los portales dentro de *Mirror's Edge*).
@@ -61,3 +61,18 @@
   1. **Control 100% desde la ventana de *Mirror's Edge***: El usuario juega únicamente en *Mirror's Edge*; el puente captura los inputs de teclado/ratón/clics en *Mirror's Edge* y los encamina a *Portal* en segundo plano.
   2. **Renderizado Visual In-Game en *Mirror's Edge* (D3D9 Proxy DLL / Overlay 3D sincronizado)**: Dibujar dentro del viewport de *Mirror's Edge* la **Portal Gun en 1ª persona**, la **retícula de estado azul/naranja**, los **portales Azul y Naranja proyectados en 3D** sobre las superficies reales de la azotea de `Edge_p` y la representación de **Chell**.
   3. **Supresión de conflicto con Faith**: Ocultar el cuerpo/manos nativos de Faith en 1ª persona mientras el modo Portal está activo para evitar superposición visual y temblores.
+
+---
+
+## ADR-006: Cambio de dirección: Mirror's Edge dentro de Portal, solo `testchmb_a_00`
+- **Fecha**: 2026-11-03
+- **Estado**: Aceptado (decisión del líder, Sebas)
+- **Contexto**: ADR-002 a ADR-005 perseguían jugar con Chell/Portal Gun dentro de *Mirror's Edge*. El objetivo del equipo es el inverso: jugar el **primer nivel de Portal 1** moviéndose como Faith. El equipo es de 6 personas (Sebas con Claude Code; Zarek, Peña, Gonzalo, Antonio y Benja con Antigravity).
+- **Decisión**:
+  1. Mapa único: `testchmb_a_00` (cámaras 00-01) de Portal 1, build 19017868 (32 bits).
+  2. Ruta "Faith dentro de Source": una DLL x86 (plugin VSP) engancha `IGameMovement::ProcessMovement` en servidor y cliente y llama a una librería de movimiento de Faith sin dependencias de motor (`mod/faith_move/`). Una sola ventana: Portal.
+  3. El modelo y las animaciones de Faith los genera cada usuario desde su propia copia de *Mirror's Edge* (extractor). No se sube ningún archivo de los juegos.
+  4. *Mirror's Edge* se usa como fuente de assets y como referencia: un grabador de telemetría de solo lectura alimenta el ajuste del movimiento.
+  5. Conversión de movimiento uu → Source = ÷2.54 (escala de personaje). 1.905 queda solo para geometría de arquitectura.
+  6. Reparto, dependencias y agentes en `PLAN_EQUIPO.md`.
+- **Consecuencias**: las skills `portal-me-*` y `levels/` quedan archivadas como referencia. Se reutilizan los offsets de ME GOG y de `client.dll` (`LESSONS.md`), y el sistema de memoria compartida.

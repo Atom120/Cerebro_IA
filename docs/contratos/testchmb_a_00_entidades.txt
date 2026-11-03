@@ -1,0 +1,180 @@
+b'VBSP' 20 entities: 323
+  32 func_brush
+  31 logic_relay
+  24 prop_dynamic
+  19 ambient_generic
+  15 env_soundscape
+  14 keyframe_rope
+  14 light
+  13 info_overlay_accessor
+  12 prop_physics
+  11 trigger_once
+   9 func_door
+   8 logic_timer
+   8 prop_portal
+   8 path_track
+   6 env_hudhint
+   6 material_modify_control
+   5 trigger_multiple
+   5 logic_choreographed_scene
+   5 func_areaportal
+   4 light_spot
+   4 npc_security_camera
+   4 func_portal_detector
+   4 env_texturetoggle
+   4 math_counter
+   4 env_shake
+   4 info_particle_system
+   3 logic_auto
+   2 trigger_portal_cleanser
+   2 env_fade
+   2 move_rope
+   2 env_entity_maker
+   2 logic_case
+   2 path_corner
+   2 filter_activator_name
+   2 env_tonemap_controller
+   2 func_noportal_volume
+   2 env_citadel_energy_core
+   2 func_tracktrain
+   2 env_beam
+   2 color_correction
+   2 env_spark
+   1 worldspawn
+   1 trigger_teleport
+   1 info_player_start
+   1 info_teleport_destination
+   1 point_spotlight
+   1 phys_ballsocket
+   1 point_template
+   1 prop_physics_override
+   1 info_node
+   1 point_viewcontrol
+   1 point_clientcommand
+   1 logic_autosave
+   1 generic_actor
+   1 info_landmark
+   1 trigger_transition
+   1 trigger_changelevel
+   1 shadow_control
+   1 env_splash
+   1 trigger_look
+---- selected
+('prop_dynamic', '', 'models/props/bed_body_reference.mdl', '')
+('trigger_portal_cleanser', 'trigger_fryer_a00', '*1', '')
+('info_player_start', '', '', '')
+('logic_relay', 'e3_start', '', '')
+('prop_dynamic', 'blackout', 'models/blackin.mdl', '')
+('prop_physics', 'lamp_2_model', 'models/props_c17/lamp_standard_off01.mdl', '')
+('trigger_multiple', 'floor_button_trigger_box_a00a', '*4', '')
+('trigger_multiple', 'floor_button_trigger_player_a00a', '*5', '')
+('prop_dynamic', 'button_top_a_rm1a', 'models/props/button_top_reference.mdl', '')
+('func_door', 'floor_button_door_a00a', '*6', '')
+('trigger_multiple', 'floor_button_trigger_box_a00', '*7', '')
+('trigger_multiple', 'floor_button_trigger_player_a00', '*8', '')
+('prop_dynamic', '', 'models/props/button_top_reference.mdl', '')
+('func_door', 'floor_button_door_a00', '*9', '')
+('func_portal_detector', '', '*10', '')
+('func_portal_detector', '', '*11', '')
+('func_portal_detector', '', '*12', '')
+('func_portal_detector', '', '*13', '')
+('prop_dynamic', 'model_door_left_a00', 'models/props/door_01_lftdoor_reference.m', '')
+('prop_dynamic', 'model_door_right_a00', 'models/props/door_01_rtdoor_reference.md', '')
+('func_door', 'door_right_a00', '*14', '')
+('func_door', 'door_left_a00', '*15', '')
+('prop_dynamic', 'model_exit_door_left_a02', 'models/props/door_01_lftdoor_reference.m', '')
+('prop_dynamic', 'model_exit_door_right_a00', 'models/props/door_01_rtdoor_reference.md', '')
+('func_door', 'exit_door_right_a00', '*16', '')
+('func_door', 'exit_door_left_a00', '*17', '')
+('logic_relay', 'trigger_open_door_00', '', '')
+('logic_relay', 'trigger_close_door_00', '', '')
+('prop_dynamic', 'model_door_right_00', 'models/props/door_01_rtdoor_reference.md', '')
+('prop_dynamic', 'model__door_left_00', 'models/props/door_01_lftdoor_reference.m', '')
+('func_door', 'door_left_00', '*18', '')
+('func_door', 'door_right_00', '*19', '')
+('prop_physics', 'box', 'models/props/metal_box.mdl', '')
+('prop_dynamic', 'box_dropper_model_cover', 'models/props/box_dropper_cover.mdl', '')
+('prop_dynamic', 'box_dropper_model', 'models/props/box_dropper.mdl', '')
+('logic_relay', 'logic_drop_box', '', '')
+('logic_relay', 'cancel_hudhint', '', '')
+('prop_dynamic', 'bed_cover', 'models/props/bed_cover_reference.mdl', '')
+('prop_dynamic', '', 'models/props/clock.mdl', '')
+('prop_dynamic', 'toilet_body', 'models/props/toilet_body_reference.mdl', '')
+('logic_relay', 'logic_make_blue_1', '', '')
+('prop_portal', 'portal_blue_1', '', '')
+('trigger_portal_cleanser', 'a00-a01_trigger_fryer_rm2', '*27', '')
+('logic_auto', '', '', '')
+('prop_portal', 'portal_blue_0', '', '')
+('prop_portal', 'portal_red_0', '', '')
+('trigger_once', 'trigger_exit_room1', '*28', '')
+('logic_relay', 'relay_portal_cancel_room1', '', '')
+('trigger_once', 'trigger_hudhint_a00', '*29', '')
+('point_viewcontrol', 'blackout_viewcontroller', '', '')
+('trigger_once', 'trigger_door_close_rm1', '*30', '')
+('prop_physics', '', 'models/props_junk/garbage_coffeemug001a_', '')
+('prop_dynamic', '', 'models/props/table_reference.mdl', '')
+('prop_portal', 'portal_red_1', '', '')
+('prop_portal', 'portal_blue_3', '', '')
+('trigger_once', '', '*32', '')
+('logic_relay', 'logic_make_blue_3', '', '')
+('trigger_once', 'trigger_section2_start', '*33', '')
+('logic_relay', 'logic_play_cleanser_dialog', '', '')
+('logic_auto', '', '', '')
+('logic_relay', 'logic_change_tonemap', '', '')
+('logic_relay', 'logic_make_blue_2', '', '')
+('trigger_once', '', '*34', '')
+('logic_choreographed_scene', 'choreo_AI_00_A_entry', '', '')
+('logic_choreographed_scene', 'choreo_AI_00_A_success', '', '')
+('logic_choreographed_scene', 'choreo_AI_00_B_entry', '', '')
+('logic_choreographed_scene', 'choreo_AI_00_B_success', '', '')
+('logic_choreographed_scene', 'choreo_AI_Box_Fried', '', '')
+('trigger_once', 'trigger_elevator_move', '*35', '')
+('logic_relay', 'elevator_logic_stop', '', '')
+('logic_relay', 'elevator_door_model_open', '', '')
+('logic_relay', 'elevator_door_model_close', '', '')
+('prop_dynamic', 'elevator_body_model', 'models/props/round_elevator_body.mdl', '')
+('prop_dynamic', 'elevator_door_model_middle', 'models/props/round_elevator_doors.mdl', '')
+('trigger_once', 'a00-a01_trigger_elevator_move', '*38', '')
+('logic_relay', 'a00-a01_elevator_logic_stop', '', '')
+('info_landmark', 'a00-a01_landmark_elevator', '', '')
+('trigger_changelevel', 'a00-a01_change_level_a01_02', '*41', 'testchmb_a_01')
+('logic_relay', 'a00-a01_elevator_door_model_open', '', '')
+('logic_relay', 'a00-a01_elevator_door_model_close', '', '')
+('prop_dynamic', 'a00-a01_elevator_body_model', 'models/props/round_elevator_body.mdl', '')
+('prop_dynamic', 'a00-a01_elevator_door_model', 'models/props/round_elevator_doors.mdl', '')
+('trigger_once', '', '*43', '')
+('trigger_multiple', 'trigger_drop_new_box', '*45', '')
+('logic_relay', 'logic_no_play_cleanser_dialog', '', '')
+('trigger_once', 'show_drop_hudhint', '*49', '')
+('logic_relay', 'relay_boxplacementsuccess', '', '')
+('prop_dynamic', 'sign_00', 'models/props_animsigns/signage_num00.mdl', '')
+('prop_dynamic', 'sign_01', 'models/props_animsigns/signage_num01.mdl', '')
+('trigger_once', '', '*50', '')
+('prop_physics', '', 'models/props/lab_chair/lab_chair.mdl', '')
+('prop_physics', '', 'models/props/lab_chair/lab_chair.mdl', '')
+('prop_physics', '', 'models/props/lab_chair/lab_chair.mdl', '')
+('logic_relay', 'relay_dim_lights', '', '')
+('logic_relay', 'relay_up_lights', '', '')
+('prop_physics', '', 'models/props/lab_chair/lab_chair.mdl', '')
+('prop_physics', '', 'models/props/lab_chair/lab_chair.mdl', '')
+('prop_physics', '', 'models/props/lab_chair/lab_chair.mdl', '')
+('prop_physics', '', 'models/props/lab_chair/lab_chair.mdl', '')
+('prop_physics', '', 'models/props/lab_chair/lab_chair.mdl', '')
+('logic_relay', 'relay_sign00', '', '')
+('logic_relay', 'relay_start_sign_buzz_00', '', '')
+('logic_relay', 'relay_start_sign_buzz_01', '', '')
+('logic_relay', 'relay_sign01', '', '')
+('prop_dynamic', '', 'models/props/clock.mdl', '')
+('func_door', '', '*55', '')
+('logic_relay', 'relay_toiletflush', '', '')
+('prop_portal', 'portal_blue_start', '', '')
+('prop_portal', 'portal_red_start', '', '')
+('prop_physics', '', 'models/props_bts/bts_clipboard.mdl', '')
+('prop_portal', 'portal_blue_2', '', '')
+('logic_relay', 'relay_animate_sign_00', '', '')
+('logic_relay', 'relay_animate_sign_01', '', '')
+('logic_relay', 'relay_start_map', '', '')
+('logic_relay', 'hud_hint_enable', '', '')
+('logic_relay', 'relay_commentary_fade', '', '')
+('logic_auto', '', '', '')
+('prop_dynamic', '', 'models/props/toilet_lid_reference.mdl', '')

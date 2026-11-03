@@ -16,7 +16,12 @@ tags: [proyecto, apertureRunner, mod, cpp, python]
 - Sin GLaDOS hablando: el director de IA queda fuera.
 - Sin geles, torretas ni puentes de luz (no salen en esa cámara).
 
-## Investigación 2026-11-03 (pendiente de decisión)
+## Plan de equipo
+- Reparto, dependencias y agentes: [[PLAN_EQUIPO]] (ADR-006 en `.agents/memory/DECISIONS.md`).
+- Equipo: Sebas (líder), Zarek, Peña, Gonzalo, Antonio, Benja.
+- Código nuevo en `mod/` dentro de este repo. Trabajo anterior de Benja (Portal dentro de ME) archivado como referencia.
+
+## Investigación 2026-11-03
 - El primer mapa real de Portal 1 es `testchmb_a_00` (cámaras 00-01, sin pistola de portales); falta confirmar si sustituye a `testchmb_a_01`.
 - Recomendado: ruta B "Faith dentro de Source" (una DLL x86 en Portal + modelo de Faith generado desde la copia propia de Mirror's Edge). La ruta A (dos juegos a la vez) queda como fase posterior.
 - Portal instalado: build 19017868, 32 bits. Mirror's Edge aún no.

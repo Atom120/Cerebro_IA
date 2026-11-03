@@ -5,7 +5,8 @@
 ## 1. Propósito del Repositorio
 - **Nombre**: `AntigravityColab`
 - **Objetivo**: Espacio de trabajo colaborativo sincronizado mediante **Git / GitHub Desktop** donde múltiples instancias de Antigravity mantienen el contexto continuo, comparten habilidades (`skills`), reglas (`AGENTS.md`) y acumulan aprendizaje entre dispositivos.
-- **Proyecto Activo**: Mod *Pass-Through* para jugar con el personaje y físicas de **Portal** (Chell + Portal Gun en Source Engine) dentro de una sección acotada de **Mirror's Edge** (Unreal Engine 3).
+- **Proyecto Activo** (desde 2026-11-03, ADR-006): **ApertureRunner**, *Mirror's Edge dentro de Portal*. Jugar el primer mapa de Portal 1 (`testchmb_a_00`) moviéndose como Faith, en una sola ventana (Portal). Plan y reparto: `PLAN_EQUIPO.md`.
+- **Proyecto anterior (archivado)**: mod *Pass-Through* de Portal (Chell + Portal Gun) dentro de una azotea de Mirror's Edge (ADR-002 a ADR-005).
 
 ## 2. Preferencias Globales del Usuario y Filosofía de Ingeniería
 - **Idioma principal**: Español (documentación, explicaciones, resúmenes de handoff y comentarios).
@@ -23,7 +24,7 @@
 - `.agents/memory/DECISIONS.md`: Decisiones arquitectónicas y técnicas tomadas (`ADR-001` a `ADR-005`).
 - `.agents/memory/SESSIONS.md`: Bitácora cronológica de sesiones entre dispositivos.
 - `.agents/skills/`: Habilidades modulares compartidas entre todos los dispositivos:
-  - `portal-me-true-ingame-v2`: **(Ruta Principal Activa en `segundo-intento`)** Flujo refinado en 4 módulos para jugar 100% dentro de *Mirror's Edge* con geometría 1:1, inyección de inputs en memoria, lectura real de `C_Prop_Portal` y hook `d3d9.dll` (`EndScene`) con Portales 3D, Chell y Viewmodel de la *Portal Gun*.
+  - `portal-me-true-ingame-v2`: **(Archivada por ADR-006; antes ruta principal en `segundo-intento`)** Flujo refinado en 4 módulos para jugar 100% dentro de *Mirror's Edge* con geometría 1:1, inyección de inputs en memoria, lectura real de `C_Prop_Portal` y hook `d3d9.dll` (`EndScene`) con Portales 3D, Chell y Viewmodel de la *Portal Gun*.
   - `portal-me-lean-slice`: Flujo de `primer-intento` (sincronización externa de coordenadas en 3 pasos, conservado como base de offsets GOG + Steam).
   - `portal-mirrors-edge-passthrough`: Flujo #1 original (`Edge_p` Azotea).
   - `portal-mirrors-edge-stormdrain`: Flujo #2 avanzado (`Stormdrain_p` Esclusa Vertical con Cubo y Kismet).

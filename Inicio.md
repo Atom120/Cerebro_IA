@@ -7,7 +7,7 @@ creado: 2026-10-20
 Mapa principal de la bóveda. Cada proyecto y tema nuevo se enlaza aquí.
 
 ## Proyectos
-- [[10_Proyectos/ApertureRunner/README|ApertureRunner]]
+- [[10_Proyectos/ApertureRunner/README|ApertureRunner]] · plan del equipo: [[PLAN_EQUIPO]]
 - _(agrega aquí: [[10_Proyectos/NombreProyecto/README|NombreProyecto]])_
 
 ## Temas

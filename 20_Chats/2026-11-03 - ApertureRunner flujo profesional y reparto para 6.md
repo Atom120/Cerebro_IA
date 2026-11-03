@@ -50,8 +50,21 @@ tags: [chat, apertureRunner, mod, investigacion, equipo, antigravity, gemini, so
 - [ ] Instalar Mirror's Edge (las personas de assets y de telemetría lo necesitan seguro).
 - [ ] Spike de la semana 1: enganchar `IGameMovement::ProcessMovement` desde un VSP en el build 19017868.
 
+## Plan de equipo (misma sesión)
+- Se revisó git: Benja (Flextus) había subido `9078014`, su trabajo de Antigravity (`AGENTS.md`, `.agents/memory`, skills, `src/`, `levels/`). Ese trabajo seguía la dirección contraria: Portal dentro de Mirror's Edge, en la azotea `Edge_p`.
+- Decisión del líder: Mirror's Edge dentro de Portal, en `testchmb_a_00` (ADR-006). Los flujos de Benja se archivan como referencia y no se borran.
+- Se creó [[PLAN_EQUIPO]] con:
+  - el reparto (Zarek: plugin de servidor; Peña: movimiento; Gonzalo: cliente y cámara; Antonio: assets; Benja: telemetría de ME, mapa y QA);
+  - dependencias marcadas como 🟢 paralelo, 🟡 con stub y 🔴 espera;
+  - hitos H1 a H4;
+  - reglas de GitHub Desktop;
+  - un agente de Antigravity por rol.
+- Se actualizó la memoria compartida (`HANDOFF`, `MEMORY`, `DECISIONS` y `SESSIONS`) para que los agentes de todos lean el plan nuevo.
+- Unidades: el movimiento usa ÷2.54 (escala de personaje). El 1.905 de `LESSONS.md` es la escala de arquitectura.
+
 ## Relacionado
 - [[Inicio]]
+- [[PLAN_EQUIPO]]
 - [[10_Proyectos/ApertureRunner/README|ApertureRunner]]
 - [[20_Chats/2026-10-28 - ApertureRunner núcleo y director IA]]
 - [[30_Temas/Portales no euclidianos|Portales no euclidianos]]
