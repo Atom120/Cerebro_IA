@@ -1,12 +1,18 @@
 ---
 name: portal-mirrors-edge-stormdrain
+status: archivado
 description: >-
-  Segundo flujo de trabajo modular y multi-instancia (complementario a portal-mirrors-edge-passthrough)
+  [status: archivado — ADR-006, conservado como referencia] Segundo flujo de trabajo modular y
+  multi-instancia (complementario a portal-mirrors-edge-passthrough)
   para jugar con el personaje y físicas de Portal (Chell + Portal Gun + Cubo de Compañía) dentro de la
   Gran Esclusa Vertical del Capítulo 2 de Mirror's Edge (Stormdrain_p — stormdrain_p_sluice_01).
   Incluye soporte para rampas inclinadas a 45 grados (Angled Flings), sincronización de objetos físicos
   interactivos (prop_weighted_cube + prop_floor_button -> Kismet) y barreras Emancipation Grill.
 ---
+
+> [!IMPORTANT]
+> **Estado: ARCHIVADO (`status: archivado` por `ADR-006`, 2026-11-03).**
+> El proyecto activo es **ApertureRunner** (*Mirror's Edge dentro de Portal*, mapa `testchmb_a_00`; ver [`PLAN_EQUIPO.md`](../../../PLAN_EQUIPO.md)). Esta skill se conserva sin borrarse como referencia matemática de conservación de momentum en portales oblicuos (`Angled Flings`). Consulta [`docs/artifacts/2026-11-03-archivado-portal-me-y-reutilizacion-adr006.md`](../../../docs/artifacts/2026-11-03-archivado-portal-me-y-reutilizacion-adr006.md).
 
 # Flujo de Trabajo #2 Multi-Instancia: Mod Pass-Through Avanzado en `Stormdrain_p` (Esclusa Vertical + Catapultas a 45° + Cubo de Compañía)
 

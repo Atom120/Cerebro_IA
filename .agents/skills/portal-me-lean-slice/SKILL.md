@@ -1,11 +1,17 @@
 ---
 name: portal-me-lean-slice
+status: archivado
 description: >-
-  Flujo de trabajo rediseñado y ultraligero (Lean Vertical Slice en 3 Pasos) para lograr el mod
+  [status: archivado — ADR-006, conservado como referencia] Flujo de trabajo rediseñado y ultraligero
+  (Lean Vertical Slice en 3 Pasos) para lograr el mod
   Pass-Through de Portal dentro de Mirror's Edge en el menor tiempo posible. Combina la simplicidad
   de la azotea inicial de Edge_p con la rampa de salto a 45 grados, eliminando Source SDK, Kismet y
   hooks de D3D9 mediante el modo Ghost nativo de UE3 y un único puente externo en C++ (Cero SDKs).
 ---
+
+> [!IMPORTANT]
+> **Estado: ARCHIVADO (`status: archivado` por `ADR-006`, 2026-11-03).**
+> El proyecto activo es **ApertureRunner** (*Mirror's Edge dentro de Portal*, mapa `testchmb_a_00`; ver [`PLAN_EQUIPO.md`](../../../PLAN_EQUIPO.md)). Esta skill se conserva sin borrarse como referencia de calibración de offsets GOG + Steam (`lean_external_bridge.cpp`). Consulta [`docs/artifacts/2026-11-03-archivado-portal-me-y-reutilizacion-adr006.md`](../../../docs/artifacts/2026-11-03-archivado-portal-me-y-reutilizacion-adr006.md).
 
 # Flujo Rediseñado: "Lean Vertical Slice" en 3 Pasos (Máxima Velocidad y Mínima Complejidad)
 

@@ -1,12 +1,18 @@
 ---
 name: portal-mirrors-edge-passthrough
+status: archivado
 description: >-
-  Flujo de trabajo modular y multi-instancia para desarrollar el mod Pass-Through que permite jugar
+  [status: archivado — ADR-006, conservado como referencia] Flujo de trabajo modular y multi-instancia
+  para desarrollar el mod Pass-Through que permite jugar
   con el personaje y físicas de Portal (Chell + Portal Gun en Source Engine) dentro de una sección
   única del mundo de Mirror's Edge (Azotea inicial de Edge_p en Unreal Engine 3). Úsala cuando
   trabajes en cualquier fase de extracción de geometría, mapa proxy .vmf/.bsp, plugin VSP de Portal,
   hook UE3/D3D9 de Mirror's Edge o validación del puente IPC entre distintas computadoras.
 ---
+
+> [!IMPORTANT]
+> **Estado: ARCHIVADO (`status: archivado` por `ADR-006`, 2026-11-03).**
+> El proyecto activo es **ApertureRunner** (*Mirror's Edge dentro de Portal*, mapa `testchmb_a_00`; ver [`PLAN_EQUIPO.md`](../../../PLAN_EQUIPO.md)). Esta skill se conserva sin borrarse como referencia del esqueleto VSP (`src/backend_source/portal_me_vsp.cpp`) y transformación de coordenadas entre motores. Consulta [`docs/artifacts/2026-11-03-archivado-portal-me-y-reutilizacion-adr006.md`](../../../docs/artifacts/2026-11-03-archivado-portal-me-y-reutilizacion-adr006.md).
 
 # Flujo de Trabajo Multi-Instancia: Mod Pass-Through (Portal en Mirror's Edge)
 

@@ -1,7 +1,9 @@
 ---
 name: portal-me-true-ingame-v2
+status: archivado
 description: >-
-  Flujo de trabajo principal para la rama segundo-intento (Opción 1 Refinada):
+  [status: archivado — ADR-006, conservado como referencia] Flujo de trabajo para la rama
+  segundo-intento (Opción 1 Refinada):
   True In-Game Pass-Through de Portal dentro de Mirror's Edge en una sola ventana,
   fiel a las referencias reales de mods cross-engine en internet (estilo libsm64 /
   Mods de Portal Gun con D3D9 EndScene Hook). Incluye alineación geométrica 1:1 con
@@ -9,6 +11,10 @@ description: >-
   C_Prop_Portal desde client.dll, ocultamiento total de Faith y renderizado 3D nativo
   en Direct3D 9 (Portales con Z-Buffer + vista interior + Chell + Viewmodel de Portal Gun).
 ---
+
+> [!IMPORTANT]
+> **Estado: ARCHIVADO (`status: archivado` por `ADR-006`, 2026-11-03).**
+> El proyecto activo es **ApertureRunner** (*Mirror's Edge dentro de Portal*, mapa `testchmb_a_00`; ver [`PLAN_EQUIPO.md`](../../../PLAN_EQUIPO.md)). Esta skill no se borra: se conserva como referencia técnica (offsets de Mirror's Edge GOG, offsets de `client.dll` de Portal y notas de integración). Consulta [`docs/artifacts/2026-11-03-archivado-portal-me-y-reutilizacion-adr006.md`](../../../docs/artifacts/2026-11-03-archivado-portal-me-y-reutilizacion-adr006.md).
 
 # Flujo de Trabajo `segundo-intento` v2: True In-Game Pass-Through en *Mirror's Edge* (`portal-me-true-ingame-v2`)
 
