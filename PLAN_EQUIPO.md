@@ -153,6 +153,31 @@ No modifiques nada. Termina con "LISTO PARA PR" o "CORREGIR ANTES".
 
 ---
 
+## 5b. Prompt para empezar (cópialo en Antigravity al abrir cada sesión)
+
+Cambia `<TU NOMBRE>` por Zarek, Peña, Gonzalo, Antonio o Benja:
+
+```text
+Soy <TU NOMBRE> del equipo ApertureRunner (Mirror's Edge dentro de Portal, mapa testchmb_a_00).
+Antes de cambiar nada:
+1. Ejecuta git status y git log -n 5 --oneline. Si mi rama main está atrasada respecto a origin, dime que haga Pull en GitHub Desktop y espera.
+2. Lee completos PLAN_EQUIPO.md, .agents/memory/HANDOFF.md y la ADR-006 de .agents/memory/DECISIONS.md.
+3. Busca mi sección en PLAN_EQUIPO.md y dame un resumen en español:
+   - mi área y las carpetas que son mías;
+   - una tabla con cada una de mis tareas (ID, qué es, 🟢/🟡/🔴). Para cada dependencia, comprueba en el repo (archivos y git log) si ya está en main, y di "lista" o "pendiente de <persona> (<ID>)";
+   - qué tarea puedo empezar hoy y cuáles tengo que esperar;
+   - qué necesito instalado y si lo tengo: Portal build 19017868 (mira steamapps/appmanifest_400.acf), Visual Studio con C++, CMake y, si me toca, Mirror's Edge o Blender. Revisa también si existe config/paths.local.json;
+   - mis agentes en .agents/agents/ y cuándo usar cada uno.
+4. Ejecuta la skill build-x86 y dime si compila y pasan las pruebas.
+5. Propón un implementation plan para mi siguiente tarea 🟢 y espera mi aprobación antes de editar archivos.
+Reglas: solo edito mis carpetas; no toco mod/include/ar ni mod/core; no subo archivos de los juegos ni secretos;
+trabajo en una rama <mi-nombre>/<ID>-<descripcion>; nada de borrados recursivos ni git reset --hard.
+```
+
+Al terminar la sesión: *"prepara el handoff de mi tarea, añade mi línea a SESSIONS.md y dime qué subir"*. Después haz `Commit` y `Push`, y abre el PR a Sebas.
+
+---
+
 ## 6. Datos compartidos que todos deben respetar
 
 - **Juego objetivo:** Portal (Steam, app 400), **build 19017868**, **solo 32 bits**, rama Source 2013 Singleplayer (última actualización 2025-06-27). Comprueba el build en `steamapps/appmanifest_400.acf` (`buildid`). Si tu build es otro, avisa antes de buscar firmas u offsets.
