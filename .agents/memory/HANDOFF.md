@@ -13,9 +13,10 @@
 - S1: `mod/` con el núcleo (`mod/core/`), CMake Win32, `mod\build.bat` y CI (`.github/workflows/mod-build.yml`). Pruebas: 77 de contratos y 174 del núcleo, todas OK en x86.
 - S2: contratos v1 en `mod/include/ar/` y `docs/contratos/asset_manifest.json`.
 - Integración de las **13 skills + CLI `um` de `universal-modder`** en `.agents/skills/` y `.agents/tools/universal-modder/bin/um.cmd`, e implementación completa de los 4 módulos de referencia de `portal-me-true-ingame-v2` (`src/common/ipc_true_ingame_v2.h`, `src/true_ingame_v2/`, `levels/edge_p_true_ingame_v2/`).
+- **Z1 (Zarek)**: Implementada la DLL de servidor x86 `aperture_runner.dll` (`IServerPluginCallbacks` v003), banner para Portal 1 build 19017868, descriptor `addons/aperture_runner.vdf` y arnés de pruebas de carga dinámica autónoma (`test_plugin_load.exe`). Compilación Win32/x86 con MSVC 2026 y 100% de tests aprobados (3/3). Rama `zarek/Z1-dll-carga`.
 
 ## Próximos Pasos (semana 1)
-- Zarek: Z1, Z2, Z3, Z4. Peña: P1, P2, P4. Gonzalo: G1, G3. Antonio: A1, A2. Benja: **B1**, B2, B4.
+- Zarek: PR de Z1 a Sebas -> continuar con Z2 (interfaces y datamaps) y Z3/Z4. Peña: P1, P2, P4. Gonzalo: G1, G3. Antonio: A1, A2. Benja: **B1**, B2, B4.
 - Sebas: revisar PRs (S4) e integración semanal cuando exista Z3 (S3).
 
 ---
