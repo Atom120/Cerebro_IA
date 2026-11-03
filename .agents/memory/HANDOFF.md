@@ -24,6 +24,8 @@
 - **Regla**: nada se sube directo a `main`; todo va por rama y PR (el commit `f53db1c` se subió directo).
 - Sebas: integración semanal cuando exista Z3 (S3).
 - **Z3 (Zarek)**: Implementado el hook de vtable de `IGameMovement::ProcessMovement` en passthrough puro (`movement_hook.h/.cpp`), obtención de `GameMovement001` vía `gameServerFactory`, logging en consola de Source con `tier0.dll!Msg`, y arnés autónomo con mock dinámico de `IGameMovement` en `test_plugin_load.exe`. Compilación Win32/x86 y 100% de tests aprobados (4/4). Rama `zarek/Z3-hook-passthrough`. Listo para cerrar el **Hito H1** ("La DLL vive") con la checklist B1 de Benja.
+  - **Revisado e integrado por Sebas (PR #5) y probado en Portal (build 19017868):** el log muestra `ProcessMovement hookeado exitosamente` y `passthrough activo (500…2000 ticks interceptados)` en `testchmb_a_00`, sin cierres. El banner ya sale en la consola de Source gracias a `tier0!Msg`. Corrección: la prueba llamaba a `ProcessMovement` sobre el objeto concreto (el compilador puede saltarse la vtable); ahora la llamada pasa por un puntero `volatile` a `IGameMovement`.
+  - Pendiente para H1: Benja (B3) recorre la checklist B1 con el hook puesto, y Gonzalo engancha la copia de predicción en `client.dll` (G1).
 
 ---
 

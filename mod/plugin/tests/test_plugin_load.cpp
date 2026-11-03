@@ -104,7 +104,10 @@ int main(int argc, char* argv[]) {
     // 4. Invocar ProcessMovement a traves del mock (debe pasar por Hooked_ProcessMovement y delegar al mock)
     int dummyPlayer = 0x1234;
     int dummyMove = 0x5678;
-    g_mockGameMovement.ProcessMovement(&dummyPlayer, &dummyMove);
+    // Llamar por un puntero volatile a la interfaz: si se llama sobre el objeto concreto, el
+    // compilador puede desvirtualizar la llamada y saltarse la vtable (y el hook).
+    ar::source::IGameMovement* volatile gm = &g_mockGameMovement;
+    gm->ProcessMovement(&dummyPlayer, &dummyMove);
 
     if (g_mockGameMovement.process_movement_calls != 1 ||
         g_mockGameMovement.last_player != &dummyPlayer ||
@@ -121,7 +124,7 @@ int main(int argc, char* argv[]) {
 
     // Invocar varios ticks mas
     for (int i = 0; i < 10; ++i) {
-        g_mockGameMovement.ProcessMovement(&dummyPlayer, &dummyMove);
+        gm->ProcessMovement(&dummyPlayer, &dummyMove);
     }
     if (g_mockGameMovement.process_movement_calls != 11) {
         std::fprintf(stderr, "[test_plugin_load] Error: Se esperaban 11 llamadas de movimiento, se obtuvieron %d\n",

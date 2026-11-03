@@ -79,6 +79,7 @@ tags: [chat, apertureRunner, mod, investigacion, equipo, antigravity, gemini, so
 - Benja subió `f53db1c` directo a `main` (13 skills de universal-modder y módulos de la ruta archivada). Se recordó la regla: todo va por rama y PR.
 - Lección: `git pull --rebase` después de `git merge --no-ff` aplana los merges y cambia los SHA, así que GitHub no marca los PRs como fusionados. Si `main` ya está al día, hay que subir sin rebase, o fusionar desde GitHub.
 - Prueba real de Z1: Portal (build 19017868) carga `aperture_runner.dll` desde `portal/addons`; `plugin_print` la lista y `testchmb_a_00` abre sin cierres. Truco: `-condebug` escribe la consola en `portal/console.log` y `+plugin_print` lista los plugins cargados.
+- Z3 de Zarek (PR #5; no hubo PR aparte para Z2, iba incluido): hook de vtable sobre `IGameMovement::ProcessMovement` (ranura 1 en MSVC) obtenido por `GameMovement001`, en modo passthrough. Probado en Portal: intercepta los ticks reales y el juego sigue estable. Se corrigió la prueba para que no se salte la vtable.
 
 ## Relacionado
 - [[Inicio]]
