@@ -1,0 +1,148 @@
+{
+  "workflow_id": "portal-me-true-ingame-v2",
+  "slice_id": "edge_p_true_ingame_v2",
+  "title": "True In-Game Pass-Through v2 (Segundo Intento): Azotea Real de Edge_p 1:1 + C_Prop_Portal + Memory Input + D3D9 EndScene",
+  "design_goal": "Jugar 100% dentro de la única ventana de Mirror's Edge con geometría 1:1 de la azotea activa de Edge_p ((19500.0, -3009.5, 8517.2) y Azotea 1 (32208.5, -4811.3, 15180.0)), inyección de inputs en memoria hacia Portal sin cambiar de ventana, lectura en vivo de C_Prop_Portal desde client.dll y renderizado 3D nativo en D3D9 EndScene (Portales con Z-Buffer + Vista Interior + Chell + Viewmodel de la Portal Gun + Retícula).",
+  "conversion_constants": {
+    "hu_to_uu": 1.905,
+    "uu_to_hu": 0.5249343832020997,
+    "deg_to_uru": 182.04444444444445,
+    "uru_to_deg": 0.0054931640625,
+    "invert_y_axis": true,
+    "invert_pitch": true,
+    "invert_yaw": true
+  },
+  "anchor_origin": {
+    "description": "Ancla geométrica 1:1 de la azotea de control libre de Edge_p (1Pt1_4PlayerStart_FreeControl en (19500.0, -3009.5, 8517.2) con esquina suroeste en (18928.4, -2819.0, 8517.2))",
+    "mirrors_edge_uu": { "x": 18928.4, "y": -2819.0, "z": 8517.2 },
+    "rooftop_1_alternate_anchor_uu": { "x": 31827.5, "y": -4620.8, "z": 15180.0 },
+    "portal_hu": { "x": 0.0, "y": 0.0, "z": 0.0 }
+  },
+  "player_spawn": {
+    "description": "Punto de spawn 1:1 sobre la azotea activa de Edge_p ((19309.4, -3009.5, 8527.2) UU <-> (200.0, 100.0, 5.25) HU)",
+    "mirrors_edge_uu": { "x": 19309.4, "y": -3009.5, "z": 8527.2, "pitch_uru": 0, "yaw_uru": 16384, "roll_uru": 0 },
+    "portal_hu": { "x": 200.0, "y": 100.0, "z": 5.25, "pitch_deg": 0.0, "yaw_deg": -90.0, "roll_deg": 0.0 }
+  },
+  "verified_binary_offsets": {
+    "mirrors_edge_gog_1_01": {
+      "exe_path": "C:/Program Files/GOG Galaxy/Games/Mirror's Edge/Binaries/MirrorsEdge.exe",
+      "image_base": "0x00400000",
+      "aslr_enabled": false,
+      "timestamp": "0x4965FFF1",
+      "gengine_va": "0x01FF8B20",
+      "gworld_va": "0x01FFBCA4",
+      "gobjobjects_va": "0x0204A35C",
+      "gnames_va": "0x0204E7D8",
+      "uengine_gameplayers_data_offset": "0x2BC",
+      "ulocalplayer_actor_offset": "0x40",
+      "acontroller_pawn_offset": "0x1C0",
+      "acontroller_camera_offset": "0x2D0",
+      "aactor_physics_offset": "0x6B",
+      "aactor_location_offset": "0xE8",
+      "aactor_rotation_offset": "0xF4",
+      "aactor_velocity_offset": "0x100",
+      "aactor_drawscale_offset": "0x10C",
+      "aactor_collocation_offset": "0x13C",
+      "atdpawn_capsule_loc1_offset": "0x2E0",
+      "atdpawn_capsule_loc2_offset": "0x2F8"
+    },
+    "portal_steam_2025": {
+      "client_dll_path": "C:/Program Files (x86)/Steam/steamapps/common/Portal/portal/bin/client.dll",
+      "timestamp": "0x68362D89",
+      "main_view_origin_rva": "0x0050F484",
+      "main_view_angles_rva": "0x0050F490",
+      "local_player_ptr_rva": "0x004D78F0",
+      "cl_entitylist_rva": "0x004C6624",
+      "entity_serial_stride": "0x10",
+      "c_prop_portal_origin_offset": "0x28C",
+      "c_prop_portal_angles_offset": "0x298",
+      "c_prop_portal_is_portal2_offset": "0x0E05",
+      "c_prop_portal_activated_offset": "0x0E06",
+      "c_prop_portal_linked_handle_offset": "0x0E00"
+    }
+  },
+  "bounding_box_local_uu": {
+    "min": { "x": -100.0, "y": -2900.0, "z": -100.0 },
+    "max": { "x": 4300.0, "y": 100.0, "z": 1250.0 }
+  },
+  "proxy_brushes": [
+    {
+      "id": "rooftop_main_floor_1to1",
+      "shape": "box",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_floor001a",
+      "description": "Losa principal de concreto blanco de la azotea activa de Edge_p (Z = 8517.2 UU / 0.0 local)",
+      "bounds_local_uu": {
+        "min": { "x": 0.0, "y": -2800.0, "z": -32.0 },
+        "max": { "x": 2600.0, "y": 0.0, "z": 0.0 }
+      }
+    },
+    {
+      "id": "elevator_tower_wall_north",
+      "shape": "box",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_wall001a",
+      "description": "Muro vertical alto de la torre del ascensor de Edge_p para colocar portales en altura",
+      "bounds_local_uu": {
+        "min": { "x": 1150.0, "y": -420.0, "z": 0.0 },
+        "max": { "x": 2050.0, "y": -360.0, "z": 980.0 }
+      }
+    },
+    {
+      "id": "rooftop_west_parapet_wall",
+      "shape": "box",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_wall001a",
+      "description": "Muro perimetral oeste de la azotea de Edge_p (alineado 1:1 para pruebas de tiro frontal)",
+      "bounds_local_uu": {
+        "min": { "x": -32.0, "y": -2800.0, "z": 0.0 },
+        "max": { "x": 0.0, "y": 0.0, "z": 420.0 }
+      }
+    },
+    {
+      "id": "rooftop_south_parapet_wall",
+      "shape": "box",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_wall001a",
+      "description": "Muro perimetral sur de la azotea de Edge_p",
+      "bounds_local_uu": {
+        "min": { "x": 0.0, "y": -2832.0, "z": 0.0 },
+        "max": { "x": 2600.0, "y": -2800.0, "z": 360.0 }
+      }
+    },
+    {
+      "id": "rooftop_red_jump_ramp_45",
+      "shape": "wedge_45_plus_x",
+      "surface_type": "portalable_angled_45",
+      "source_material": "concrete/concrete_modular_wall001a",
+      "description": "Rampa roja de salto a 45° en el borde este de la azotea de Edge_p (catapulta parabólica hacia la azotea vecina)",
+      "normal_source_rh": { "x": 0.70710678, "y": 0.0, "z": 0.70710678 },
+      "bounds_local_uu": {
+        "min": { "x": 2300.0, "y": -1600.0, "z": 0.0 },
+        "max": { "x": 2600.0, "y": -1000.0, "z": 300.0 }
+      }
+    },
+    {
+      "id": "target_across_street_roof",
+      "shape": "box",
+      "surface_type": "portalable",
+      "source_material": "concrete/concrete_modular_floor001a",
+      "description": "Azotea meta al otro lado de la calle de Edge_p",
+      "bounds_local_uu": {
+        "min": { "x": 3400.0, "y": -2200.0, "z": 100.0 },
+        "max": { "x": 4200.0, "y": -400.0, "z": 140.0 }
+      }
+    },
+    {
+      "id": "hvac_obstacle_noportal",
+      "shape": "box",
+      "surface_type": "noportal",
+      "source_material": "metal/metalwall048b",
+      "description": "Unidad metálica de aire acondicionado central (superficie noportal)",
+      "bounds_local_uu": {
+        "min": { "x": 900.0, "y": -1600.0, "z": 0.0 },
+        "max": { "x": 1400.0, "y": -1100.0, "z": 180.0 }
+      }
+    }
+  ]
+}

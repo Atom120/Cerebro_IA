@@ -75,13 +75,29 @@ flowchart TB
 ### Módulo 4: Hook Nativo `d3d9.dll` dentro de `MirrorsEdge.exe` (Portales 3D + Vista Interior + Chell + Viewmodel de Portal Gun)
 1. **Problema que resuelve**: Incorpora visualmente los elementos de *Portal* dentro del motor gráfico de *Mirror's Edge*.
 2. **Procedimiento**:
-   - Compilar un DLL proxy x86 (`d3d9.dll`) para `Mirror's Edge/Binaries/` que intercepta `IDirect3DDevice9::EndScene`.
-   - **Ocultar a Faith**: Ajustar `DrawScale = 0` (o desplazar la malla `ATdPlayerPawn`) y fijar `TdPlayerCamera` (`Controller + 0x2D0`) con `FOV = 90°` a la posición de ojos de Chell.
+   - Compilar un DLL proxy x86 (`d3d9.dll` / [`src/true_ingame_v2/me_true_ingame_d3d9.cpp`](../../../src/true_ingame_v2/me_true_ingame_d3d9.cpp)) para `Mirror's Edge/Binaries/` que intercepta `IDirect3DDevice9::EndScene`.
+   - **Ocultar a Faith**: Ajustar `DrawScale = 0` (`Pawn + 0x10C`) y fijar `TdPlayerCamera` (`Controller + 0x2D0`) con `FOV = 90°` a la posición de ojos de Chell.
    - **Renderizar los Portales 3D con Z-Buffer y Vista Interior**:
      - Construir la matriz `ViewProjection` desde `TdPlayerCamera` y proyectar en 3D las elipses del **Portal Azul (`#00A2FF`)** y **Portal Naranja (`#FF6A00`)** adheridas a la superficie real de la azotea.
      - Renderizar en el interior del óvalo la vista proyectada del destino y la figura 3D de **Chell** cuando ambos portales están activos.
    - **Renderizar el Viewmodel de la Portal Gun y la Retícula**:
-     - Dibujar en una pasada final (con limpieza de rango Z para evitar *clipping* con muros) la **Portal Gun en primera persona** (con iluminación central azul/naranja, retroceso al disparar y haz de energía hacia el punto de impacto) y la retícula central oficial de *Portal*.
+     - Dibujar en una pasada final (con limpieza de rango Z `MinZ=0.0, MaxZ=0.08` para evitar *clipping* con muros) la **Portal Gun en primera persona** (con iluminación central azul/naranja, retroceso al disparar y haz de energía hacia el punto de impacto) y la retícula central oficial de *Portal*.
+
+---
+
+## Comando Único de Construcción, Compilación (`.bsp` + `x86`) y Verificación
+
+Ejecuta el script todo-en-uno ([`build-and-verify-true-ingame-v2.js`](./scripts/build-and-verify-true-ingame-v2.js)) que genera el `.vmf` 1:1 desde [`levels/edge_p_true_ingame_v2/slice_manifest.json`](../../../levels/edge_p_true_ingame_v2/slice_manifest.json), compila [`me_edge_true_ingame_v2.bsp`](../../../levels/edge_p_true_ingame_v2/me_edge_true_ingame_v2.bsp) con `vbsp.exe`, compila `me_true_ingame_d3d9.dll` y `true_ingame_bridge_v2.exe` con `vcvars32.bat`, y ejecuta `--self-test` sobre los 4 módulos:
+
+```powershell
+node .agents/skills/portal-me-true-ingame-v2/scripts/build-and-verify-true-ingame-v2.js
+```
+
+### Archivos de Implementación de los 4 Módulos
+- **Contrato IPC v2 (`PTV2`)**: [`src/common/ipc_true_ingame_v2.h`](../../../src/common/ipc_true_ingame_v2.h)
+- **Módulo 1 (Manifiesto + `.vmf` + `.bsp` 1:1)**: [`levels/edge_p_true_ingame_v2/slice_manifest.json`](../../../levels/edge_p_true_ingame_v2/slice_manifest.json)
+- **Módulo 2 y 3 (Inyección en Memoria + `C_Prop_Portal`)**: [`src/true_ingame_v2/true_ingame_bridge_v2.cpp`](../../../src/true_ingame_v2/true_ingame_bridge_v2.cpp)
+- **Módulo 4 (Hook Proxy `d3d9.dll` `EndScene`)**: [`src/true_ingame_v2/me_true_ingame_d3d9.cpp`](../../../src/true_ingame_v2/me_true_ingame_d3d9.cpp)
 
 ---
 

@@ -23,9 +23,12 @@
 - `.agents/memory/LESSONS.md`: Lecciones aprendidas, correcciones del usuario, patrones efectivos y errores resueltos.
 - `.agents/memory/DECISIONS.md`: Decisiones arquitectónicas y técnicas tomadas (`ADR-001` a `ADR-005`).
 - `.agents/memory/SESSIONS.md`: Bitácora cronológica de sesiones entre dispositivos.
-- `.agents/skills/`: Habilidades modulares compartidas entre todos los dispositivos:
-  - `portal-me-true-ingame-v2`: **(Archivada por ADR-006; antes ruta principal en `segundo-intento`)** Flujo refinado en 4 módulos para jugar 100% dentro de *Mirror's Edge* con geometría 1:1, inyección de inputs en memoria, lectura real de `C_Prop_Portal` y hook `d3d9.dll` (`EndScene`) con Portales 3D, Chell y Viewmodel de la *Portal Gun*.
+- `.agents/skills/`: Habilidades modulares compartidas entre todos los dispositivos (22 skills en total):
+  - `build-x86` y `launch-portal-test`: Compilación Win32/x86 de `mod/` (`ApertureRunner`) y prueba directa en Portal (`testchmb_a_00`).
+  - `portal-me-true-ingame-v2`: **(Archivada por ADR-006; antes ruta principal en `segundo-intento`, 4 módulos implementados)** Flujo refinado en 4 módulos para jugar 100% dentro de *Mirror's Edge* con geometría 1:1, inyección de inputs en memoria, lectura real de `C_Prop_Portal` y hook `d3d9.dll` (`EndScene`) con Portales 3D, Chell y Viewmodel de la *Portal Gun*.
   - `portal-me-lean-slice`: Flujo de `primer-intento` (sincronización externa de coordenadas en 3 pasos, conservado como base de offsets GOG + Steam).
   - `portal-mirrors-edge-passthrough`: Flujo #1 original (`Edge_p` Azotea).
   - `portal-mirrors-edge-stormdrain`: Flujo #2 avanzado (`Stormdrain_p` Esclusa Vertical con Cubo y Kismet).
+  - `colab-sync`, `cross-device-learn`, `session-handoff`: Sincronización Git/GitHub Desktop, aprendizaje continuo y relevo entre sesiones.
+  - **Toolkit `universal-modder` (13 skills + CLI `.agents/tools/universal-modder/bin/um.cmd`)**: `mod-any-game`, `mashup-mods`, `game-recon`, `game-research-websearch`, `reverse-engineering`, `port-a-mod`, `asset-pipeline`, `fal-assets`, `game-automation`, `showcase-video`, `publish-mod`, `share-field-notes`, `blitz3d-decomp`.
 - `docs/artifacts/`: Carpeta versionada para exportar artefactos importantes que deban consultarse en otras computadoras.

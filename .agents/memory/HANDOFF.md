@@ -12,6 +12,7 @@
 - S0: 16 agentes en `.agents/agents/` y skills `build-x86` y `launch-portal-test`.
 - S1: `mod/` con el núcleo (`mod/core/`), CMake Win32, `mod\build.bat` y CI (`.github/workflows/mod-build.yml`). Pruebas: 77 de contratos y 174 del núcleo, todas OK en x86.
 - S2: contratos v1 en `mod/include/ar/` y `docs/contratos/asset_manifest.json`.
+- Integración de las **13 skills + CLI `um` de `universal-modder`** en `.agents/skills/` y `.agents/tools/universal-modder/bin/um.cmd`, e implementación completa de los 4 módulos de referencia de `portal-me-true-ingame-v2` (`src/common/ipc_true_ingame_v2.h`, `src/true_ingame_v2/`, `levels/edge_p_true_ingame_v2/`).
 
 ## Próximos Pasos (semana 1)
 - Zarek: Z1, Z2, Z3, Z4. Peña: P1, P2, P4. Gonzalo: G1, G3. Antonio: A1, A2. Benja: **B1**, B2, B4.
@@ -35,10 +36,10 @@
 
 ### Tareas en Curso (In Progress en `segundo-intento`)
 - [x] Post-Mortem de `primer-intento` y diseño de la arquitectura `portal-me-true-ingame-v2` (`ADR-005`).
-- [ ] **Módulo 1**: Extraer las superficies reales de la azotea de `Edge_p` y compilar el `.bsp` 1:1.
-- [ ] **Módulo 2**: Implementar inyección de inputs en memoria (ME $\rightarrow$ Portal) para jugar 100% dentro de *Mirror's Edge*.
-- [ ] **Módulo 3**: Localizar y leer las entidades `C_Prop_Portal` (Azul y Naranja) en `client.dll` de *Portal*.
-- [ ] **Módulo 4**: Compilar e inyectar `d3d9.dll` en `Mirror's Edge/Binaries/` para renderizar Portales 3D, Chell y Viewmodel de la *Portal Gun* en `EndScene`.
+- [x] **Módulo 1**: Extraer las superficies reales de la azotea de `Edge_p` y compilar el `.bsp` 1:1 (`levels/edge_p_true_ingame_v2/me_edge_true_ingame_v2.bsp`).
+- [x] **Módulo 2**: Implementar inyección de inputs en memoria (ME $\rightarrow$ Portal) para jugar 100% dentro de *Mirror's Edge*.
+- [x] **Módulo 3**: Localizar y leer las entidades `C_Prop_Portal` (Azul y Naranja) en `client.dll` de *Portal*.
+- [x] **Módulo 4**: Compilar `me_true_ingame_d3d9.dll` para renderizar Portales 3D, Chell y Viewmodel de la *Portal Gun* en `EndScene`.
 
 ### Próximos Pasos Sugeridos (Next Steps)
 1. Implementar **Módulo 1 y Módulo 3**: Extraer las coordenadas exactas de `C_Prop_Portal` en `client.dll` y alinear la geometría del `.bsp` con la azotea real de `Edge_p`.

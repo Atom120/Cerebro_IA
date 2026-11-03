@@ -37,6 +37,7 @@ build/
 *.umap
 *.bsp
 !levels/edge_p_lean_slice/me_edge_lean_slice.bsp
+!levels/edge_p_true_ingame_v2/me_edge_true_ingame_v2.bsp
 *.prt
 *.lin
 *.psk
@@ -51,4 +52,6 @@ levels/*/raw_extracted/
 # Keep Antigravity workspace customizations & shared memory tracked!
 !.agents/
 !.agents/**
+.agents/**/__pycache__/
+.agents/**/*.py[cod]
 !AGENTS.md
