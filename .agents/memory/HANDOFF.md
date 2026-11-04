@@ -7,6 +7,7 @@
 - **Quién**: Sebas (Claude Code) — Repositorio `Cerebro_IA` (`main`)
 - **Estado general**: **Cambio de dirección (ADR-006).** El proyecto ahora es *Mirror's Edge dentro de Portal*: Faith en el primer mapa de Portal 1 (`testchmb_a_00`). **El plan, el reparto por persona, las dependencias y los agentes están en [`PLAN_EQUIPO.md`](../../PLAN_EQUIPO.md). Léelo antes de proponer cambios y trabaja solo en las tareas y carpetas de tu persona.**
 - **Equipo**: Sebas (líder/integración), Zarek (plugin servidor), Peña (movimiento de Faith), Gonzalo (cliente y cámara), Antonio (assets de Faith), Benja (telemetría ME, contrato del mapa y QA).
+- **Usuarios de GitHub**: Sebas `Atom120`, Zarek `zarek21`, Benja `Flextus`, Gonzalo `DaddyGanzux`. Peña y Antonio: pendiente (entre los colaboradores también está `j0emike`, sin confirmar).
 
 ## Hecho (2026-11-03)
 - S0: 16 agentes en `.agents/agents/` y skills `build-x86` y `launch-portal-test`.
