@@ -87,6 +87,14 @@ tags: [chat, apertureRunner, mod, investigacion, equipo, antigravity, gemini, so
   - los temporizadores en float terminan un tick tarde si no se redondean;
   - las pruebas de mutación encontraron 3 pruebas que no comprobaban nada (cooldown del borde, ápice del coil, paredes físicas).
 - 2026-11-04: Sebas revisó el PR #7 de Benja (cambios pedidos) y corrigió Z4 de Zarek después de probarlo en Portal con sondas temporales. Fallaban tres cosas, todas por ABI de CS:GO frente a Source 2013: la vtable de `IEngineTrace`, `Ray_t` y la clasificación de entidades. Ahora hay un autotest en el mapa. Los comentarios de los PR se publican con la credencial de Git y la API de GitHub (`gh` no está instalado). Z5 desbloqueado.
+- 2026-11-04 (tarde): Sebas hizo las tareas pendientes de Zarek, Gonzalo y Benja.
+  - **Z5:** Faith mueve al jugador en Portal con `ar_enable 1`. Portales híbridos: cerca de un portal usa el movimiento original.
+  - **Z2:** documentación de la ABI.
+  - **G1:** `cl_predict` vale 0 y no hay predicción; G2 no aplica.
+  - **G3:** módulo de cámara con 30 pruebas.
+  - **B3:** prueba automática de H2, 9/9 PASS. Incluye sprint, salto, portal y ascensor.
+  - **Bloqueado:** G4 (falta el modelo de Antonio), B2b (falta Mirror's Edge) y B5 (H4).
+  - **Truco:** la entrada para las pruebas se inyecta con `ar_qa_input`, porque Source suelta `+forward` si la ventana pierde el foco.
 
 ## Relacionado
 - [[Inicio]]
