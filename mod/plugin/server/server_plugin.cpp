@@ -40,7 +40,7 @@ void ApertureRunnerServerPlugin::LogMsg(const char* fmt, ...) {
     std::printf("%s", buffer);
 }
 
-bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn /*interfaceFactory*/, source::CreateInterfaceFn gameServerFactory) {
+bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn interfaceFactory, source::CreateInterfaceFn gameServerFactory) {
     if (is_loaded_) return true;
 
 #ifdef _WIN32
@@ -59,6 +59,19 @@ bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn /*interfaceFacto
         " Estado Inicial: ar_enable = 0 (passthrough)\n"
         "======================================================\n\n",
         kPortalBuildId);
+
+    // Z4: Obtener EngineTraceServer003 para el trace provider del servidor
+    if (interfaceFactory) {
+        int returnCode = 0;
+        void* iface = interfaceFactory(source::kEngineTraceServerVersion, &returnCode);
+        if (iface && returnCode == 0) {
+            engine_trace_ = static_cast<source::IEngineTrace*>(iface);
+            trace_provider_.SetEngineTrace(engine_trace_);
+            LogMsg("[ApertureRunner] EngineTraceServer003 adquirido exitosamente (Z4).\n");
+        } else {
+            LogMsg("[ApertureRunner] AVISO: EngineTraceServer003 no disponible en interfaceFactory (rc=%d).\n", returnCode);
+        }
+    }
 
     // Z2/Z3: Obtener GameMovement001 y enganchar ProcessMovement en passthrough
     if (gameServerFactory) {
@@ -87,6 +100,10 @@ void ApertureRunnerServerPlugin::Unload() {
         MovementHook::Uninstall();
         LogMsg("[ApertureRunner] VTable de IGameMovement restaurada al original.\n");
     }
+
+    engine_trace_ = nullptr;
+    trace_provider_.SetEngineTrace(nullptr);
+    trace_provider_.SetIgnorePlayer(nullptr);
 
     LogMsg("[ApertureRunner] Plugin descargado limpiamente.\n");
     is_loaded_ = false;

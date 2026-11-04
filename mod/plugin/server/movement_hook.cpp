@@ -19,6 +19,11 @@ static uint64_t s_intercepted_ticks = 0;
 void __fastcall MovementHook::Hooked_ProcessMovement(void* thisptr, int /*dummy_edx*/, void* pPlayer, void* pMove) {
     ++s_intercepted_ticks;
 
+    // Actualiza la entidad jugador activa para que el trace provider la ignore
+    if (pPlayer) {
+        ApertureRunnerServerPlugin::Instance().GetTraceProvider()->SetIgnorePlayer(pPlayer);
+    }
+
     // Log discreto periodico cada 500 ticks (~7.5 segundos en Source a 66.67 Hz)
     if (s_intercepted_ticks % 500 == 0) {
         ApertureRunnerServerPlugin::LogMsg(

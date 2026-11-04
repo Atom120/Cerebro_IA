@@ -31,13 +31,13 @@
 | Persona | Hecho | En curso / siguiente | Estado |
 |---|---|---|---|
 | Sebas | S0, S1, S2, S3 (semana 1), S4 (PRs #1–#6) | S4 continuo; S3 cada semana | 🟢 |
-| Zarek | Z1, Z3 | **Z2 incompleta**: solo `GameMovement001`; faltan `PlayerInfoManager002`, `VEngineServer021` y documentar los campos de `CPortal_Player`. Luego Z4 (`ITraceProvider` real) | 🟢 |
+| Zarek | Z1, Z3, Z4 | **Z2**: interfaces y datamaps (`PlayerInfoManager002`, `VEngineServer021`, campos de `CPortal_Player`). Luego Z5 (conectar `faith_move` con Z4 a `ProcessMovement`) | 🟢 |
 | Peña | P1 y P2 (hechos por Sebas el 2026-11-04) | P3 (parkour) sobre `mod/faith_move/` | 🟡 |
 | Gonzalo | — (rama `G1` creada, vacía) | G1 (predicción en `client.dll`): falta para cerrar del todo H1. G3 (cámara) se puede hacer en paralelo | 🟡 |
 | Antonio | — (sin ramas ni PRs) | A1 (necesita Mirror's Edge instalado + UEViewer), A2 | 🟡 |
 | Benja | B1, B2 (CSV sintéticos), B3 (H1, provisional), B4 | Aclarar los tiempos de `H1.md` y adjuntar el log crudo; grabar trazas reales con `--record` (B2b) | 🟢 |
 
-**Hitos:** H1 "la DLL vive": servidor ✅, QA ✅ (provisional), cliente ⏳ (G1). H2 bloqueado por P2 + Z4 → Z5.
+**Hitos:** H1 "la DLL vive": servidor ✅, QA ✅ (provisional), cliente ⏳ (G1). H2 desbloqueado en movimiento (P1/P2) y trace de servidor (Z4); requiere Z2 + Z5.
 
 **Para la semana 2:** Peña sube P1 cuanto antes (aunque sea el esqueleto con pruebas de `BoxWorld`). Gonzalo sube G1. Zarek cierra Z2 y empieza Z4. Ramas con el formato `nombre/ID-descripcion` (no `G1` a secas). Nada directo a `main`.
 
@@ -54,6 +54,7 @@
 - **Regla**: nada se sube directo a `main`; todo va por rama y PR.
 - **Z3 (Zarek)**: Implementado el hook de vtable de `IGameMovement::ProcessMovement` en passthrough puro (`movement_hook.h/.cpp`), obtención de `GameMovement001` vía `gameServerFactory`, logging en consola de Source con `tier0.dll!Msg`, y arnés autónomo con mock dinámico de `IGameMovement` en `test_plugin_load.exe`. Compilación Win32/x86 y 100% de tests aprobados (4/4). Rama `zarek/Z3-hook-passthrough`.
   - **Revisado e integrado por Sebas (PR #5) y probado en Portal (build 19017868):** el log muestra `ProcessMovement hookeado exitosamente` y `passthrough activo (500…2000 ticks interceptados)` en `testchmb_a_00`, sin cierres. El banner ya sale en la consola de Source gracias a `tier0!Msg`.
+- **Z4 (Zarek)**: Implementado `ServerTraceProvider` (`mod/plugin/server/server_trace_provider.h/.cpp`) satisfaciendo `ar::ITraceProvider`, enlazado a `EngineTraceServer003` vía `interfaceFactory` de Source (`engine.dll`), estructuras binarias exactas Source (`VectorAligned` 16 bytes, `Ray_t` con `m_pWorldAxisTransform`, `cplane_t`, `trace_t`, máscara `kMaskPlayerSolid = 0x201400Bu`), filtro `TraceFilterPlayerOnly` para ignorar la entidad del jugador, y arnés en `test_plugin_load.exe` con `MockEngineTrace` (6/6 comprobaciones espaciales OK: piso Z=0, pared X=100, libre, colisión inicial en sólido y filtrado). Compilación Win32/x86 en Debug y Release con 100% de tests aprobados (5/5). Rama `zarek/Z4-trace-provider`. Desbloquea Z5.
 - **B3 (Benja)**: Recorrida y verificada al 100% la checklist de `testchmb_a_00` (`CHK-01` a `CHK-14`) en Portal (build 19017868) con `aperture_runner.dll` y hook de `ProcessMovement` passthrough (`ar_enable 0`). Grabada demo local `h1_testchmb_a_00.dem` (1,170,204 bytes, 4,733 frames de juego, 71.6 s), más de 5,000 ticks de simulación continua interceptados sin cierres ni desincronización, supervivencia probada a través de `ChangeLevel` a `testchmb_a_01` y generado el informe de QA en `qa/resultados/H1.md`. Rama `benja/B3-qa-h1`. **Hito H1 validado por QA.**
   - Revisión de Sebas (PR #6, integrado): en el informe, los portales de la cámara 00 se abren a t=15.9 s, pero B1 dice que `relay_start_map` los abre a t=66.5 s. Benja debe anotar en `qa/resultados/H1.md` si usó `ent_fire`, `host_timescale` u otro atajo, y adjuntar el `console.log` crudo (fuera de git o recortado) para que el informe se pueda reproducir.
 

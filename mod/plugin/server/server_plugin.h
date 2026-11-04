@@ -1,6 +1,7 @@
 #pragma once
 
 #include "source_interfaces.h"
+#include "server_trace_provider.h"
 #include "ar/units.h"
 
 namespace ar {
@@ -33,6 +34,9 @@ public:
     bool IsEnabled() const { return enabled_; }
     void SetEnabled(bool enabled) { enabled_ = enabled; }
 
+    ServerTraceProvider* GetTraceProvider() { return &trace_provider_; }
+    const ServerTraceProvider* GetTraceProvider() const { return &trace_provider_; }
+
     // Enrutador de mensajes: imprime en consola de Source (tier0.dll Msg), OutputDebugString y stdout
     static void LogMsg(const char* fmt, ...);
 
@@ -45,6 +49,9 @@ private:
     bool enabled_ = false;
     bool is_loaded_ = false;
     char current_map_[64] = {};
+
+    source::IEngineTrace* engine_trace_ = nullptr;
+    ServerTraceProvider trace_provider_;
 };
 
 }  // namespace ar
