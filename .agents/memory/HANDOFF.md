@@ -45,7 +45,7 @@
 | Peña | P1, P2 y P3 (hechos por Sebas el 2026-11-04) | P4 (portales) y P5 (ajuste con trazas reales) | 🟡 |
 | Gonzalo | — (rama `G1` creada, vacía) | G1 (predicción en `client.dll`): falta para cerrar del todo H1. G3 (cámara) se puede hacer en paralelo | 🟡 |
 | Antonio | — (sin ramas ni PRs) | A1 (necesita Mirror's Edge instalado + UEViewer), A2 | 🟡 |
-| Benja | B1, B2 (CSV sintéticos), B3 (H1, provisional), B4 | Aclarar los tiempos de `H1.md` y adjuntar el log crudo; grabar trazas reales con `--record` (B2b) | 🟢 |
+| Benja | B1, B2 (CSV sintéticos), B3 (H1, provisional), B4 | B2b en marcha (suite de captura interactiva y comparación lista en `benja/B2b-telemetria-real`); aclarar tiempos de `H1.md` | 🟢 |
 
 **Hitos:** H1 "la DLL vive": servidor ✅, QA ✅ (provisional), cliente ⏳ (G1). H2 desbloqueado en movimiento (P1/P2) y trace de servidor (Z4); requiere Z2 + Z5.
 
