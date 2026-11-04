@@ -7,6 +7,7 @@ add_library(aperture_runner SHARED
     server/movement_hook.cpp
     server/server_trace_provider.cpp
     server/faith_driver.cpp
+    client/client_movement_hook.cpp
 )
 
 target_link_libraries(aperture_runner PRIVATE ar_contracts faith_move)

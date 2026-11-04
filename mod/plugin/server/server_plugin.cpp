@@ -2,6 +2,7 @@
 #include "server_plugin.h"
 #include "movement_hook.h"
 #include "faith_driver.h"
+#include "client/client_movement_hook.h"
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -90,6 +91,10 @@ bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn interfaceFactory
         }
     }
 
+    // G1: copia de prediccion del cliente (client.dll), en el mismo proceso.
+    LogMsg(ClientMovementHook::Install() ? "[ApertureRunner] Prediccion del cliente (client.dll GameMovement001) enganchada (G1).\n"
+                                         : "[ApertureRunner] client.dll no disponible: sin hook de prediccion.\n");
+
     is_loaded_ = true;
     return true;
 }
@@ -101,6 +106,7 @@ void ApertureRunnerServerPlugin::Unload() {
         MovementHook::Uninstall();
         LogMsg("[ApertureRunner] VTable de IGameMovement restaurada al original.\n");
     }
+    ClientMovementHook::Uninstall();
 
     engine_trace_ = nullptr;
     trace_provider_.SetEngineTrace(nullptr);
