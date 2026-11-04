@@ -338,6 +338,364 @@ void TestPredictionReplay() {
     CHECK(std::memcmp(&r.s, &first, sizeof(FaithState)) == 0);
 }
 
+// ------------------------------------------------------------------ P3: parkour
+
+// Runs until `done` or `max_ticks`; returns the ticks taken.
+int RunUntil(Rig& r, int max_ticks, const std::function<bool()>& done, float fwd = 1, uint32_t held = 0) {
+    int t = 0;
+    while (!done() && t < max_ticks) {
+        r.Tick(fwd, 0, held);
+        ++t;
+    }
+    return t;
+}
+
+void TestWallRun() {
+    Rig r(true, {0, -80, 0});
+    r.world.Add({-512, -140, 0}, {8192, -100, 300});  // wall on the right of a run along +X
+    r.Settle();
+    r.Run(Ticks(1.5f), 1);
+    r.Tick(1, 0, 0, kFaithButtonUp);
+    CHECK(r.events & kFaithEventWallRunStart);
+    CHECK(!(r.events & kFaithEventJumped));
+    CHECK(r.s.anim == FaithAnimState::WallRunRight);
+    CHECK(!r.s.on_ground);
+    CHECK_NEAR(r.s.wall_normal.y, 1.0, 1e-3);
+    CHECK(r.s.view_roll < 0.0f);
+
+    float max_z = 0.0f;
+    const int ticks = 1 + RunUntil(r, 300, [&] {
+        max_z = std::fmax(max_z, r.s.origin.z);
+        return r.s.anim != FaithAnimState::WallRunRight;
+    });
+    CHECK_NEAR(ticks * kDt, faith::kWallrunDurationSec, 0.05);  // forward held: it ends by time, not speed
+    CHECK(max_z > 40.0f && max_z < 80.0f);
+    CHECK(r.events & kFaithEventWallRunEnd);
+    CHECK(r.s.speed_2d > 250.0f);
+
+    // Holding Up does not run the same wall again before landing.
+    r.events = 0;
+    RunUntil(r, 300, [&] { return r.s.on_ground; }, 1, kFaithButtonUp);
+    CHECK(r.s.on_ground);
+    CHECK(!(r.events & kFaithEventWallRunStart));
+    CHECK(!(r.events & kFaithEventHardLanding));
+
+    // Without forward held the run slows down and ends earlier.
+    Rig slow(true, {0, -80, 0});
+    slow.world.Add({-512, -140, 0}, {8192, -100, 300});
+    slow.Settle();
+    slow.Run(Ticks(0.3f), 1);
+    slow.Tick(1, 0, 0, kFaithButtonUp);
+    const int slow_ticks = 1 + RunUntil(slow, 300, [&] { return slow.s.anim != FaithAnimState::WallRunRight; }, 0);
+    CHECK(slow_ticks * kDt < faith::kWallrunDurationSec - 0.2f);
+}
+
+void TestWallRunLeftAndWallJump() {
+    Rig r(true, {0, 80, 0});
+    r.world.Add({-512, 100, 0}, {8192, 140, 300});  // wall on the left
+    r.Settle();
+    r.Run(Ticks(1.0f), 1);
+    r.Tick(1, 0, 0, kFaithButtonUp);
+    CHECK(r.s.anim == FaithAnimState::WallRunLeft);
+    CHECK(r.s.view_roll > 0.0f);
+    r.Run(Ticks(0.3f), 1);
+    CHECK(r.s.anim == FaithAnimState::WallRunLeft);
+    r.events = 0;
+    r.Tick(1, 0, 0, kFaithButtonUp);
+    CHECK(r.events & kFaithEventJumped);
+    CHECK(r.events & kFaithEventWallRunEnd);
+    CHECK(r.s.anim == FaithAnimState::WallRunJump);
+    CHECK(r.s.velocity.y < -100.0f);  // pushed away from the wall (normal -Y)
+    CHECK(r.s.velocity.z > 200.0f);
+}
+
+void TestWallRunRefused() {
+    Rig cube(true, {0, -80, 0});  // physics props are never wallrunnable
+    cube.world.Add({-512, -140, 0}, {8192, -100, 300}, TraceHitKind::Physics);
+    cube.Settle();
+    cube.Run(Ticks(1.0f), 1);
+    cube.Tick(1, 0, 0, kFaithButtonUp);
+    CHECK(!(cube.events & kFaithEventWallRunStart));
+    CHECK(cube.events & kFaithEventJumped);
+
+    Rig low(true, {0, -80, 0});  // a wall lower than kWallrunMinWallHeight (75.6) is not
+    low.world.Add({-512, -140, 0}, {8192, -100, 60});
+    low.Settle();
+    low.Run(Ticks(1.0f), 1);
+    low.Tick(1, 0, 0, kFaithButtonUp);
+    CHECK(!(low.events & kFaithEventWallRunStart));
+
+    Rig slow(true, {0, -80, 0});  // walking (59 su/s) is under kWallrunMinSpeed (78.7)
+    slow.world.Add({-512, -140, 0}, {8192, -100, 300});
+    slow.Settle();
+    slow.Run(Ticks(1.0f), 1, 0, kFaithButtonWalk);
+    slow.Tick(1, 0, kFaithButtonWalk, kFaithButtonUp);
+    CHECK(!(slow.events & kFaithEventWallRunStart));
+}
+
+void TestWallClimb() {
+    Rig r;
+    r.world.Add({100, -256, 0}, {400, 256, 400});
+    r.Settle();
+    r.Run(Ticks(0.6f), 1);  // touching the wall
+    r.Tick(1, 0, 0, kFaithButtonUp);
+    CHECK(r.events & kFaithEventWallClimbStart);
+    CHECK(!(r.events & kFaithEventJumped));
+    CHECK(r.s.anim == FaithAnimState::WallClimb);
+    CHECK_NEAR(r.s.wall_normal.x, -1.0, 1e-3);
+
+    float max_z = 0.0f;
+    RunUntil(r, 300, [&] {
+        max_z = std::fmax(max_z, r.s.origin.z);
+        return r.s.anim != FaithAnimState::WallClimb;
+    });
+    const double v = faith::kWallClimbSpeed;
+    CHECK_NEAR(max_z, v * v / (2.0 * faith::kGravity * faith::kWallClimbGravityScale), 3.0);
+    CHECK(r.s.anim == FaithAnimState::Fall);
+
+    r.events = 0;  // only one wallclimb per airtime
+    r.Tick(1, 0, 0, kFaithButtonUp);
+    CHECK(!(r.events & kFaithEventWallClimbStart));
+    RunUntil(r, 300, [&] { return r.s.on_ground; });
+    r.Run(5, 1);
+    r.Tick(1, 0, 0, kFaithButtonUp);  // landed: allowed again
+    CHECK(r.events & kFaithEventWallClimbStart);
+
+    Rig turn;  // climb, turn away from the wall, jump off it
+    turn.world.Add({100, -256, 0}, {400, 256, 400});
+    turn.Settle();
+    turn.Run(Ticks(0.6f), 1);
+    turn.Tick(1, 0, 0, kFaithButtonUp);
+    turn.Run(Ticks(0.2f), 1);
+    turn.events = 0;
+    turn.Tick(1, 0, 0, kFaithButtonTurn180);
+    CHECK(turn.events & kFaithEventTurn180);
+    CHECK(turn.s.anim == FaithAnimState::WallClimbTurn);
+    const float held_z = turn.s.origin.z;
+    turn.Run(Ticks(0.3f));
+    CHECK_NEAR(turn.s.origin.z, held_z, 1e-4);  // hangs on the wall
+    turn.Tick(0, 0, 0, kFaithButtonUp);
+    CHECK(turn.events & kFaithEventJumped);
+    CHECK(turn.s.anim == FaithAnimState::WallClimbJump);
+    CHECK(turn.s.velocity.x < -150.0f);
+    CHECK_NEAR(turn.s.velocity.z, faith::kJumpSpeed, 0.01);
+
+    Rig expire;  // the turn hold runs out and she drops
+    expire.world.Add({100, -256, 0}, {400, 256, 400});
+    expire.Settle();
+    expire.Run(Ticks(0.6f), 1);
+    expire.Tick(1, 0, 0, kFaithButtonUp);
+    expire.Run(Ticks(0.2f), 1);
+    expire.Tick(0, 0, 0, kFaithButtonTurn180);
+    expire.Run(Ticks(faith::kWallClimbTurnHoldSec + 0.1f));
+    CHECK(expire.s.anim == FaithAnimState::Fall);
+}
+
+void TestLedges() {
+    // Jump at a 100 su box from 30 su away (out of wallclimb reach): grabs the ledge near the apex.
+    Rig r(true, {54, 0, 0});
+    r.world.Add({100, -256, 0}, {400, 256, 100});
+    r.Settle();
+    r.Tick(1, 0, 0, kFaithButtonUp);
+    CHECK(r.events & kFaithEventJumped);
+    RunUntil(r, 100, [&] { return r.s.anim == FaithAnimState::LedgeHang; });
+    CHECK(r.s.anim == FaithAnimState::LedgeHang);
+    CHECK(r.events & kFaithEventLedgeGrab);
+    CHECK(!(r.events & kFaithEventWallClimbStart));
+    const float hang_z = r.s.origin.z;
+    r.Run(Ticks(0.5f));
+    CHECK_NEAR(r.s.origin.z, hang_z, 1e-4);
+    CHECK_NEAR(r.s.speed_2d, 0.0, 1e-6);
+
+    r.Tick(0, 0, 0, kFaithButtonUp);
+    CHECK(r.s.anim == FaithAnimState::LedgeClimbUp);
+    RunUntil(r, 100, [&] { return r.s.on_ground; }, 0);
+    CHECK(r.s.on_ground);
+    CHECK_NEAR(r.s.origin.z, 100.0, 0.05);
+    CHECK(r.s.origin.x > 100.0f);
+    r.Run(Ticks(1.0f), 1);  // and can run on top
+    CHECK(r.s.origin.x > 200.0f);
+    CHECK_NEAR(r.s.origin.z, 100.0, 0.05);
+
+    // Reached through a wallclimb on a taller box.
+    Rig climb;
+    climb.world.Add({100, -256, 0}, {400, 256, 150});
+    climb.Settle();
+    climb.Run(Ticks(0.6f), 1);
+    climb.Tick(1, 0, 0, kFaithButtonUp);
+    CHECK(climb.events & kFaithEventWallClimbStart);
+    RunUntil(climb, 100, [&] { return climb.s.anim == FaithAnimState::LedgeHang; });
+    CHECK(climb.s.anim == FaithAnimState::LedgeHang);
+    climb.Tick(0, 0, 0, kFaithButtonUp);
+    RunUntil(climb, 100, [&] { return climb.s.on_ground; }, 0);
+    CHECK_NEAR(climb.s.origin.z, 150.0, 0.05);
+
+    // A wall too tall for the climb: no ledge, she falls back down.
+    Rig tall;
+    tall.world.Add({100, -256, 0}, {400, 256, 400});
+    tall.Settle();
+    tall.Run(Ticks(0.6f), 1);
+    tall.Tick(1, 0, 0, kFaithButtonUp);
+    RunUntil(tall, 300, [&] { return tall.s.on_ground; });
+    CHECK(!(tall.events & kFaithEventLedgeGrab));
+
+    // Down drops from the ledge without grabbing it again at once.
+    Rig drop(true, {54, 0, 0});
+    drop.world.Add({100, -256, 0}, {400, 256, 100});
+    drop.Settle();
+    drop.Tick(1, 0, 0, kFaithButtonUp);
+    RunUntil(drop, 100, [&] { return drop.s.anim == FaithAnimState::LedgeHang; });
+    drop.events = 0;
+    drop.Tick(0, 0, 0, kFaithButtonDown);
+    RunUntil(drop, 200, [&] { return drop.s.on_ground; }, 1);  // even pushing toward the wall
+    CHECK(drop.s.on_ground);
+    CHECK(!(drop.events & kFaithEventLedgeGrab));
+}
+
+void TestVault() {
+    Rig r;
+    r.world.Add({100, -256, 0}, {116, 256, 36});  // waist-high, thin obstacle
+    r.Settle();
+    RunUntil(r, 200, [&] { return r.s.origin.x >= 62.0f; });
+    const float speed = r.s.speed_2d;
+    r.Tick(1, 0, 0, kFaithButtonUp);
+    CHECK(!(r.events & kFaithEventJumped));
+    CHECK(r.s.anim == FaithAnimState::Vault);
+    const int ticks = RunUntil(r, 100, [&] { return r.s.anim != FaithAnimState::Vault; });
+    CHECK_NEAR(ticks * kDt, faith::kVaultSec, 0.05);
+    CHECK(r.s.speed_2d >= speed - 1.0f);  // keeps the run
+    r.Run(Ticks(1.0f), 1);
+    CHECK(r.s.origin.x > 200.0f);
+    CHECK(r.s.on_ground);
+    CHECK_NEAR(r.s.origin.z, 0.0, 0.05);
+}
+
+void TestSlideAndCrouch() {
+    Rig r(true, {-300, 0, 0});
+    r.world.Add({200, -256, 40}, {260, 256, 200});  // bar: 40 su of room under it
+    r.Settle();
+    r.Run(Ticks(1.0f), 1);
+    r.Tick(1, 0, kFaithButtonDown, kFaithButtonDown);
+    CHECK(r.events & kFaithEventSlideStart);
+    CHECK(r.s.anim == FaithAnimState::Slide);
+    CHECK(r.s.ducked);
+    CHECK_NEAR(r.s.eye_height, source_defaults::kDuckViewHeight, 1e-6);
+
+    const int slide_ticks = 1 + RunUntil(r, 300, [&] { return r.s.anim != FaithAnimState::Slide; }, 1, kFaithButtonDown);
+    CHECK(slide_ticks * kDt > 0.8f && slide_ticks * kDt < 1.6f);  // until under kSlideAbortSpeed (98.4)
+    CHECK(r.s.speed_2d < faith::kSlideAbortSpeed + 1.0f);
+
+    RunUntil(r, 600, [&] { return r.s.origin.x > 230.0f; }, 1, kFaithButtonDown);  // crouch-walk under the bar
+    CHECK(r.s.anim == FaithAnimState::CrouchWalk);
+    CHECK(r.s.speed_2d <= faith::kCrouchSpeed + 0.01f);
+    r.Run(5, 0);  // Down released under the bar: no room to stand
+    CHECK(r.s.ducked);
+    RunUntil(r, 600, [&] { return r.s.origin.x > 300.0f; }, 1, kFaithButtonDown);
+    r.Run(5, 1);  // past the bar: stands up
+    CHECK(!r.s.ducked);
+    CHECK_NEAR(r.s.eye_height, source_defaults::kViewHeight, 1e-6);
+
+    Rig slow;  // no slide from a walk: crouch instead
+    slow.Settle();
+    slow.Run(Ticks(0.5f), 1, 0, kFaithButtonWalk);
+    slow.Tick(1, 0, kFaithButtonDown, kFaithButtonDown);
+    CHECK(!(slow.events & kFaithEventSlideStart));
+    CHECK(slow.s.ducked);
+    slow.Run(Ticks(0.5f), 0, 0, kFaithButtonDown);
+    CHECK(slow.s.anim == FaithAnimState::Crouch);
+}
+
+void TestCoilAndSkillRoll() {
+    auto tower_fall = [](float press_height, bool hold) {
+        Rig r;
+        r.world.Add({-64, -64, 0}, {64, 64, 300});
+        r.move->Reset(r.s, {0, 0, 300}, {0, 0, 0});
+        r.Settle();
+        RunUntil(r, 400, [&] { return !r.s.on_ground; });
+        RunUntil(r, 400, [&] { return r.s.origin.z < press_height; });
+        const float before = r.s.origin.z;
+        r.Tick(1, 0, kFaithButtonDown, kFaithButtonDown);
+        CHECK(r.s.anim == FaithAnimState::Coil);
+        CHECK(r.s.ducked);
+        CHECK(r.s.origin.z > before + 25.0f);  // feet tuck up, head stays
+        float air_speed = 0.0f;
+        RunUntil(r, 400, [&] {
+            if (!r.s.on_ground) air_speed = r.s.speed_2d;
+            return r.s.on_ground;
+        }, 1, hold ? kFaithButtonDown : 0u);
+        r.last_impact = air_speed;  // reuse: horizontal speed just before landing
+        return r;
+    };
+
+    Rig roll = tower_fall(70.0f, true);  // Down just before landing from 300 su: Skill Roll
+    CHECK(roll.events & kFaithEventSkillRoll);
+    CHECK(!(roll.events & kFaithEventHardLanding));
+    CHECK(roll.s.anim == FaithAnimState::SkillRoll);
+    CHECK(roll.s.speed_2d >= roll.last_impact - 0.5f);  // keeps the speed instead of the hard-landing stop
+    CHECK(roll.s.speed_2d > faith::kHardLandingMaxSpeed + 50.0f);
+    roll.Run(Ticks(faith::kSkillRollSec), 1);
+    CHECK(roll.s.anim == FaithAnimState::Sprint);
+    CHECK(!roll.s.ducked);
+
+    Rig early = tower_fall(280.0f, false);  // Down long before landing: too early, hard landing
+    CHECK(!(early.events & kFaithEventSkillRoll));
+    CHECK(early.events & kFaithEventHardLanding);
+    CHECK(!early.s.ducked);
+
+    Rig hop;  // a jump (47.6 su) is under kSkillRollHeight (78.7): no roll even coiling just before landing
+    hop.Settle();
+    hop.Tick(0, 0, 0, kFaithButtonUp);
+    hop.Run(Ticks(0.45f));  // coil near the apex: the tuck must not count as height gained
+    hop.Tick(0, 0, kFaithButtonDown, kFaithButtonDown);
+    CHECK(hop.s.anim == FaithAnimState::Coil);
+    hop.Run(Ticks(0.25f), 0, 0, kFaithButtonDown);
+    hop.Tick(0, 0, kFaithButtonDown, kFaithButtonDown);  // tap again so the landing is inside the roll window
+    CHECK(!hop.s.on_ground);
+    RunUntil(hop, 100, [&] { return hop.s.on_ground; }, 0, kFaithButtonDown);
+    CHECK(hop.s.on_ground);
+    CHECK(!(hop.events & kFaithEventSkillRoll));
+}
+
+void TestTurn180() {
+    Rig r;
+    r.Settle();
+    r.Run(Ticks(2.0f), 1);
+    r.Tick(1, 0, 0, kFaithButtonTurn180);
+    CHECK(r.events & kFaithEventTurn180);
+    CHECK(r.s.anim == FaithAnimState::Turn180);
+    CHECK(r.s.velocity.x < 0.0f);
+    CHECK(r.s.speed_2d <= faith::kRunSpeed + 0.01f);
+    r.Run(Ticks(faith::kTurn180Sec), 0, 0, 0, 180.0f);  // the host turned the view
+    CHECK(r.s.anim != FaithAnimState::Turn180);
+}
+
+void TestParkourReplay() {
+    Rig r(true, {0, -80, 0});
+    r.world.Add({-512, -140, 0}, {900, -100, 300})   // wall to run on
+        .Add({1100, -512, 0}, {1400, 512, 100})      // box to grab
+        .Add({600, 20, 0}, {616, 400, 36});          // obstacle to vault
+    r.Settle();
+    auto script = [](Rig& rig, int from, int to) {
+        for (int i = from; i < to; ++i) {
+            uint32_t pressed = 0;
+            if (i % 70 == 20) pressed |= kFaithButtonUp;
+            if (i % 110 == 60) pressed |= kFaithButtonDown;
+            if (i % 230 == 200) pressed |= kFaithButtonTurn180;
+            const uint32_t held = (i % 110 >= 60 && i % 110 < 80) ? kFaithButtonDown : 0u;
+            rig.Tick(1.0f, (i / 50) % 2 ? 0.2f : -0.2f, held, pressed, static_cast<float>(i % 400) * 0.1f);
+        }
+    };
+    script(r, 0, 150);
+    const FaithState saved = r.s;
+    script(r, 150, 700);
+    const FaithState first = r.s;
+    const uint32_t events = r.events;
+    r.s = saved;
+    script(r, 150, 700);
+    CHECK(std::memcmp(&r.s, &first, sizeof(FaithState)) == 0);
+    CHECK(events & (kFaithEventWallRunStart | kFaithEventWallClimbStart | kFaithEventLedgeGrab | kFaithEventSlideStart));
+}
+
 }  // namespace
 
 int main() {
@@ -353,6 +711,16 @@ int main() {
     TestWallsStepsAndCube();
     TestCoyoteTime();
     TestPredictionReplay();
+    TestWallRun();
+    TestWallRunLeftAndWallJump();
+    TestWallRunRefused();
+    TestWallClimb();
+    TestLedges();
+    TestVault();
+    TestSlideAndCrouch();
+    TestCoilAndSkillRoll();
+    TestTurn180();
+    TestParkourReplay();
     std::printf("%d checks, %d failures\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;
 }
