@@ -17,7 +17,7 @@
 - **S4 (Sebas)**: PRs #1 (B2), #2 (B1), #3 (B4) y #4 (Z1) revisados e integrados en `main`. Build x86: 4/4 pruebas OK (`test_contracts`, `test_core`, `test_plugin_load`, `test_me_telemetry`). Correcciones de revisión:
   - Z1: `DisableThreadLibraryCalls` recibe ahora `hinstDLL` (antes `nullptr`).
   - B2: los 9 CSV de `qa/telemetria/` son **sintéticos** (salen de `--generate-reference` con las constantes de `ar::me_reference`). Se añadió un aviso en su README: no sirven para ajustar el movimiento hasta que haya trazas grabadas en vivo.
-  - **Z1 probada en Portal (2026-11-03, build 19017868):** el `console.log` muestra `Plugins: found file "aperture_runner.vdf"`, `Loading unsigned module addonsperture_runner` y, en `plugin_print`, `0: "ApertureRunner: Mirror's Edge movement in Portal 1 (testchmb_a_00)"`. `testchmb_a_00` carga sin cierres; los errores del log son los mismos del juego sin el mod. No hizo falta `-insecure`. `printf` no sale en la consola de Source; en Z2 conviene usar `Msg`/`ConColorMsg` de `tier0.dll`. **Hito H1 parcial: la DLL carga.**
+  - **Z1 probada en Portal (2026-11-03, build 19017868):** el `console.log` muestra `Plugins: found file "aperture_runner.vdf"`, `Loading unsigned module addons\aperture_runner` y, en `plugin_print`, `0: "ApertureRunner: Mirror's Edge movement in Portal 1 (testchmb_a_00)"`. `testchmb_a_00` carga sin cierres; los errores del log son los mismos del juego sin el mod. No hizo falta `-insecure`. `printf` no sale en la consola de Source; en Z2 conviene usar `Msg`/`ConColorMsg` de `tier0.dll`. **Hito H1 parcial: la DLL carga.**
 
 ## Próximos Pasos (semana 1)
 - **Hito H1**: Completado en servidor y QA (`Z1`, `Z3`, `B1`, `B3`). Pendiente G1 de Gonzalo (hook de predicción en `client.dll`) para cerrar completamente la paridad cliente-servidor de H1.
@@ -26,10 +26,12 @@
 - Gonzalo: G1 (hook de predicción en `client.dll`), G3 (módulo de cámara estilo ME).
 - Antonio: A1 (extracción de Faith con UEViewer), A2 (pipeline de Blender para SMD/DMX).
 - Benja: Grabar trazas reales en vivo de ME con `--record` (`me_telemetry_recorder.exe`, B2b) para el ajuste de Peña.
-- Sebas: Integración y revisión de PRs de H1/H2.
+- Sebas: S3 (build de integración semanal y nota de estado) y revisión de PRs de H1/H2.
+- **Regla**: nada se sube directo a `main`; todo va por rama y PR.
 - **Z3 (Zarek)**: Implementado el hook de vtable de `IGameMovement::ProcessMovement` en passthrough puro (`movement_hook.h/.cpp`), obtención de `GameMovement001` vía `gameServerFactory`, logging en consola de Source con `tier0.dll!Msg`, y arnés autónomo con mock dinámico de `IGameMovement` en `test_plugin_load.exe`. Compilación Win32/x86 y 100% de tests aprobados (4/4). Rama `zarek/Z3-hook-passthrough`.
   - **Revisado e integrado por Sebas (PR #5) y probado en Portal (build 19017868):** el log muestra `ProcessMovement hookeado exitosamente` y `passthrough activo (500…2000 ticks interceptados)` en `testchmb_a_00`, sin cierres. El banner ya sale en la consola de Source gracias a `tier0!Msg`.
 - **B3 (Benja)**: Recorrida y verificada al 100% la checklist de `testchmb_a_00` (`CHK-01` a `CHK-14`) en Portal (build 19017868) con `aperture_runner.dll` y hook de `ProcessMovement` passthrough (`ar_enable 0`). Grabada demo local `h1_testchmb_a_00.dem` (1,170,204 bytes, 4,733 frames de juego, 71.6 s), más de 5,000 ticks de simulación continua interceptados sin cierres ni desincronización, supervivencia probada a través de `ChangeLevel` a `testchmb_a_01` y generado el informe de QA en `qa/resultados/H1.md`. Rama `benja/B3-qa-h1`. **Hito H1 validado por QA.**
+  - Revisión de Sebas (PR #6, integrado): en el informe, los portales de la cámara 00 se abren a t=15.9 s, pero B1 dice que `relay_start_map` los abre a t=66.5 s. Benja debe anotar en `qa/resultados/H1.md` si usó `ent_fire`, `host_timescale` u otro atajo, y adjuntar el `console.log` crudo (fuera de git o recortado) para que el informe se pueda reproducir.
 
 ---
 
