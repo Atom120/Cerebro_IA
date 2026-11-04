@@ -55,6 +55,12 @@
   5. **La rama sale de `6d5adfd`** y choca con `main` en `qa/resultados/H1.md` (los dos lo crean) y en `HANDOFF.md`. Además, el `HANDOFF` del PR borra la regla de ramas, las notas de revisión y el estado de P1–P3.
   - **Qué hacer:** actualizar la rama con `main`, editar el `qa/resultados/H1.md` que ya existe (no crear otro), dejar `ar_enable 1` como `N/A (H2)` y adjuntar el log crudo o un recorte real. No marcar H1 como cerrado: falta G1 (cliente).
 
+- **PR #8 (Zarek, Z4 `ServerTraceProvider`): NO integrado, cambios pedidos (Sebas, 2026-11-04, comentario en el PR).** Se probó en Portal con una sonda: un rayo desde el `info_player_start` hacia abajo.
+  1. `IEngineTrace` tiene una función de más (`GetPointContents_WorldOnly`, de CS:GO). `TraceRay` está en la **ranura 4**; la suya cae en la 5 y **cuelga Portal**.
+  2. `Ray_t` tiene un campo de más (`m_pWorldAxisTransform`, de CS:GO), así que la traza **atraviesa el suelo**. Con el `Ray_t` de 2013 en la ranura 4 da suelo en z=160, normal (0,0,1).
+  3. `m_pEnt` no es null al chocar con el mundo, así que el mundo y la caja salen como `StaticProp`. La caja debe ser `Physics`.
+  - **Z5 espera** a que Z4 esté corregido y probado en Portal.
+
 ## Próximos Pasos (semana 1)
 - **Hito H1**: Completado en servidor y QA (`Z1`, `Z3`, `B1`, `B3`). Pendiente G1 de Gonzalo (hook de predicción en `client.dll`) para cerrar completamente la paridad cliente-servidor de H1.
 - Peña: P1 (`mod/faith_move/` núcleo puro), P2 (conectar `ProcessMovement` con `faith_move`), P4 (pruebas deterministas con `BoxWorld`).
