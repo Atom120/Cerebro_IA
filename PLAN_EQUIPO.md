@@ -1,11 +1,28 @@
 ---
 tipo: plan
 proyecto: ApertureRunner
-actualizado: 2026-11-03
+actualizado: 2026-11-04
 responsable: Sebas
 tags: [plan, equipo, apertureRunner, antigravity]
 ---
 # Plan de equipo: Mirror's Edge dentro de Portal (ApertureRunner)
+
+> [!IMPORTANT]
+> **2026-11-04: Sebas hizo las tareas pendientes de Zarek, Gonzalo y Benja para avanzar el proyecto. Ya están en `main` y probadas en Portal.**
+> **No las rehagas ni las modifiques sin hablar antes con Sebas.**
+> | Hecho por Sebas | Qué es | Dónde |
+> |---|---|---|
+> | P1, P2, P3 | movimiento de Faith (suelo + parkour), 212 pruebas | `mod/faith_move/` |
+> | Z2, Z5 (+ correcciones de Z4) | `ar_enable 1` mueve al jugador con Faith; portales híbridos; comandos `ar_*` | `mod/plugin/server/`, `docs/contratos/source_2013_abi.md` |
+> | G1, G3 (G2 no aplica) | estudio de `client.dll` (`cl_predict 0`), hook de predicción y módulo de cámara con 30 pruebas | `mod/plugin/client/`, `mod/camera/`, `docs/contratos/portal_client_offsets.md` |
+> | B3 (H1 y H2) | prueba automática de H2 en Portal (9/9 PASS) e informes | `qa/scripts/h2_smoke.ps1`, `qa/resultados/H1.md`, `qa/resultados/H2.md` |
+>
+> **Lo que queda de cada uno:**
+> - **Zarek:** casco agachado en el motor (`FL_DUCKING`) y el wallrun a través de portales, junto con Peña (P4). Ver la sección «Qué no cubre» de `qa/resultados/H2.md`.
+> - **Gonzalo:** G4, aplicar `mod/camera` a la vista (incluido el giro de 180°) y dibujar los brazos y el cuerpo de Faith. Espera al modelo de Antonio (A3); antes puede usar uno provisional.
+> - **Benja:** B2b (grabar trazas reales de Mirror's Edge con `--record`; necesita ME instalado) y B5 (vídeo, H4).
+> - **Peña:** P4 (portales en `faith_move`) y P5 (ajuste con trazas reales).
+> - **Antonio:** A1–A4 (modelo de Faith).
 
 > **Lee esto completo una vez. Después solo busca tu nombre (`Ctrl+F`).**
 > Cada persona tiene sus tareas, sus agentes de Antigravity y la lista de qué puede hacer ya y qué tiene que esperar.
@@ -218,7 +235,7 @@ Al terminar la sesión: *"prepara el handoff de mi tarea, añade mi línea a SES
 | S0 | Subir los agentes de este plan a `.agents/agents/` y las skills comunes (`build-x86`, `launch-portal-test`) | 🟢 | Archivos en `.agents/` |
 | S1 | Crear `mod/`: mover el núcleo de `aperture-runner-mashup` a `mod/core/`, `CMakeLists.txt` para Win32, CI (GitHub Actions, Windows, x86) | 🟢 | `main` compila en CI |
 | S2 | **Contratos** en `mod/include/ar/`: `faith_movement.h` (`FaithInput`, `FaithState`, `FaithAnimState`, `IFaithMovement`), `trace_provider.h` (`ITraceProvider`), `units.h`, y `docs/contratos/asset_manifest.json` | 🟢 **Bloquea a Z3, Z4, P1, G3 y A2. Prioridad máxima, día 1–2** | Headers fusionados en `main` |
-| S3 | Build de integración semanal y prueba en Portal (semana 1 ✅ 2026-11-04) | 🔴 (Z3) | Nota de estado semanal en `HANDOFF.md` |
+| S3 ✅ semana 1 | Build de integración semanal y prueba en Portal (semana 1 ✅ 2026-11-04) | 🔴 (Z3) | Nota de estado semanal en `HANDOFF.md` |
 | S4 | Revisar y fusionar PRs; actualizar `DECISIONS.md` si cambia algo | continuo | — |
 | S5 | Instalador final (DLL + `addons/aperture_runner.vdf` + extractor) | 🔴 (Z5, A4) | Release |
 
@@ -230,11 +247,11 @@ Al terminar la sesión: *"prepara el handoff de mi tarea, añade mi línea a SES
 
 | ID | Tarea | Dependencia | Entregable |
 |---|---|---|---|
-| Z1 | DLL mínima x86 que implementa `IServerPluginCallbacks` (versión 003), carga con `plugin_load addons/aperture_runner` en `testchmb_a_00`, imprime el build y registra la ConVar `ar_enable` | 🟢 (usa el CMake de S1 cuando llegue; antes, un proyecto VS suelto) | La DLL carga sin errores |
-| Z2 | Obtener por fábrica de interfaces `GameMovement001` (`server.dll`), `PlayerInfoManager002` y `VEngineServer021`. Documentar los campos de `CPortal_Player` que necesitamos (velocidad, flags, duck, ground entity) leyendo sus datamaps, **sin offsets fijos si se puede** | 🟢 | `docs/contratos/portal_server_offsets.md` |
-| Z3 | Hook (vtable) de `IGameMovement::ProcessMovement` en **passthrough**: llama al original y no cambia nada. Prueba que portales, caja, botones, desintegrador y ascensor siguen funcionando | 🟡 (S2 para la firma; la prueba de la checklist de Benja B1 cuando llegue) | **Hito H1** |
+| Z1 ✅ (Zarek) | DLL mínima x86 que implementa `IServerPluginCallbacks` (versión 003), carga con `plugin_load addons/aperture_runner` en `testchmb_a_00`, imprime el build y registra la ConVar `ar_enable` | 🟢 (usa el CMake de S1 cuando llegue; antes, un proyecto VS suelto) | La DLL carga sin errores |
+| Z2 ✅ (Sebas, 2026-11-04) | Obtener por fábrica de interfaces `GameMovement001` (`server.dll`), `PlayerInfoManager002` y `VEngineServer021`. Documentar los campos de `CPortal_Player` que necesitamos (velocidad, flags, duck, ground entity) leyendo sus datamaps, **sin offsets fijos si se puede** | 🟢 | `docs/contratos/portal_server_offsets.md` |
+| Z3 ✅ (Zarek) | Hook (vtable) de `IGameMovement::ProcessMovement` en **passthrough**: llama al original y no cambia nada. Prueba que portales, caja, botones, desintegrador y ascensor siguen funcionando | 🟡 (S2 para la firma; la prueba de la checklist de Benja B1 cuando llegue) | **Hito H1** |
 | Z4 ✅ (Zarek + correcciones de Sebas, 2026-11-04) | `ITraceProvider` real: trazas de casco y de rayo con `IEngineTrace` del servidor (paredes, bordes, suelo) | 🟡 (S2) | Implementación + prueba en el mapa |
-| Z5 | Con `ar_enable 1`, el movimiento lo calcula `faith_move` y se escribe en el jugador. Con 0, vuelve el de Portal | 🔴 (Z3, Z4, P2) | Hito H2 |
+| Z5 ✅ (Sebas, 2026-11-04) | Con `ar_enable 1`, el movimiento lo calcula `faith_move` y se escribe en el jugador. Con 0, vuelve el de Portal | 🔴 (Z3, Z4, P2) | Hito H2 |
 
 **Referencias:** SourcePauseTool (solo lectura): cómo detecta Portal y busca `CPortalGameMovement` y los datamaps de `CPortal_Player`. `src/backend_source/portal_me_vsp.cpp` de Benja (esqueleto VSP anterior).
 
@@ -334,9 +351,9 @@ No edites código: entrega una tabla.
 
 | ID | Tarea | Dependencia | Entregable |
 |---|---|---|---|
-| G1 | Estudio: la copia de `GameMovement001` en `client.dll` (predicción), el hook de `CreateMove` y cómo engancharlo desde la misma DLL (es un solo proceso). Comprobar los offsets de `client.dll` que dejó Benja en `LESSONS.md` contra tu build | 🟢 | `docs/contratos/portal_client_offsets.md` |
-| G2 | La predicción del cliente ejecuta el mismo `faith_move` que el servidor, sin tirones | 🔴 (Z3, P2) | Hito H2 |
-| G3 | Módulo de cámara en `mod/camera/` (C++ puro, con pruebas): enderezado del roll `exp(-λ·dt)`, balanceo al correr, subida del FOV con la velocidad, sacudida al aterrizar y al rodar | 🟡 (S2, para `FaithState`) | Módulo + pruebas |
+| G1 ✅ (Sebas, 2026-11-04) | Estudio: la copia de `GameMovement001` en `client.dll` (predicción), el hook de `CreateMove` y cómo engancharlo desde la misma DLL (es un solo proceso). Comprobar los offsets de `client.dll` que dejó Benja en `LESSONS.md` contra tu build | 🟢 | `docs/contratos/portal_client_offsets.md` |
+| G2 ⚪ no aplica con `cl_predict 0` (Sebas, 2026-11-04) | La predicción del cliente ejecuta el mismo `faith_move` que el servidor, sin tirones | 🔴 (Z3, P2) | Hito H2 |
+| G3 ✅ (Sebas, 2026-11-04) | Módulo de cámara en `mod/camera/` (C++ puro, con pruebas): enderezado del roll `exp(-λ·dt)`, balanceo al correr, subida del FOV con la velocidad, sacudida al aterrizar y al rodar | 🟡 (S2, para `FaithState`) | Módulo + pruebas |
 | G4 | Dibujar los brazos y el cuerpo de Faith en primera persona con el modelo de Antonio. Mientras no esté, usar un modelo provisional de Portal | 🔴 (A3) para el modelo final; 🟢 con el provisional | Hito H3 |
 
 **Agentes:**
@@ -428,10 +445,10 @@ Compila con <Portal>/bin/studiomdl.exe -game <Portal>/portal. Máximo 128 huesos
 
 | ID | Tarea | Dependencia | Entregable |
 |---|---|---|---|
-| B1 | **Contrato del mapa** `testchmb_a_00`: partir de `docs/contratos/testchmb_a_00_entidades.txt` y hacer una checklist de lo que el jugador debe poder activar (botones, caja, puertas, temporizadores de portales, detectores, desintegrador, escenas, ascensor, cambio de nivel), en orden de partida | 🟢 **Lo necesitan Zarek (Z3) y QA. Prioridad, semana 1** | `docs/contratos/testchmb_a_00_checklist.md` |
-| B2 | Grabador de solo lectura en Mirror's Edge: posición, velocidad, `MovementState` (`ATdPawn`+0x04FE, verificar en GOG) y tiempo a 60–120 Hz → CSV. Grabar: arrancar a sprint, salto, wallrun izq./der., wallclimb, borde, slide, caída dura, Skill Roll. Puede reutilizar `GuestBridge` de `mod/core/` | 🟢 (`core` llega con S1; antes, un ejecutable suelto basado en `lean_external_bridge.cpp`) | CSV en `qa/telemetria/` + script |
-| B3 | Matriz de pruebas en Portal: cada punto de la checklist con `ar_enable 0` y `1`, en cada hito. Grabar demos (`record`) | 🔴 (Z3) | `qa/resultados/H1.md`, `H2.md`… |
-| B4 | Marcar como **archivadas** las skills `portal-me-*` (añadir `status: archivado` en su descripción, sin borrarlas) y dejar en `docs/artifacts/` una nota de qué se reutiliza | 🟢 | PR pequeño |
+| B1 ✅ (Benja) | **Contrato del mapa** `testchmb_a_00`: partir de `docs/contratos/testchmb_a_00_entidades.txt` y hacer una checklist de lo que el jugador debe poder activar (botones, caja, puertas, temporizadores de portales, detectores, desintegrador, escenas, ascensor, cambio de nivel), en orden de partida | 🟢 **Lo necesitan Zarek (Z3) y QA. Prioridad, semana 1** | `docs/contratos/testchmb_a_00_checklist.md` |
+| B2 🟡 (Benja; CSV sintéticos, falta grabar en vivo) | Grabador de solo lectura en Mirror's Edge: posición, velocidad, `MovementState` (`ATdPawn`+0x04FE, verificar en GOG) y tiempo a 60–120 Hz → CSV. Grabar: arrancar a sprint, salto, wallrun izq./der., wallclimb, borde, slide, caída dura, Skill Roll. Puede reutilizar `GuestBridge` de `mod/core/` | 🟢 (`core` llega con S1; antes, un ejecutable suelto basado en `lean_external_bridge.cpp`) | CSV en `qa/telemetria/` + script |
+| B3 ✅ H1 y H2 (Sebas, 2026-11-04) | Matriz de pruebas en Portal: cada punto de la checklist con `ar_enable 0` y `1`, en cada hito. Grabar demos (`record`) | 🔴 (Z3) | `qa/resultados/H1.md`, `H2.md`… |
+| B4 ✅ (Benja) | Marcar como **archivadas** las skills `portal-me-*` (añadir `status: archivado` en su descripción, sin borrarlas) y dejar en `docs/artifacts/` una nota de qué se reutiliza | 🟢 | PR pequeño |
 | B5 | Vídeo final del nivel completo | 🔴 (H4) | Vídeo |
 
 **Agentes:**

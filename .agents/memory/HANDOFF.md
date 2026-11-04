@@ -3,7 +3,7 @@
 > **Instrucción para Antigravity**: Lee este archivo al iniciar cualquier conversación para retomar exactamente donde se quedó la última sesión/computadora. Actualízalo al terminar una tarea relevante o cuando el usuario indique que cambiará de dispositivo/cuenta.
 
 ## Última Actualización
-- **Fecha**: 2026-11-03
+- **Fecha**: 2026-11-04
 - **Quién**: Sebas (Claude Code) — Repositorio `Cerebro_IA` (`main`)
 - **Estado general**: **Cambio de dirección (ADR-006).** El proyecto ahora es *Mirror's Edge dentro de Portal*: Faith en el primer mapa de Portal 1 (`testchmb_a_00`). **El plan, el reparto por persona, las dependencias y los agentes están en [`PLAN_EQUIPO.md`](../../PLAN_EQUIPO.md). Léelo antes de proponer cambios y trabaja solo en las tareas y carpetas de tu persona.**
 - **Equipo**: Sebas (líder/integración), Zarek (plugin servidor), Peña (movimiento de Faith), Gonzalo (cliente y cámara), Antonio (assets de Faith), Benja (telemetría ME, contrato del mapa y QA).
@@ -18,6 +18,16 @@
   - Z1: `DisableThreadLibraryCalls` recibe ahora `hinstDLL` (antes `nullptr`).
   - B2: los 9 CSV de `qa/telemetria/` son **sintéticos** (salen de `--generate-reference` con las constantes de `ar::me_reference`). Se añadió un aviso en su README: no sirven para ajustar el movimiento hasta que haya trazas grabadas en vivo.
   - **Z1 probada en Portal (2026-11-03, build 19017868):** el `console.log` muestra `Plugins: found file "aperture_runner.vdf"`, `Loading unsigned module addons\aperture_runner` y, en `plugin_print`, `0: "ApertureRunner: Mirror's Edge movement in Portal 1 (testchmb_a_00)"`. `testchmb_a_00` carga sin cierres; los errores del log son los mismos del juego sin el mod. No hizo falta `-insecure`. `printf` no sale en la consola de Source; en Z2 conviene usar `Msg`/`ConColorMsg` de `tier0.dll`. **Hito H1 parcial: la DLL carga.**
+
+## ⚠️ 2026-11-04: Sebas hizo las tareas pendientes de Zarek, Gonzalo y Benja (NO rehacer ni modificar sin hablar con Sebas)
+- **Z5 + Z2:** con `ar_enable 1`, Faith mueve al jugador en Portal (`mod/plugin/server/faith_driver.*`).
+  - Comandos de consola: `ar_enable [0|1]`, `ar_status`, `ar_debug [0|1|2]` y `ar_qa_input <adelante> <lado> <botones j/d/t/w> <ticks>`.
+  - Offsets de `CMoveData`, `edict_t` y `CCommand` verificados en el juego (`docs/contratos/source_2013_abi.md`).
+  - **Portales:** cerca de un `prop_portal` (donde el casco toca el hueco) se usa el movimiento original de Portal, que hace el teletransporte. También se usa si el jugador empieza dentro de un sólido.
+- **G1:** en un jugador `cl_predict` vale 0 y el cliente no predice (0 ticks), así que **G2 no aplica**. Hook de `client.dll` instalado, y offsets de Benja de `client.dll` verificados (`docs/contratos/portal_client_offsets.md`).
+- **G3:** `mod/camera` con `UpdateCamera()` (inclinación, FOV, balanceo, sacudidas, Skill Roll y giro de 180°) y 30 pruebas. **Falta aplicarlo a la vista (G4).**
+- **B3:** `qa/scripts/h2_smoke.ps1` prueba H2 en Portal sin teclado: **9/9 PASS** (autotest, sprint con rampa de 84 su/s², salto de 49.6 su, agacharse, cruce de `portal_red_0` → `portal_blue_0`, ascensor hasta z=725, `ar_enable 0`, sin cierres). Informes en `qa/resultados/H1.md` (verificación) y `qa/resultados/H2.md` (incluye lo que **no** cubre).
+- La build x86 pasa 6/6 (`test_contracts`, `test_core`, `test_faith_move`, `test_camera`, `test_plugin_load`, `test_me_telemetry`).
 
 ## Nota semanal S3 — semana 1 (2026-11-04, Sebas)
 **Build de integración:** `main` en `f5872f2`, compilado desde cero (Win32/x86, Release). Sin avisos; 4/4 pruebas OK (`test_contracts`, `test_core`, `test_plugin_load`, `test_me_telemetry`).
@@ -69,15 +79,15 @@
     5. **Portales:** la traza normal del motor no atraviesa los portales (Portal usa trazas especiales en `CPortalGameMovement`). Al principio, para cruzar un portal deja que el movimiento original de Portal haga el tick en el que se toca un portal, o investígalo antes de Z5. Es el riesgo n.º 1 de H2.
     6. `ar_enable` (cvar) todavía no existe: créalo con `ICvar` (`VEngineCvar004`) o empieza con un comando de consola.
 
-## Próximos Pasos (semana 1)
-- **Hito H1**: Completado en servidor y QA (`Z1`, `Z3`, `B1`, `B3`). Pendiente G1 de Gonzalo (hook de predicción en `client.dll`) para cerrar completamente la paridad cliente-servidor de H1.
-- Peña: P1 (`mod/faith_move/` núcleo puro), P2 (conectar `ProcessMovement` con `faith_move`), P4 (pruebas deterministas con `BoxWorld`).
-- Zarek: Z2 (interfaces y datamaps), luego Z4/Z5.
-- Gonzalo: G1 (hook de predicción en `client.dll`), G3 (módulo de cámara estilo ME).
-- Antonio: A1 (extracción de Faith con UEViewer), A2 (pipeline de Blender para SMD/DMX).
-- Benja: Grabar trazas reales en vivo de ME con `--record` (`me_telemetry_recorder.exe`, B2b) para el ajuste de Peña.
-- Sebas: S3 (build de integración semanal y nota de estado) y revisión de PRs de H1/H2.
-- **Regla**: nada se sube directo a `main`; todo va por rama y PR.
+## Próximos Pasos (semana 2)
+- **H1 cerrado** en lo que depende del mod. **H2 funcionando** en Portal (ver `qa/resultados/H2.md`).
+- **Zarek:** casco agachado en el motor (`FL_DUCKING` + bounds) cuando `FaithState::ducked`, y el wallrun a través de portales, junto con Peña (P4).
+- **Gonzalo:** G4, aplicar `mod/camera` a la vista (enganchar el cálculo de la vista del cliente; incluye el giro de 180° del evento `Turn180`) y los brazos de Faith (modelo provisional hasta A3).
+- **Peña:** P4 (continuar el wallrun al cruzar un portal) y P5 (ajuste con trazas reales).
+- **Antonio:** A1–A4 (necesita Mirror's Edge instalado).
+- **Benja:** B2b (trazas reales con `--record`; necesita ME instalado) y B5 (vídeo, H4).
+- **Sebas:** S3 semanal (ahora con `qa/scripts/h2_smoke.ps1`) y S4.
+- **Regla:** nada se sube directo a `main`; todo va por rama y PR. Antes de empezar, **actualiza tu rama desde `main`**.
 - **Z3 (Zarek)**: Implementado el hook de vtable de `IGameMovement::ProcessMovement` en passthrough puro (`movement_hook.h/.cpp`), obtención de `GameMovement001` vía `gameServerFactory`, logging en consola de Source con `tier0.dll!Msg`, y arnés autónomo con mock dinámico de `IGameMovement` en `test_plugin_load.exe`. Compilación Win32/x86 y 100% de tests aprobados (4/4). Rama `zarek/Z3-hook-passthrough`.
   - **Revisado e integrado por Sebas (PR #5) y probado en Portal (build 19017868):** el log muestra `ProcessMovement hookeado exitosamente` y `passthrough activo (500…2000 ticks interceptados)` en `testchmb_a_00`, sin cierres. El banner ya sale en la consola de Source gracias a `tier0!Msg`.
 - **Z4 (Zarek)**: Implementado `ServerTraceProvider` (`mod/plugin/server/server_trace_provider.h/.cpp`) satisfaciendo `ar::ITraceProvider`, enlazado a `EngineTraceServer003` vía `interfaceFactory` de Source (`engine.dll`), estructuras binarias exactas Source (`VectorAligned` 16 bytes, `Ray_t` con `m_pWorldAxisTransform`, `cplane_t`, `trace_t`, máscara `kMaskPlayerSolid = 0x201400Bu`), filtro `TraceFilterPlayerOnly` para ignorar la entidad del jugador, y arnés en `test_plugin_load.exe` con `MockEngineTrace` (6/6 comprobaciones espaciales OK: piso Z=0, pared X=100, libre, colisión inicial en sólido y filtrado). Compilación Win32/x86 en Debug y Release con 100% de tests aprobados (5/5). Rama `zarek/Z4-trace-provider`. Desbloquea Z5.
