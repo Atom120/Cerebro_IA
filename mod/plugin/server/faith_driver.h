@@ -25,7 +25,7 @@ public:
 
     void SetEnabled(bool enabled);
     bool Enabled() const { return enabled_; }
-    void SetDebug(bool debug) { debug_ = debug; }
+    void SetDebug(int level) { debug_ = level; }  // 0 off, 1 twice a second + events, 2 every tick
 
     // Finds the prop_portal entities of the map (ServerActivate) / forgets them (LevelShutdown).
     void ScanPortals(void* edict_list, int edict_count);
@@ -33,6 +33,10 @@ public:
 
     void Process(void* game_movement, void* player, source::CMoveData* mv, ProcessMovementFn original,
                  const ITraceProvider& trace);
+
+    // QA (B3): for `ticks` ticks use this input instead of the player's, so automated tests do not
+    // depend on the Portal window having keyboard focus. buttons: FaithButton bits, pressed on tick 1.
+    void SetQaInput(float forward, float side, uint32_t buttons, int ticks);
 
     void PrintStatus() const;
     size_t PortalCount() const { return portals_.size(); }
@@ -46,13 +50,18 @@ private:
     Vec3 engine_origin_;  // last origin the engine passed in (for ar_status)
     std::vector<void*> portals_;  // IServerUnknown* of each prop_portal
     bool enabled_ = false;
-    bool debug_ = false;
+    int debug_ = 0;
     bool initialized_ = false;
     bool last_tick_portal_ = false;
     double time_ = 0.0;
     uint64_t faith_ticks_ = 0;
     uint64_t portal_ticks_ = 0;
     uint32_t last_events_ = 0;
+    float qa_forward_ = 0.0f;
+    float qa_side_ = 0.0f;
+    uint32_t qa_buttons_ = 0;
+    int qa_ticks_left_ = 0;
+    bool qa_first_tick_ = false;
 };
 
 }  // namespace ar

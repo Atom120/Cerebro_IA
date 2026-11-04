@@ -136,6 +136,18 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
     }
     if (!move_) move_ = CreateFaithMovement(FaithHostConfig{});
 
+    // QA input override: written into CMoveData so the original movement (portal ticks) sees it too.
+    const bool qa_active = qa_ticks_left_ > 0;
+    const uint32_t qa_pressed = qa_first_tick_ ? qa_buttons_ : 0u;
+    if (qa_active) {
+        --qa_ticks_left_;
+        qa_first_tick_ = false;
+        mv->m_flForwardMove = qa_forward_ * source::kForwardSpeed;
+        mv->m_flSideMove = qa_side_ * source::kForwardSpeed;
+        if (qa_buttons_ & kFaithButtonUp) mv->m_nButtons |= source::kInJump;
+        if (qa_buttons_ & kFaithButtonDown) mv->m_nButtons |= source::kInDuck;
+    }
+
     const Vec3 feet{mv->m_vecAbsOrigin[0], mv->m_vecAbsOrigin[1], mv->m_vecAbsOrigin[2]};
     engine_origin_ = feet;
     const FaithHostConfig cfg;
@@ -159,6 +171,10 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
     in.view_angles = {mv->m_vecViewAngles[0], mv->m_vecViewAngles[1], mv->m_vecViewAngles[2]};
     in.buttons = MapButtons(mv->m_nButtons);
     in.buttons_pressed = MapButtons(mv->m_nButtons & ~mv->m_nOldButtons);
+    if (qa_active) {
+        in.buttons = qa_buttons_;
+        in.buttons_pressed = qa_pressed;
+    }
 
     const FaithStepResult r = move_->Step(in, state_, trace);
     time_ += in.dt;
@@ -170,12 +186,20 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
         mv->m_vecAbsOrigin[i] = (&state_.origin.x)[i];
     }
 
-    if (debug_ && (faith_ticks_ % 33 == 0 || r.events)) {
+    if (debug_ >= 2 || (debug_ == 1 && (faith_ticks_ % 33 == 0 || r.events))) {
         ApertureRunnerServerPlugin::LogMsg("[AR] t=%.2f anim=%s vel2d=%.1f vz=%.1f suelo=%d pos=(%.1f %.1f %.1f) eventos=0x%x\n",
                                            time_, SequenceName(state_.anim), state_.speed_2d, state_.velocity.z,
                                            state_.on_ground ? 1 : 0, state_.origin.x, state_.origin.y,
                                            state_.origin.z, r.events);
     }
+}
+
+void FaithDriver::SetQaInput(float forward, float side, uint32_t buttons, int ticks) {
+    qa_forward_ = std::clamp(forward, -1.0f, 1.0f);
+    qa_side_ = std::clamp(side, -1.0f, 1.0f);
+    qa_buttons_ = buttons;
+    qa_ticks_left_ = std::max(0, ticks);
+    qa_first_tick_ = true;
 }
 
 void FaithDriver::PrintStatus() const {

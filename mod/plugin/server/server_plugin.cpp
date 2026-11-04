@@ -4,6 +4,7 @@
 #include "faith_driver.h"
 #include "client/client_movement_hook.h"
 #include <cstdarg>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 
@@ -211,7 +212,20 @@ source::PluginResult ApertureRunnerServerPlugin::ClientCommand(void* /*pEntity*/
         return source::kPluginStop;
     }
     if (std::strcmp(cmd, "ar_debug") == 0) {
-        faith.SetDebug(!arg || std::strcmp(arg, "0") != 0);
+        faith.SetDebug(arg ? std::atoi(arg) : 1);
+        return source::kPluginStop;
+    }
+    // ar_qa_input <forward -1..1> <side -1..1> <buttons: j=Up d=Down t=Turn180 w=Walk, - = none> <ticks>
+    if (std::strcmp(cmd, "ar_qa_input") == 0 && CommandArgc(args) >= 5) {
+        uint32_t buttons = 0;
+        for (const char* c = CommandArg(args, 3); *c; ++c) {
+            if (*c == 'j') buttons |= kFaithButtonUp;
+            if (*c == 'd') buttons |= kFaithButtonDown;
+            if (*c == 't') buttons |= kFaithButtonTurn180;
+            if (*c == 'w') buttons |= kFaithButtonWalk;
+        }
+        faith.SetQaInput(static_cast<float>(std::atof(CommandArg(args, 1))), static_cast<float>(std::atof(CommandArg(args, 2))),
+                         buttons, std::atoi(CommandArg(args, 4)));
         return source::kPluginStop;
     }
     return source::kPluginContinue;
