@@ -29,6 +29,14 @@ import sys
 import time
 from pathlib import Path
 
+try:
+    import ctypes
+    import msvcrt
+    import winsound
+    HAS_WIN32 = True
+except ImportError:
+    HAS_WIN32 = False
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_TELEMETRY_DIR = REPO_ROOT / "qa" / "telemetria"
 RECORDER_EXE = REPO_ROOT / "build" / "x86" / "tools" / "me_telemetry" / "Release" / "me_telemetry_recorder.exe"
@@ -152,6 +160,73 @@ def run_cpp_tool(args: list[str]) -> int:
     return proc.returncode
 
 
+def sound_beep(freq: int, duration_ms: int):
+    if HAS_WIN32:
+        try:
+            winsound.Beep(freq, duration_ms)
+        except Exception:
+            pass
+
+
+def sound_countdown_and_start():
+    if HAS_WIN32:
+        try:
+            for _ in range(3):
+                winsound.Beep(880, 100)
+                time.sleep(0.4)
+            winsound.Beep(1760, 300)
+        except Exception:
+            pass
+
+
+def sound_completion(success: bool = True):
+    if HAS_WIN32:
+        try:
+            if success:
+                winsound.Beep(1318, 100)
+                winsound.Beep(1760, 200)
+            else:
+                winsound.Beep(440, 350)
+        except Exception:
+            pass
+
+
+def wait_for_user_trigger() -> str:
+    """
+    Espera una señal de inicio:
+      - Presionar tecla F9 en CUALQUIER lugar de Windows (incluso dentro de Mirror's Edge en pantalla completa)
+      - Presionar ENTER en la consola
+      - Presionar 's' para saltar el movimiento
+    """
+    if not HAS_WIN32:
+        res = input("    ¿Listo? Presiona ENTER (o 's' para saltar): ").strip().lower()
+        return "skip" if res == 's' else "trigger"
+
+    user32 = ctypes.windll.user32
+    VK_F9 = 0x78
+
+    # Limpiar estado previo de F9
+    user32.GetAsyncKeyState(VK_F9)
+
+    print("    [EN ESPERA] Presiona F9 (dentro del juego) o ENTER en consola (o 's' para saltar)...")
+    while True:
+        # Detectar tecla F9 global en hardware
+        if user32.GetAsyncKeyState(VK_F9) & 0x8000:
+            while user32.GetAsyncKeyState(VK_F9) & 0x8000:
+                time.sleep(0.04)
+            return "trigger"
+
+        # Detectar entrada en consola
+        if msvcrt.kbhit():
+            ch = msvcrt.getch()
+            if ch in (b'\r', b'\n', b' '):
+                return "trigger"
+            if ch.lower() == b's':
+                return "skip"
+
+        time.sleep(0.05)
+
+
 def verify_csv_directory(target_dir: Path) -> int:
     target_dir = target_dir.resolve()
     print(f"=== Verificando CSVs de telemetría en {target_dir.relative_to(REPO_ROOT)} ===")
@@ -160,7 +235,6 @@ def verify_csv_directory(target_dir: Path) -> int:
 
     missing = 0
     all_clips = EXPECTED_CLIPS + [item["live"] for item in CLIPS_METADATA]
-    # Check present files
     files_to_check = [f for f in all_clips if (target_dir / f).is_file()]
     if not files_to_check:
         print("  [AVISO] No se encontraron archivos de telemetría.")
@@ -255,10 +329,11 @@ def record_interactive_suite(target_dir: Path, hz: int) -> int:
     print("=================================================================")
     print("   ASISTENTE DE GRABACIÓN EN VIVO DE TELEMETRÍA (B2b) — MIRROR'S EDGE")
     print("=================================================================")
-    print("Requisitos:")
-    print("1. Mirror's Edge (GOG v1.01) debe estar ABIERTO con una partida cargada.")
-    print("   (Ej. Azotea de inicio en Edge_p o Prólogo).")
-    print("2. Faith debe estar viva y controlable en pantalla.")
+    print("SOPORTE PARA PANTALLA COMPLETA:")
+    print(" - Puedes permanecer 100% dentro del juego a pantalla completa.")
+    print(" - Para iniciar cada toma, presiona F9 desde el propio juego.")
+    print(" - Escucharás 3 beeps cortos y un pitido agudo (¡GRABANDO!).")
+    print(" - Realiza la maniobra durante el pitido hasta escuchar el doble beep.")
     print("-----------------------------------------------------------------")
 
     # Probar conexión
@@ -272,6 +347,7 @@ def record_interactive_suite(target_dir: Path, hz: int) -> int:
         print(" - Vuelve a ejecutar este comando.")
         return probe_rc
 
+    sound_completion(True)
     print("\n[2/2] ¡Conexión establecida exitosamente con el proceso de Faith!")
     print(f"Se grabarán {len(CLIPS_METADATA)} movimientos a {hz} Hz en {target_dir.relative_to(REPO_ROOT)}/.\n")
 
@@ -281,14 +357,13 @@ def record_interactive_suite(target_dir: Path, hz: int) -> int:
         print(f"    Descripción : {item['desc']}")
         print(f"    Duración    : {item['duration']} segundos")
 
-        resp = input("    ¿Listo para grabar? Presiona ENTER para iniciar cuenta atrás (o 's' para saltar): ").strip().lower()
-        if resp == 's':
+        trigger = wait_for_user_trigger()
+        if trigger == "skip":
             print("    [SALTADO]")
             continue
 
-        for cd in [3, 2, 1]:
-            print(f"    Iniciando en {cd}...", end="\r", flush=True)
-            time.sleep(1.0)
+        print("    [PREPARADO] Cuenta atrás sonora iniciada...")
+        sound_countdown_and_start()
         print("    *** ¡GRABANDO! REALIZA EL MOVIMIENTO AHORA EN MIRROR'S EDGE ***")
 
         rc = run_cpp_tool([
@@ -298,9 +373,11 @@ def record_interactive_suite(target_dir: Path, hz: int) -> int:
         ])
 
         if rc != 0 or not out_file.is_file():
+            sound_completion(False)
             print(f"    [FALLO] No se pudo completar la grabación de {item['live']}.")
             continue
 
+        sound_completion(True)
         stat = analyze_csv(out_file)
         print(f"    [OK] Guardado {item['live']} ({stat['rows']} muestras, {stat['dur']:.2f}s).")
         print(f"         Velocidad máxima: {stat['max_v_uu']:.1f} uu/s ({stat['max_v_su']:.1f} su/s).")
@@ -326,9 +403,12 @@ def record_single_clip(clip_id: str, target_dir: Path, hz: int) -> int:
     print(f"Descripción : {meta['desc']}")
     print(f"Duración    : {meta['duration']} s @ {hz} Hz")
 
-    for cd in [3, 2, 1]:
-        print(f"Iniciando en {cd}...", end="\r", flush=True)
-        time.sleep(1.0)
+    trigger = wait_for_user_trigger()
+    if trigger == "skip":
+        print("[SALTADO]")
+        return 0
+
+    sound_countdown_and_start()
     print("¡GRABANDO AHORA!")
 
     rc = run_cpp_tool([
@@ -338,10 +418,13 @@ def record_single_clip(clip_id: str, target_dir: Path, hz: int) -> int:
     ])
 
     if rc == 0 and out_file.is_file():
+        sound_completion(True)
         stat = analyze_csv(out_file)
         print(f"[OK] Guardado: {out_file.name} ({stat['rows']} muestras, {stat['dur']:.2f}s).")
         print(f"     Velocidad máx: {stat['max_v_uu']:.1f} uu/s ({stat['max_v_su']:.1f} su/s).")
         print(f"     Estados: {stat['states']}")
+    else:
+        sound_completion(False)
     return rc
 
 
@@ -350,7 +433,7 @@ def main() -> int:
     parser.add_argument("--probe", action="store_true", help="Verifica offsets en vivo (solo lectura) en MirrorsEdge.exe")
     parser.add_argument("--record", type=str, default="", help="Ruta del CSV a grabar en vivo desde MirrorsEdge.exe")
     parser.add_argument("--record-clip", type=str, default="", help="Graba uno de los 9 movimientos de B2b (ej. sprint_start, jump, wallrun_left)")
-    parser.add_argument("--suite", action="store_true", help="Asistente interactivo paso a paso para grabar los 9 clips de B2b")
+    parser.add_argument("--suite", action="store_true", help="Asistente interactivo paso a paso para grabar los 9 clips de B2b con F9 o ENTER")
     parser.add_argument("--duration", type=float, default=5.0, help="Duración de grabación en segundos (defecto: 5.0)")
     parser.add_argument("--hz", type=int, default=120, help="Frecuencia de muestreo 60..120 Hz (defecto: 120)")
     parser.add_argument("--generate-reference", action="store_true", help="Genera las 9 trazas CSV base en qa/telemetria/")
