@@ -39,9 +39,13 @@ public:
     // depend on the Portal window having keyboard focus. buttons: FaithButton bits, pressed on press_tick and held after it.
     void SetQaInput(float forward, float side, uint32_t buttons, int ticks, int press_tick = 0);
 
+    // Map audit (QA): logs vault/ledge spots in a grid at floor height z (ar_find_ledges).
+    void FindLedges(const ITraceProvider& trace, float x0, float y0, float x1, float y1, float z, float step) const;
+
     void PrintStatus() const;
     size_t PortalCount() const { return portals_.size(); }
     void SetCamera(bool enabled) { camera_enabled_ = enabled; }
+    bool CameraEnabled() const { return camera_enabled_; }
 
 private:
     void ApplyCamera(const FaithStepResult& r);

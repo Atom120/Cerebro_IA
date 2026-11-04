@@ -539,6 +539,22 @@ void TestLedges() {
     RunUntil(tall, 300, [&] { return tall.s.on_ground; });
     CHECK(!(tall.events & kFaithEventLedgeGrab));
 
+    // A 65 su ledge from right in front: too high to jump onto (47.6), too low to hang from at the
+    // top of the jump (the grab needs 40+ above the feet). Faith mantles straight onto it.
+    Rig mantle(true, {80, 0, 0});
+    mantle.world.Add({100, -256, 0}, {400, 256, 65});
+    mantle.Settle();
+    mantle.Tick(1, 0, 0, kFaithButtonUp);
+    bool mantled = false;
+    for (int i = 0; i < 150 && !(mantle.s.on_ground && mantle.s.origin.z > 60.0f); ++i) {
+        mantle.Tick(1);
+        mantled |= mantle.s.anim == FaithAnimState::Vault;
+    }
+    CHECK(mantled);
+    CHECK(mantle.events & kFaithEventLedgeGrab);
+    CHECK_NEAR(mantle.s.origin.z, 65.0, 0.05);
+    CHECK(mantle.s.origin.x > 100.0f);
+
     // Down drops from the ledge without grabbing it again at once.
     Rig drop(true, {54, 0, 0});
     drop.world.Add({100, -256, 0}, {400, 256, 100});

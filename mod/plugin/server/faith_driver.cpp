@@ -53,9 +53,23 @@ bool PortalTransform(void* unknown, float origin[3], float angles[3]) {
         return false;
     }
 }
+
+// Open portals only: a closed prop_portal is just a wall, which Faith handles herself. If the flag
+// cannot be read the portal counts as open (the safe side: Portal's movement takes over).
+bool PortalActive(void* unknown) {
+    __try {
+        void** vt = *reinterpret_cast<void***>(unknown);
+        const unsigned char* entity = static_cast<const unsigned char*>(
+            reinterpret_cast<PtrFn>(vt[source::kServerUnknownGetBaseEntitySlot])(unknown));
+        return !entity || entity[source::kPortalActivatedOffset] != 0;
+    } __except (1) {
+        return true;
+    }
+}
 #else
 const char* EdictClassName(void*) { return nullptr; }
 bool PortalTransform(void*, float*, float*) { return false; }
+bool PortalActive(void*) { return true; }
 #endif
 
 uint32_t MapButtons(int in) {
@@ -102,7 +116,7 @@ bool FaithDriver::NearPortal(Vec3 feet) const {
     const Vec3 center = feet + Vec3{0, 0, 36.0f};
     for (void* portal : portals_) {
         float o[3], a[3];
-        if (!PortalTransform(portal, o, a)) continue;
+        if (!PortalActive(portal) || !PortalTransform(portal, o, a)) continue;
         const float p = a[0] * aperture_runner::kDegToRad, y = a[1] * aperture_runner::kDegToRad;
         const Vec3 fwd{std::cos(p) * std::cos(y), std::cos(p) * std::sin(y), -std::sin(p)};
         const Vec3 right{std::sin(y), -std::cos(y), 0.0f};
@@ -275,6 +289,58 @@ void FaithDriver::ApplyCamera(const FaithStepResult& r) {
     view[2] = co.roll;
     applied_pitch_ = shake;
     ClientView::SetViewAngles(view);
+}
+
+// QA/map audit: scans a grid at floor height z for places where Faith can vault (obstacle 18-48 su
+// high) or grab a ledge (40-96 su), with the same probes and checks faith_move uses (reach 24 su,
+// hands 24 su above the head, 36 su over the edge along the wall normal, walkable top, free climb path). Logs one line per spot: position, facing yaw and height.
+void FaithDriver::FindLedges(const ITraceProvider& trace, float x0, float y0, float x1, float y1, float z,
+                             float step) const {
+    const FaithHostConfig cfg;
+    const Vec3 mins = cfg.hull_mins, maxs = cfg.hull_maxs;
+    const float reach_up = maxs.z + 24.0f;
+    int found = 0;
+    for (float x = x0; x <= x1 && found < 40; x += step) {
+        for (float y = y0; y <= y1 && found < 40; y += step) {
+            const Vec3 p{x, y, z + 1.0f};
+            if (trace.TraceHull(p, p, mins, maxs).start_solid) continue;
+            const TraceResult floor = trace.TraceHull(p, p - Vec3{0, 0, 8}, mins, maxs);
+            if (!floor.Hit() || floor.normal.z < 0.7f) continue;
+            const Vec3 feet = floor.end_pos + Vec3{0, 0, 0.1f};
+            for (int d = 0; d < 4; ++d) {
+                const float yaw = 90.0f * static_cast<float>(d);
+                const Vec3 dir{std::cos(yaw * aperture_runner::kDegToRad), std::sin(yaw * aperture_runner::kDegToRad), 0};
+                const TraceResult wall = trace.TraceHull(feet, feet + dir * 24.0f, mins, maxs);
+                if (!wall.Hit() || wall.start_solid || std::fabs(wall.normal.z) > 0.3f) continue;
+                const TraceResult up = trace.TraceHull(feet, feet + Vec3{0, 0, reach_up}, mins, maxs);
+                if (up.Hit()) continue;
+                const Vec3 into = Vec3{0, 0, 0} - wall.normal;  // like faith_move: over the edge along the wall normal
+                // Same order as faith_move: first walkable top over the edge, then the climb path.
+                float h = -1.0f;
+                Vec3 target;
+                const float gap = wall.fraction * 24.0f;
+                for (const float forward : {gap + 2.0f * maxs.x + 1.0f, 36.0f, 24.0f, 48.0f}) {  // as faith_move
+                    const TraceResult over = trace.TraceHull(up.end_pos, up.end_pos + into * forward, mins, maxs);
+                    if (over.Hit()) continue;
+                    const TraceResult down = trace.TraceHull(over.end_pos, over.end_pos - Vec3{0, 0, reach_up}, mins, maxs);
+                    if (down.start_solid || !down.Hit() || down.normal.z < 0.7f) continue;
+                    target = down.end_pos;
+                    if (target.z - feet.z > 4.0f) {
+                        h = target.z - feet.z;
+                        break;
+                    }
+                }
+                const Vec3 top{feet.x, feet.y, target.z + 2.0f}, across{target.x, target.y, target.z + 2.0f};
+                if (h < 0.0f || trace.TraceHull(feet, top, mins, maxs).Hit() || trace.TraceHull(top, across, mins, maxs).Hit()) continue;
+                const char* kind = h > 18.0f && h <= 48.0f ? "VAULT" : (h >= 40.0f && h <= 96.0f ? "BORDE" : nullptr);
+                if (!kind) continue;
+                ApertureRunnerServerPlugin::LogMsg("[AR-LEDGE] %s pos=(%.0f %.0f %.1f) yaw=%.0f altura=%.1f muro_a=%.1f kind=%d\n", kind,
+                                                   feet.x, feet.y, feet.z, yaw, h, wall.fraction * 24.0f, static_cast<int>(wall.kind));
+                ++found;
+            }
+        }
+    }
+    ApertureRunnerServerPlugin::LogMsg("[AR-LEDGE] fin (%d sitios)\n", found);
 }
 
 void FaithDriver::SetQaInput(float forward, float side, uint32_t buttons, int ticks, int press_tick) {

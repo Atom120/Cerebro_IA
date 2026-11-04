@@ -12,6 +12,8 @@ $cfg = Join-Path $portal "portal\cfg\ar_qa_tmp.cfg"
 $viewTool = Join-Path $PSScriptRoot "read_portal_view.py"
 
 function Send([string[]]$commands) {
+    # Sin Portal abierto, -hijack abriria un Portal nuevo y se quedaria esperando: mejor fallar.
+    if (-not (Get-Process hl2 -ErrorAction SilentlyContinue)) { throw "Portal se cerro durante la prueba." }
     [IO.File]::WriteAllText($cfg, ($commands -join "`n") + "`n")
     Start-Process -FilePath (Join-Path $portal "hl2.exe") -WorkingDirectory $portal -Wait `
         -ArgumentList @("-hijack", "-game", "portal", "+exec", "ar_qa_tmp")
