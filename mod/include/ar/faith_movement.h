@@ -23,7 +23,8 @@
 
 namespace ar {
 
-inline constexpr uint32_t kFaithMovementContractVersion = 1;
+// v2 (P3): kFaithEventTurn180. FaithState layout unchanged.
+inline constexpr uint32_t kFaithMovementContractVersion = 2;
 
 // Semantic buttons. The host maps engine input to these (proposal, confirmed in G1):
 //   Up <- IN_JUMP, Down <- IN_DUCK, Turn180 <- IN_RELOAD, Walk <- IN_WALK. IN_USE stays with the engine.
@@ -107,6 +108,9 @@ enum FaithEvent : uint32_t {
     kFaithEventLedgeGrab = 1u << 7,
     kFaithEventSlideStart = 1u << 8,
     kFaithEventPortalContinued = 1u << 9,  // a wallrun/slide survived a portal teleport
+    // Quick turn (ground Turn180 or turning away from a wallclimb). The library has already turned its
+    // own velocity; the host must add 180 degrees to the view yaw (spread over ~0.3 s by the camera).
+    kFaithEventTurn180 = 1u << 10,
 };
 
 // Fixed per session; the host reads the real values from the engine.
