@@ -111,18 +111,29 @@ t,x,y,z,vx,vy,vz,movement_state,walking_state
 
 ---
 
-## 5. Comandos para Reproducir o Grabar en Vivo
+## 5. Comandos para Reproducir o Grabar en Vivo (B2 / B2b)
 
 ```powershell
-# Compilar y ejecutar pruebas unitarias (76 checks en x86)
+# 1. Compilar y ejecutar pruebas unitarias
 mod\build.bat
 
-# Verificar offsets en vivo (solo lectura) con Mirror's Edge abierto
+# 2. Verificar offsets en vivo (solo lectura) con Mirror's Edge abierto en un mapa
 python mod/tools/me_telemetry/record_me_csv.py --probe
 
-# Grabar una sesión en vivo desde Mirror's Edge a 120 Hz
+# 3. Grabar la suite completa interactiva de los 9 movimientos en vivo (B2b)
+python mod/tools/me_telemetry/record_me_csv.py --suite
+
+# 4. Grabar un movimiento individual en vivo (ej. sprint_start, jump, wallrun_left...)
+python mod/tools/me_telemetry/record_me_csv.py --record-clip sprint_start
+python mod/tools/me_telemetry/record_me_csv.py --record-clip jump
+python mod/tools/me_telemetry/record_me_csv.py --record-clip wallrun_left
+
+# 5. Comparar trazas sintéticas de referencia frente a trazas reales en vivo
+python mod/tools/me_telemetry/record_me_csv.py --compare
+
+# 6. Grabar una sesión libre personalizada en vivo a 120 Hz
 python mod/tools/me_telemetry/record_me_csv.py --record qa/telemetria/mi_captura.csv --duration 10 --hz 120
 
-# Verificar integridad de los 9 CSVs de referencia
+# 7. Verificar integridad de los CSVs presentes
 python mod/tools/me_telemetry/record_me_csv.py --verify
 ```
