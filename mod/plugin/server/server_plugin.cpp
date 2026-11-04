@@ -40,7 +40,7 @@ void ApertureRunnerServerPlugin::LogMsg(const char* fmt, ...) {
     std::printf("%s", buffer);
 }
 
-bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn /*interfaceFactory*/, source::CreateInterfaceFn gameServerFactory) {
+bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn interfaceFactory, source::CreateInterfaceFn gameServerFactory) {
     if (is_loaded_) return true;
 
 #ifdef _WIN32
@@ -59,6 +59,19 @@ bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn /*interfaceFacto
         " Estado Inicial: ar_enable = 0 (passthrough)\n"
         "======================================================\n\n",
         kPortalBuildId);
+
+    // Z4: Obtener EngineTraceServer003 para el trace provider del servidor
+    if (interfaceFactory) {
+        int returnCode = 0;
+        void* iface = interfaceFactory(source::kEngineTraceServerVersion, &returnCode);
+        if (iface && returnCode == 0) {
+            engine_trace_ = static_cast<source::IEngineTrace*>(iface);
+            trace_provider_.SetEngineTrace(engine_trace_);
+            LogMsg("[ApertureRunner] EngineTraceServer003 adquirido exitosamente (Z4).\n");
+        } else {
+            LogMsg("[ApertureRunner] AVISO: EngineTraceServer003 no disponible en interfaceFactory (rc=%d).\n", returnCode);
+        }
+    }
 
     // Z2/Z3: Obtener GameMovement001 y enganchar ProcessMovement en passthrough
     if (gameServerFactory) {
@@ -88,6 +101,10 @@ void ApertureRunnerServerPlugin::Unload() {
         LogMsg("[ApertureRunner] VTable de IGameMovement restaurada al original.\n");
     }
 
+    engine_trace_ = nullptr;
+    trace_provider_.SetEngineTrace(nullptr);
+    trace_provider_.SetIgnorePlayer(nullptr);
+
     LogMsg("[ApertureRunner] Plugin descargado limpiamente.\n");
     is_loaded_ = false;
 }
@@ -100,8 +117,36 @@ void ApertureRunnerServerPlugin::LevelInit(const char* pMapName) {
     }
 }
 
+// Z4 self-test in testchmb_a_00: a ray straight down onto the floor at info_player_start must hit
+// the world at z = 160 with an up normal. Catches IEngineTrace/Ray_t ABI mismatches in the real game.
+static TraceResult SelfTestTrace(const ServerTraceProvider& provider, bool* crashed) {
+    TraceResult r;
+#ifdef _WIN32
+    __try {
+        r = provider.TraceRay({-607.8f, -346.7f, 200.0f}, {-607.8f, -346.7f, 0.0f});
+    } __except (1) {
+        *crashed = true;
+    }
+#else
+    r = provider.TraceRay({-607.8f, -346.7f, 200.0f}, {-607.8f, -346.7f, 0.0f});
+#endif
+    return r;
+}
+
+void ApertureRunnerServerPlugin::RunTraceSelfTest() {
+    if (!engine_trace_ || std::strcmp(current_map_, "testchmb_a_00") != 0) return;
+    bool crashed = false;
+    const TraceResult r = SelfTestTrace(trace_provider_, &crashed);
+    const bool ok = !crashed && r.Hit() && !r.start_solid && r.end_pos.z > 155.0f && r.end_pos.z < 165.0f &&
+                    r.normal.z > 0.99f && r.kind == TraceHitKind::World;
+    LogMsg("[ApertureRunner] Autotest Z4 (traza al suelo en info_player_start): %s  frac=%.4f z=%.1f nz=%.2f kind=%d%s\n",
+           ok ? "OK" : "FALLO", r.fraction, r.end_pos.z, r.normal.z, static_cast<int>(r.kind),
+           crashed ? " (excepcion en TraceRay)" : "");
+}
+
 void ApertureRunnerServerPlugin::ServerActivate(void* /*pEdictList*/, int /*edictCount*/, int /*clientMax*/) {
     LogMsg("[ApertureRunner] ServerActivate listo en mapa %s\n", current_map_);
+    RunTraceSelfTest();
 }
 
 void ApertureRunnerServerPlugin::GameFrame(bool /*simulating*/) {

@@ -5,6 +5,7 @@ add_library(aperture_runner SHARED
     main.cpp
     server/server_plugin.cpp
     server/movement_hook.cpp
+    server/server_trace_provider.cpp
 )
 
 target_link_libraries(aperture_runner PRIVATE ar_contracts)
@@ -25,7 +26,10 @@ if(MSVC)
 endif()
 
 # Prueba unitaria autonoma: simula ser Source Engine y carga aperture_runner.dll
-add_executable(test_plugin_load tests/test_plugin_load.cpp)
+add_executable(test_plugin_load
+    tests/test_plugin_load.cpp
+    server/server_trace_provider.cpp
+)
 target_link_libraries(test_plugin_load PRIVATE ar_contracts)
 target_include_directories(test_plugin_load PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
