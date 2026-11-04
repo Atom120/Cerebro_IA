@@ -47,6 +47,14 @@
   - **Contrato v2** (`mod/include/ar/faith_movement.h`): nuevo evento `kFaithEventTurn180`. **Zarek/Gonzalo:** al recibirlo, el host suma 180° al yaw de la vista (la cámara lo reparte en ~0.3 s). `FaithState` no cambió (196 bytes).
   - **Zarek (Z5):** al agacharse, deslizarse o hacer coil, `FaithState::ducked = true`; hay que poner el casco agachado y `FL_DUCKING`. Con el coil el origen sube 36 (la cabeza no se mueve).
 
+- **PR #7 (Benja, `benja/B3-qa-hito-h1`): NO integrado, cambios pedidos (Sebas, 2026-11-04).**
+  1. **Columna `ar_enable 1` en PASS en los 14 puntos.** Es imposible: `ar_enable` todavía no existe como cvar en la DLL y el movimiento de Faith no está conectado (falta Z5). Debe ser `N/A (H2)`, como en el informe que ya está en `main`.
+  2. **Tiempos imposibles.** El informe dice que los portales se abren a los 66.5 s, pero la partida entera (dos ascensores incluidos) dura unos 75 s, o 5.000 ticks. En la prueba S3 de Sebas, unos 4 minutos de juego son 16.500 ticks.
+  3. **Sigue faltando lo que se pidió en el PR #6:** el `console.log` crudo y aclarar si usó `ent_fire` o `host_timescale`.
+  4. **Ruta personal en un enlace** (`file:///c:/Users/Benjamin%20Sepulveda/...`). Usa rutas relativas.
+  5. **La rama sale de `6d5adfd`** y choca con `main` en `qa/resultados/H1.md` (los dos lo crean) y en `HANDOFF.md`. Además, el `HANDOFF` del PR borra la regla de ramas, las notas de revisión y el estado de P1–P3.
+  - **Qué hacer:** actualizar la rama con `main`, editar el `qa/resultados/H1.md` que ya existe (no crear otro), dejar `ar_enable 1` como `N/A (H2)` y adjuntar el log crudo o un recorte real. No marcar H1 como cerrado: falta G1 (cliente).
+
 ## Próximos Pasos (semana 1)
 - **Hito H1**: Completado en servidor y QA (`Z1`, `Z3`, `B1`, `B3`). Pendiente G1 de Gonzalo (hook de predicción en `client.dll`) para cerrar completamente la paridad cliente-servidor de H1.
 - Peña: P1 (`mod/faith_move/` núcleo puro), P2 (conectar `ProcessMovement` con `faith_move`), P4 (pruebas deterministas con `BoxWorld`).

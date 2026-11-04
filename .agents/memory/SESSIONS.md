@@ -26,3 +26,4 @@
 - **2026-11-04 (Sebas - Claude Code - S3 semana 1)**: build limpia de `main` 4/4 OK; en Portal, 18.500 ticks interceptados en `testchmb_a_00` y `testchmb_a_01` (sobrevive a `changelevel`). Nota semanal en HANDOFF: P1/P2 de Peña es la ruta crítica de H2.
 - **2026-11-04 (Sebas - Claude Code - P1/P2 en lugar de Peña)**: `mod/faith_move/` con el movimiento de suelo de Faith y 104 pruebas; la build pasa 5/5. Rama `sebas/P2-faith-suelo` integrada en `main`. Desbloquea Z5 y G2.
 - **2026-11-04 (Sebas - Claude Code - P3 en lugar de Peña)**: parkour de Faith en `mod/faith_move/`, contrato v2 (`kFaithEventTurn180`) y 212 pruebas verificadas con mutaciones. La build pasa 5/5. Rama `sebas/P3-parkour` integrada en `main`.
+- **2026-11-04 (Sebas - Claude Code - revisión PR #7)**: PR #7 de Benja (B3) no integrado: marca `ar_enable 1` como PASS (no existe todavía), tiempos imposibles, sin log crudo, ruta personal y conflictos con `main`. Cambios pedidos en HANDOFF.
