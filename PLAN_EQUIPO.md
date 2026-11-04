@@ -283,8 +283,8 @@ No cambies la lógica ni los contratos de mod/include/. Explica cada cambio en u
 
 | ID | Tarea | Dependencia | Entregable |
 |---|---|---|---|
-| P1 | Esqueleto de la librería + pruebas con un `ITraceProvider` falso (suelo plano, pared, borde, portal). Puedes empezar con un header borrador y cambiarlo cuando S2 se fusione | 🟡 (S2) | Librería que compila y pasa pruebas |
-| P2 | Suelo: caminar, correr, **sprint con inercia** (157.5 → 283.5 u/s), aceleración, salto (248), gravedad de Faith (≈646), caer, aterrizaje suave y duro | 🟢 tras P1 | Pruebas de cada valor de la tabla de la sección 6 |
+| P1 ✅ (Sebas, 2026-11-04) | Esqueleto de la librería + pruebas con un `ITraceProvider` falso (suelo plano, pared, borde, portal). Puedes empezar con un header borrador y cambiarlo cuando S2 se fusione | 🟡 (S2) | Librería que compila y pasa pruebas |
+| P2 ✅ (Sebas, 2026-11-04) | Suelo: caminar, correr, **sprint con inercia** (157.5 → 283.5 u/s), aceleración, salto (248), gravedad de Faith (≈646), caer, aterrizaje suave y duro | 🟢 tras P1 | Pruebas de cada valor de la tabla de la sección 6 |
 | P3 | Parkour: wallrun izq./der., wallclimb, agarrar borde y subir, slide, coil (encoger en el aire), Skill Roll, giro de 180° | 🟢 tras P2 | Máquina de estados + pruebas |
 | P4 | Cruce de portales: conservar la velocidad y continuar el wallrun al pasar, usando `core/math.h` (`T = M_out · R_π · M_in⁻¹`) | 🟡 (S1, para tener `core/` en `mod/`) | Pruebas con portales en suelo y pared |
 | P5 | Ajuste fino comparando con las grabaciones reales de Mirror's Edge (CSV de Benja) | 🔴 (B2) | Tabla de ajuste + gráficas |

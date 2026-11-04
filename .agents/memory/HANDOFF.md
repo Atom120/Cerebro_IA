@@ -32,7 +32,7 @@
 |---|---|---|---|
 | Sebas | S0, S1, S2, S3 (semana 1), S4 (PRs #1–#6) | S4 continuo; S3 cada semana | 🟢 |
 | Zarek | Z1, Z3 | **Z2 incompleta**: solo `GameMovement001`; faltan `PlayerInfoManager002`, `VEngineServer021` y documentar los campos de `CPortal_Player`. Luego Z4 (`ITraceProvider` real) | 🟢 |
-| Peña | — (sin ramas ni PRs) | **P1 y P2: ruta crítica de H2.** Sin `faith_move`, Z5 y G2 no pueden empezar | 🔴 atención |
+| Peña | P1 y P2 (hechos por Sebas el 2026-11-04) | P3 (parkour) sobre `mod/faith_move/` | 🟡 |
 | Gonzalo | — (rama `G1` creada, vacía) | G1 (predicción en `client.dll`): falta para cerrar del todo H1. G3 (cámara) se puede hacer en paralelo | 🟡 |
 | Antonio | — (sin ramas ni PRs) | A1 (necesita Mirror's Edge instalado + UEViewer), A2 | 🟡 |
 | Benja | B1, B2 (CSV sintéticos), B3 (H1, provisional), B4 | Aclarar los tiempos de `H1.md` y adjuntar el log crudo; grabar trazas reales con `--record` (B2b) | 🟢 |
@@ -40,6 +40,8 @@
 **Hitos:** H1 "la DLL vive": servidor ✅, QA ✅ (provisional), cliente ⏳ (G1). H2 bloqueado por P2 + Z4 → Z5.
 
 **Para la semana 2:** Peña sube P1 cuanto antes (aunque sea el esqueleto con pruebas de `BoxWorld`). Gonzalo sube G1. Zarek cierra Z2 y empieza Z4. Ramas con el formato `nombre/ID-descripcion` (no `G1` a secas). Nada directo a `main`.
+
+- **P1 + P2 (hechos por Sebas, 2026-11-04, porque Peña no podía):** `mod/faith_move/` implementa `ar::CreateFaithMovement` con el movimiento de suelo: correr (2419 su/s² hasta 157.5), sprint con inercia (157.5 → 283.5 en 1.5 s), caminar, frenada, salto de 248 + 39.4 en la carrera, gravedad de 646, coyote time, caída, aterrizaje suave y duro (≥ 208.7 su: bloqueo de 0.5 s), `FallUncontrolled` (> 393.7 su), escalones de 18 y colisión estilo `TryPlayerMove`. Es determinista: la repetición para la predicción da un resultado idéntico bit a bit. 104 comprobaciones en `test_faith_move`; la build x86 pasa 5/5. Los valores `placeholder` están en `faith_params.h` (P5). **Esto desbloquea Z5 (Zarek, con Z4) y G2 (Gonzalo).** Peña sigue con P3 (parkour) sobre este código; lee `mod/faith_move/README.md`.
 
 ## Próximos Pasos (semana 1)
 - **Hito H1**: Completado en servidor y QA (`Z1`, `Z3`, `B1`, `B3`). Pendiente G1 de Gonzalo (hook de predicción en `client.dll`) para cerrar completamente la paridad cliente-servidor de H1.
