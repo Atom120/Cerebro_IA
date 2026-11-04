@@ -6,9 +6,10 @@ add_library(aperture_runner SHARED
     server/server_plugin.cpp
     server/movement_hook.cpp
     server/server_trace_provider.cpp
+    server/faith_driver.cpp
 )
 
-target_link_libraries(aperture_runner PRIVATE ar_contracts)
+target_link_libraries(aperture_runner PRIVATE ar_contracts faith_move)
 
 target_include_directories(aperture_runner PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}

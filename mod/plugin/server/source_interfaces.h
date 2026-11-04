@@ -192,8 +192,63 @@ static_assert(sizeof(void*) != 4 || offsetof(trace_t, m_pEnt) == 76, "trace_t mu
 //   CBaseEntity -> IServerEntity -> IServerUnknown -> IHandleEntity:
 //     0 ~IHandleEntity, 1 SetRefEHandle, 2 GetRefEHandle, 3 GetCollideable, 4 GetNetworkable, 5 GetBaseEntity
 //   IServerNetworkable: 0 GetEntityHandle, 1 GetServerClass, 2 GetEdict, 3 GetClassName
+inline constexpr int kServerUnknownGetCollideableSlot = 3;
 inline constexpr int kServerUnknownGetNetworkableSlot = 4;
 inline constexpr int kServerNetworkableGetClassNameSlot = 3;
+// ICollideable: 10 GetCollisionOrigin (const Vector&), 11 GetCollisionAngles (const QAngle&).
+inline constexpr int kCollideableGetOriginSlot = 10;
+inline constexpr int kCollideableGetAnglesSlot = 11;
+
+// ---------------------------------------------------------------------------------------
+// Movement and entity data (Z5). Every offset verified in Portal build 19017868 (2026-11-04).
+// ---------------------------------------------------------------------------------------
+
+// game/shared/igamemovement.h CMoveData, the fields the mod reads or writes.
+struct CMoveData {
+    uint8_t m_bFirstRunOfFunctions_bits;  // two bool bitfields
+    uint8_t pad0[3];
+    uint32_t m_nPlayerHandle;
+    int m_nImpulseCommand;
+    float m_vecViewAngles[3];     // degrees (pitch, yaw, roll), +pitch looks down
+    float m_vecAbsViewAngles[3];
+    int m_nButtons;               // IN_* bits held
+    int m_nOldButtons;            // IN_* bits of the previous command
+    float m_flForwardMove;        // +-cl_forwardspeed (450)
+    float m_flSideMove;           // +-cl_sidespeed (450), + = right
+    float m_flUpMove;
+    float m_flMaxSpeed;
+    float m_flClientMaxSpeed;
+    float m_vecVelocity[3];
+    float m_vecAngles[3];
+    float m_vecOldAngles[3];
+    float m_outStepHeight;
+    float m_outWishVel[3];
+    float m_outJumpVel[3];
+    float m_vecConstraintCenter[3];
+    float m_flConstraintRadius;
+    float m_flConstraintWidth;
+    float m_flConstraintSpeedFactor;
+    float m_vecAbsOrigin[3];      // player feet
+};
+static_assert(offsetof(CMoveData, m_vecViewAngles) == 12 && offsetof(CMoveData, m_nButtons) == 36 &&
+                  offsetof(CMoveData, m_flForwardMove) == 44 && offsetof(CMoveData, m_vecVelocity) == 64 &&
+                  offsetof(CMoveData, m_vecAbsOrigin) == 152,
+              "CMoveData must match SDK 2013");
+
+// public/in_buttons.h
+inline constexpr int kInJump = 1 << 1;
+inline constexpr int kInDuck = 1 << 2;
+inline constexpr int kInForward = 1 << 3;
+inline constexpr int kInReload = 1 << 13;
+inline constexpr int kInWalk = 1 << 18;
+inline constexpr float kForwardSpeed = 450.0f;  // cl_forwardspeed / cl_sidespeed
+
+// public/edict.h edict_t (x86): 20 bytes, IServerUnknown* m_pUnk at +12.
+inline constexpr int kEdictSize = 20;
+inline constexpr int kEdictUnknownOffset = 12;
+
+// tier1/convar.h CCommand: int m_nArgc at +0, const char* m_ppArgv[64] at +1032.
+inline constexpr int kCommandArgvOffset = 1032;
 
 // MASK_PLAYERSOLID = CONTENTS_SOLID | CONTENTS_MOVEABLE | CONTENTS_PLAYERCLIP | CONTENTS_WINDOW | CONTENTS_MONSTER | CONTENTS_GRATE
 inline constexpr unsigned int kMaskPlayerSolid = 0x201400Bu;

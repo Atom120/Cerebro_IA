@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #include "movement_hook.h"
 #include "server_plugin.h"
+#include "faith_driver.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -32,10 +33,10 @@ void __fastcall MovementHook::Hooked_ProcessMovement(void* thisptr, int /*dummy_
         );
     }
 
-    // Modo passthrough puro (Z3): delega la ejecucion integra a CPortalGameMovement
-    if (s_pOriginalProcessMovement) {
-        s_pOriginalProcessMovement(thisptr, pPlayer, pMove);
-    }
+    // Z5: con ar_enable 0 delega integro en CPortalGameMovement (passthrough de Z3); con 1 mueve faith_move.
+    FaithDriver::Instance().Process(thisptr, pPlayer, static_cast<source::CMoveData*>(pMove),
+                                    s_pOriginalProcessMovement,
+                                    *ApertureRunnerServerPlugin::Instance().GetTraceProvider());
 }
 
 bool MovementHook::Install(source::IGameMovement* pMovement) {

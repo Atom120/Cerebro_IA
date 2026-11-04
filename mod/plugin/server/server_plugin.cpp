@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #include "server_plugin.h"
 #include "movement_hook.h"
+#include "faith_driver.h"
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -144,8 +145,10 @@ void ApertureRunnerServerPlugin::RunTraceSelfTest() {
            crashed ? " (excepcion en TraceRay)" : "");
 }
 
-void ApertureRunnerServerPlugin::ServerActivate(void* /*pEdictList*/, int /*edictCount*/, int /*clientMax*/) {
-    LogMsg("[ApertureRunner] ServerActivate listo en mapa %s\n", current_map_);
+void ApertureRunnerServerPlugin::ServerActivate(void* pEdictList, int edictCount, int /*clientMax*/) {
+    FaithDriver::Instance().ScanPortals(pEdictList, edictCount);
+    LogMsg("[ApertureRunner] ServerActivate listo en mapa %s (%u prop_portal)\n", current_map_,
+           static_cast<unsigned>(FaithDriver::Instance().PortalCount()));
     RunTraceSelfTest();
 }
 
@@ -154,6 +157,7 @@ void ApertureRunnerServerPlugin::GameFrame(bool /*simulating*/) {
 
 void ApertureRunnerServerPlugin::LevelShutdown() {
     LogMsg("[ApertureRunner] LevelShutdown en mapa %s\n", current_map_);
+    FaithDriver::Instance().OnLevelShutdown();
     current_map_[0] = '\0';
 }
 
@@ -176,7 +180,34 @@ source::PluginResult ApertureRunnerServerPlugin::ClientConnect(bool* /*bAllowCon
     return source::kPluginContinue;
 }
 
-source::PluginResult ApertureRunnerServerPlugin::ClientCommand(void* /*pEntity*/, const void* /*args*/) {
+// Console commands (typed in Portal's console; the engine forwards unknown commands to the server):
+//   ar_enable [0|1]  Faith movement off/on (no argument toggles)
+//   ar_status        prints Faith's state
+//   ar_debug [0|1]   logs Faith's state twice a second and on every event
+static int CommandArgc(const void* args) { return *static_cast<const int*>(args); }
+static const char* CommandArg(const void* args, int i) {
+    return reinterpret_cast<const char* const*>(static_cast<const char*>(args) + source::kCommandArgvOffset)[i];
+}
+
+source::PluginResult ApertureRunnerServerPlugin::ClientCommand(void* /*pEntity*/, const void* args) {
+    if (!args || CommandArgc(args) < 1) return source::kPluginContinue;
+    const char* cmd = CommandArg(args, 0);
+    const char* arg = CommandArgc(args) > 1 ? CommandArg(args, 1) : nullptr;
+    FaithDriver& faith = FaithDriver::Instance();
+    if (std::strcmp(cmd, "ar_enable") == 0) {
+        faith.SetEnabled(arg ? std::strcmp(arg, "0") != 0 : !faith.Enabled());
+        LogMsg("[ApertureRunner] ar_enable = %d (%s)\n", faith.Enabled() ? 1 : 0,
+               faith.Enabled() ? "movimiento de Faith" : "movimiento original de Portal");
+        return source::kPluginStop;
+    }
+    if (std::strcmp(cmd, "ar_status") == 0) {
+        faith.PrintStatus();
+        return source::kPluginStop;
+    }
+    if (std::strcmp(cmd, "ar_debug") == 0) {
+        faith.SetDebug(!arg || std::strcmp(arg, "0") != 0);
+        return source::kPluginStop;
+    }
     return source::kPluginContinue;
 }
 
