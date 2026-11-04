@@ -696,6 +696,92 @@ void TestParkourReplay() {
     CHECK(events & (kFaithEventWallRunStart | kFaithEventWallClimbStart | kFaithEventLedgeGrab | kFaithEventSlideStart));
 }
 
+// ------------------------------------------------------------------ P4: portals
+
+// What the host does when the engine teleports the player through a portal: move the origin,
+// rotate the velocity (the engine did it) and report the rotation in FaithInput::portal.
+FaithStepResult TeleportTick(Rig& r, Vec3 exit_origin, const Mat3& rot, float fwd, float yaw, uint32_t held = 0) {
+    r.s.origin = exit_origin;
+    r.s.velocity = rot * r.s.velocity;
+    FaithInput in;
+    in.dt = kDt;
+    in.forward_move = fwd;
+    in.buttons = held;
+    in.view_angles = {0, yaw, 0};
+    in.portal.teleported = true;
+    in.portal.rotation = rot;
+    const FaithStepResult res = r.move->Step(in, r.s, r.world);
+    r.events |= res.events;
+    return res;
+}
+
+Mat3 YawRotation(float degrees) {
+    const float a = degrees * aperture_runner::kDegToRad;
+    return Mat3::FromColumns({std::cos(a), std::sin(a), 0}, {-std::sin(a), std::cos(a), 0}, {0, 0, 1});
+}
+
+void TestPortalKeepsWallRun() {
+    // Wallrun along wall A (running +X, wall on the right), then a portal turns her 90 degrees left
+    // (+X -> +Y) next to wall B, which is on her right again: the wallrun keeps going.
+    Rig r(true, {0, -80, 0});
+    r.world.Add({-512, -140, 0}, {8192, -100, 300})   // wall A, normal +Y
+        .Add({1020, -512, 0}, {1060, 8192, 300});      // wall B, normal -X
+    r.Settle();
+    r.Run(Ticks(1.0f), 1);
+    r.Tick(1, 0, 0, kFaithButtonUp);
+    r.Run(Ticks(0.2f), 1);
+    CHECK(r.s.anim == FaithAnimState::WallRunRight);
+    const float speed = r.s.speed_2d;
+    const float z = r.s.origin.z;
+
+    const FaithStepResult res = TeleportTick(r, {1000, 0, z}, YawRotation(90.0f), 1, 90.0f);
+    CHECK(res.events & kFaithEventPortalContinued);
+    CHECK(r.s.anim == FaithAnimState::WallRunRight);
+    CHECK_NEAR(r.s.wall_normal.x, -1.0, 1e-3);
+    CHECK(r.s.velocity.y > speed - 10.0f);  // keeps going along +Y with its speed
+    CHECK_NEAR(r.s.velocity.x, 0.0, 6.0);    // only the small push into the wall
+    r.Run(Ticks(0.2f), 1, 0, 0, 90.0f);
+    CHECK(r.s.anim == FaithAnimState::WallRunRight);
+    CHECK(r.s.origin.y > 20.0f);
+
+    // Same portal but no wall at the exit: the wallrun ends and she flies on.
+    Rig open(true, {0, -80, 0});
+    open.world.Add({-512, -140, 0}, {8192, -100, 300});
+    open.Settle();
+    open.Run(Ticks(1.0f), 1);
+    open.Tick(1, 0, 0, kFaithButtonUp);
+    open.Run(Ticks(0.2f), 1);
+    const FaithStepResult gone = TeleportTick(open, {3000, 3000, open.s.origin.z}, YawRotation(90.0f), 1, 90.0f);
+    CHECK(!(gone.events & kFaithEventPortalContinued));
+    CHECK(gone.events & kFaithEventWallRunEnd);
+    CHECK(open.s.anim != FaithAnimState::WallRunRight);
+}
+
+void TestPortalKeepsSlideAndResetsFall() {
+    Rig r(true, {-300, 0, 0});
+    r.Settle();
+    r.Run(Ticks(1.0f), 1);
+    r.Tick(1, 0, kFaithButtonDown, kFaithButtonDown);
+    CHECK(r.s.anim == FaithAnimState::Slide);
+    const FaithStepResult res =
+        TeleportTick(r, {2000, 2000, r.s.origin.z}, YawRotation(180.0f), 1, 180.0f, kFaithButtonDown);
+    CHECK(res.events & kFaithEventPortalContinued);
+    CHECK(r.s.anim == FaithAnimState::Slide);
+    CHECK(r.s.ducked);
+    CHECK(r.s.velocity.x < -100.0f);  // the engine's rotated velocity is kept, not rotated again
+
+    // Falling 500 su into a floor portal and coming out 50 su above another floor: the landing
+    // counts from the exit, not from where the fall started.
+    Rig fall(true, {0, 0, 500});
+    fall.world.Add({2900, 2900, 0}, {3100, 3100, 10});
+    RunUntil(fall, 200, [&] { return fall.s.origin.z < 60.0f; }, 0);
+    TeleportTick(fall, {3000, 3000, 60.0f}, YawRotation(0.0f), 0, 0.0f);
+    RunUntil(fall, 200, [&] { return fall.s.on_ground; }, 0);
+    CHECK(fall.s.on_ground);
+    CHECK(fall.events & kFaithEventLanded);
+    CHECK(!(fall.events & kFaithEventHardLanding));
+}
+
 }  // namespace
 
 int main() {
@@ -721,6 +807,8 @@ int main() {
     TestCoilAndSkillRoll();
     TestTurn180();
     TestParkourReplay();
+    TestPortalKeepsWallRun();
+    TestPortalKeepsSlideAndResetsFall();
     std::printf("%d checks, %d failures\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;
 }

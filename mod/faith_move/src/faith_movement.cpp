@@ -103,10 +103,15 @@ public:
         const float dt = input.dt;
         Internal& in = t.in;
 
-        if (input.portal.teleported) {
-            // The engine moved the origin; the host refreshes it. Only our vectors need rotating (P4 extends this).
-            state.velocity = input.portal.rotation * state.velocity;
-            state.wall_normal = input.portal.rotation * state.wall_normal;
+        // P4: the engine moved and rotated the player; the host refreshed origin and velocity. Rotate only
+        // our own vectors, restart the fall height at the exit, and remember what should keep going.
+        const Mode before_portal = static_cast<Mode>(in.mode);
+        const bool teleported = input.portal.teleported;
+        if (teleported) {
+            const Mat3& rot = input.portal.rotation;
+            state.wall_normal = rot * state.wall_normal;
+            in.last_wall = rot * in.last_wall;
+            in.apex_z = state.origin.z;
         }
 
         in.mode_time += dt;
@@ -139,6 +144,9 @@ public:
         }
 
         const Mode now = static_cast<Mode>(in.mode);
+        if (teleported && now == before_portal && (now == Mode::WallRun || now == Mode::Slide)) {
+            t.result.events |= kFaithEventPortalContinued;
+        }
         const bool on_wall = now == Mode::WallRun || now == Mode::WallClimb || now == Mode::WallClimbTurn ||
                              now == Mode::LedgeHang || now == Mode::LedgeClimb;
         if (!on_wall) state.wall_normal = {};

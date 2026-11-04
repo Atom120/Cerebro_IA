@@ -43,7 +43,8 @@ public:
 
 private:
     bool NearPortal(Vec3 feet) const;
-    void Sync(const source::CMoveData* mv);
+    bool NearestPortalBasis(Vec3 p, Mat3* basis) const;
+    void Sync(const source::CMoveData* mv, PortalTransportHint* hint);
 
     std::unique_ptr<IFaithMovement> move_;
     FaithState state_{};
@@ -52,7 +53,13 @@ private:
     bool enabled_ = false;
     int debug_ = 0;
     bool initialized_ = false;
-    bool last_tick_portal_ = false;
+    bool last_tick_portal_ = false;   // the original movement ran last tick (portal or stuck)
+    bool last_tick_stuck_ = false;
+    bool portal_teleported_ = false;  // the engine teleported the player during those ticks
+    float portal_entry_speed_ = 0.0f; // Faith's speed when the portal ticks began
+    Vec3 portal_in_origin_;           // where the player was just before the teleport
+    Vec3 last_end_origin_;            // player origin when the previous tick ended
+    uint64_t portal_crossings_ = 0;
     double time_ = 0.0;
     uint64_t faith_ticks_ = 0;
     uint64_t portal_ticks_ = 0;

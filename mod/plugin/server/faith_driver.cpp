@@ -116,16 +116,53 @@ bool FaithDriver::NearPortal(Vec3 feet) const {
     return false;
 }
 
-void FaithDriver::Sync(const source::CMoveData* mv) {
+// Basis of the portal closest to p: columns forward, left, up (Source AngleMatrix).
+bool FaithDriver::NearestPortalBasis(Vec3 p, Mat3* basis) const {
+    float best = 1e30f;
+    bool found = false;
+    for (void* portal : portals_) {
+        float o[3], a[3];
+        if (!PortalTransform(portal, o, a)) continue;
+        const float d = aperture_runner::Length(p - Vec3{o[0], o[1], o[2]});
+        if (d >= best) continue;
+        best = d;
+        found = true;
+        const float pi = a[0] * aperture_runner::kDegToRad, ya = a[1] * aperture_runner::kDegToRad;
+        const float sp = std::sin(pi), cp = std::cos(pi), sy = std::sin(ya), cy = std::cos(ya);
+        *basis = Mat3::FromColumns({cp * cy, cp * sy, -sp}, {-sy, cy, 0.0f}, {sp * cy, sp * sy, cp});
+    }
+    return found;
+}
+
+// P4: picks the player back up after ticks the original Portal movement ran.
+//  * Through a portal: Faith's state (wallrun, slide...) is kept, its vectors are rotated by the
+//    portal pair (FaithInput::portal), and the speed she had going in is restored: Portal's ground
+//    friction would otherwise eat up to ~40% of a sprint in the few ticks near the portal.
+//  * Out of a solid (stuck): the state is reset from the engine.
+void FaithDriver::Sync(const source::CMoveData* mv, PortalTransportHint* hint) {
     const Vec3 origin{mv->m_vecAbsOrigin[0], mv->m_vecAbsOrigin[1], mv->m_vecAbsOrigin[2]};
-    const Vec3 velocity{mv->m_vecVelocity[0], mv->m_vecVelocity[1], mv->m_vecVelocity[2]};
-    if (!initialized_ || last_tick_portal_ || aperture_runner::Length(origin - state_.origin) > kTeleportDistance) {
+    Vec3 velocity{mv->m_vecVelocity[0], mv->m_vecVelocity[1], mv->m_vecVelocity[2]};
+    const bool resume = last_tick_portal_ && !last_tick_stuck_;
+    if (!initialized_ || last_tick_stuck_ ||
+        (!resume && aperture_runner::Length(origin - state_.origin) > kTeleportDistance)) {
         move_->Reset(state_, origin, velocity);
         initialized_ = true;
-    } else {
-        state_.origin = origin;
-        state_.velocity = velocity;
+        return;
     }
+    if (resume) {
+        const float speed = aperture_runner::Length(velocity);
+        if (speed > 1.0f && speed < portal_entry_speed_) velocity = velocity * (portal_entry_speed_ / speed);
+        if (portal_teleported_) {
+            Mat3 in_basis, out_basis;
+            if (NearestPortalBasis(portal_in_origin_, &in_basis) && NearestPortalBasis(origin, &out_basis)) {
+                hint->teleported = true;
+                hint->rotation = out_basis * Mat3::Diagonal(-1.0f, -1.0f, 1.0f) * in_basis.Transposed();
+                ++portal_crossings_;
+            }
+        }
+    }
+    state_.origin = origin;
+    state_.velocity = velocity;
 }
 
 void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* mv, ProcessMovementFn original,
@@ -150,18 +187,33 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
 
     const Vec3 feet{mv->m_vecAbsOrigin[0], mv->m_vecAbsOrigin[1], mv->m_vecAbsOrigin[2]};
     engine_origin_ = feet;
+    // The engine teleports through a prop_portal when the player touches it, between ticks (after
+    // ProcessMovement), so a portal crossing shows up as a jump from where the last tick ended.
+    if (last_tick_portal_ && !portal_teleported_ &&
+        aperture_runner::Length(feet - last_end_origin_) > kTeleportDistance) {
+        portal_teleported_ = true;
+        portal_in_origin_ = last_end_origin_;
+    }
     const FaithHostConfig cfg;
     const bool stuck = trace.TraceHull(feet, feet, cfg.hull_mins, cfg.hull_maxs).start_solid;
     if (stuck || NearPortal(feet)) {
         // Let Portal carry the player through the portal (or out of a solid, CheckStuck); pick the
-        // result up next tick.
+        // result up when the player is clear (Sync).
+        if (!last_tick_portal_) {
+            portal_entry_speed_ = initialized_ ? aperture_runner::Length(state_.velocity) : 0.0f;
+            portal_teleported_ = false;
+        }
         if (original) original(game_movement, player, mv);
+        last_end_origin_ = {mv->m_vecAbsOrigin[0], mv->m_vecAbsOrigin[1], mv->m_vecAbsOrigin[2]};
         last_tick_portal_ = true;
+        last_tick_stuck_ = stuck;
         ++portal_ticks_;
         return;
     }
-    Sync(mv);
+    PortalTransportHint hint;
+    Sync(mv, &hint);
     last_tick_portal_ = false;
+    last_tick_stuck_ = false;
 
     FaithInput in;
     in.dt = source_defaults::kTickInterval;
@@ -169,6 +221,7 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
     in.forward_move = Axis(mv->m_flForwardMove);
     in.side_move = Axis(mv->m_flSideMove);
     in.view_angles = {mv->m_vecViewAngles[0], mv->m_vecViewAngles[1], mv->m_vecViewAngles[2]};
+    in.portal = hint;
     in.buttons = MapButtons(mv->m_nButtons);
     in.buttons_pressed = MapButtons(mv->m_nButtons & ~mv->m_nOldButtons);
     if (qa_active) {
@@ -185,12 +238,13 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
         mv->m_vecVelocity[i] = (&state_.velocity.x)[i];
         mv->m_vecAbsOrigin[i] = (&state_.origin.x)[i];
     }
+    last_end_origin_ = state_.origin;
 
     if (debug_ >= 2 || (debug_ == 1 && (faith_ticks_ % 33 == 0 || r.events))) {
-        ApertureRunnerServerPlugin::LogMsg("[AR] t=%.2f anim=%s vel2d=%.1f vz=%.1f suelo=%d pos=(%.1f %.1f %.1f) eventos=0x%x\n",
+        ApertureRunnerServerPlugin::LogMsg("[AR] t=%.2f anim=%s vel2d=%.1f vz=%.1f suelo=%d pos=(%.1f %.1f %.1f) eventos=0x%x yaw=%.1f\n",
                                            time_, SequenceName(state_.anim), state_.speed_2d, state_.velocity.z,
                                            state_.on_ground ? 1 : 0, state_.origin.x, state_.origin.y,
-                                           state_.origin.z, r.events);
+                                           state_.origin.z, r.events, in.view_angles.y);
     }
 }
 
@@ -205,11 +259,11 @@ void FaithDriver::SetQaInput(float forward, float side, uint32_t buttons, int ti
 void FaithDriver::PrintStatus() const {
     ApertureRunnerServerPlugin::LogMsg(
         "[AR] ar_enable=%d anim=%s vel2d=%.1f vz=%.1f suelo=%d agachada=%d pos=(%.1f %.1f %.1f) motor=(%.1f %.1f %.1f) "
-        "ticks_faith=%llu ticks_portal=%llu portales=%u eventos_acumulados=0x%x\n",
+        "ticks_faith=%llu ticks_portal=%llu portales=%u cruces=%llu eventos_acumulados=0x%x\n",
         enabled_ ? 1 : 0, SequenceName(state_.anim), state_.speed_2d, state_.velocity.z, state_.on_ground ? 1 : 0,
         state_.ducked ? 1 : 0, state_.origin.x, state_.origin.y, state_.origin.z, engine_origin_.x, engine_origin_.y,
         engine_origin_.z, faith_ticks_, portal_ticks_,
-        static_cast<unsigned>(portals_.size()), last_events_);
+        static_cast<unsigned>(portals_.size()), portal_crossings_, last_events_);
 }
 
 }  // namespace ar
