@@ -19,6 +19,13 @@
   - B2: los 9 CSV de `qa/telemetria/` son **sintéticos** (salen de `--generate-reference` con las constantes de `ar::me_reference`). Se añadió un aviso en su README: no sirven para ajustar el movimiento hasta que haya trazas grabadas en vivo.
   - **Z1 probada en Portal (2026-11-03, build 19017868):** el `console.log` muestra `Plugins: found file "aperture_runner.vdf"`, `Loading unsigned module addons\aperture_runner` y, en `plugin_print`, `0: "ApertureRunner: Mirror's Edge movement in Portal 1 (testchmb_a_00)"`. `testchmb_a_00` carga sin cierres; los errores del log son los mismos del juego sin el mod. No hizo falta `-insecure`. `printf` no sale en la consola de Source; en Z2 conviene usar `Msg`/`ConColorMsg` de `tier0.dll`. **Hito H1 parcial: la DLL carga.**
 
+## ⚠️ 2026-11-04 (noche): H2 cerrado y H3 casi completo (Sebas) — NO rehacer ni modificar sin hablar con Sebas
+- **P4:** el contrato pasó a v3. El host refresca el origen y la velocidad tras un teletransporte, y la librería solo gira sus propios vectores. Al cruzar un portal se conservan el wallrun o el slide y la velocidad de entrada (Portal frenaba hasta un ~40%). Detección de cruces entre ticks (`cruces=` en `ar_status`).
+- **G4, parte de cámara:** `mod/plugin/client/client_view.*` (`IVEngineClient`, `VEngineClient014`, ranuras 19/20 verificadas). `mod/camera` se aplica a la vista: giro de 180°, inclinación en el wallrun y sacudida al aterrizar. `ar_camera 0|1`.
+- **Casco agachado en el motor:** en los ticks de Faith también corre el movimiento original con `IN_DUCK` según Faith (efectos secundarios: casco, `FL_DUCKING`, altura de la vista, entidad de suelo, pasos), y después se escribe encima la posición y la velocidad de Faith.
+- **QA:** `qa/scripts/h3_smoke.ps1` da **9/9 PASS**: wallrun real, inclinación de -13.4°, wallclimb de 47 su, giro de 180°, vista agachada (192 → 156), slide, portal (192.8 → 194.0 su/s). H2 sigue en 9/9. `ar_qa_input` acepta un tick de pulsación.
+- **Bloqueado:** brazos de Faith (G4) ← A3 ← Mirror's Edge instalado (Antonio). Sin ME tampoco se pueden hacer B2b, P5 ni A1–A4.
+
 ## ⚠️ 2026-11-04: Sebas hizo las tareas pendientes de Zarek, Gonzalo y Benja (NO rehacer ni modificar sin hablar con Sebas)
 - **Z5 + Z2:** con `ar_enable 1`, Faith mueve al jugador en Portal (`mod/plugin/server/faith_driver.*`).
   - Comandos de consola: `ar_enable [0|1]`, `ar_status`, `ar_debug [0|1|2]` y `ar_qa_input <adelante> <lado> <botones j/d/t/w> <ticks>`.

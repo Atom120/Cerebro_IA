@@ -15,13 +15,14 @@ tags: [plan, equipo, apertureRunner, antigravity]
 > | P1, P2, P3 | movimiento de Faith (suelo + parkour), 212 pruebas | `mod/faith_move/` |
 > | Z2, Z5 (+ correcciones de Z4) | `ar_enable 1` mueve al jugador con Faith; portales híbridos; comandos `ar_*` | `mod/plugin/server/`, `docs/contratos/source_2013_abi.md` |
 > | G1, G3 (G2 no aplica) | estudio de `client.dll` (`cl_predict 0`), hook de predicción y módulo de cámara con 30 pruebas | `mod/plugin/client/`, `mod/camera/`, `docs/contratos/portal_client_offsets.md` |
-> | B3 (H1 y H2) | prueba automática de H2 en Portal (9/9 PASS) e informes | `qa/scripts/h2_smoke.ps1`, `qa/resultados/H1.md`, `qa/resultados/H2.md` |
+> | B3 (H1, H2 y H3) | pruebas automáticas en Portal: H2 9/9 y H3 9/9 PASS, e informes | `qa/scripts/h2_smoke.ps1`, `qa/scripts/h3_smoke.ps1`, `qa/resultados/` |
+> | P4, G4 (cámara), casco agachado | inercia y parkour a través de portales; giro de 180° e inclinación en la vista; `FL_DUCKING` en el motor | `mod/faith_move/`, `mod/plugin/` |
 >
 > **Lo que queda de cada uno:**
-> - **Zarek:** casco agachado en el motor (`FL_DUCKING`) y el wallrun a través de portales, junto con Peña (P4). Ver la sección «Qué no cubre» de `qa/resultados/H2.md`.
-> - **Gonzalo:** G4, aplicar `mod/camera` a la vista (incluido el giro de 180°) y dibujar los brazos y el cuerpo de Faith. Espera al modelo de Antonio (A3); antes puede usar uno provisional.
+> - **Zarek:** Z-tareas al día. Pendiente opcional: S5 con Sebas (instalador), y bordes/vault en el mapa (ver `qa/resultados/H3.md`).
+> - **Gonzalo:** G4, los brazos y el cuerpo de Faith (la cámara ya está aplicada a la vista). Espera al modelo de Antonio (A3); antes puede usar uno provisional. También FOV y balanceo en la vista (hay que enganchar el cálculo de la vista del cliente).
 > - **Benja:** B2b (grabar trazas reales de Mirror's Edge con `--record`; necesita ME instalado) y B5 (vídeo, H4).
-> - **Peña:** P4 (portales en `faith_move`) y P5 (ajuste con trazas reales).
+> - **Peña:** P5 (ajuste con trazas reales; P4 ya está hecho).
 > - **Antonio:** A1–A4 (modelo de Faith).
 
 > **Lee esto completo una vez. Después solo busca tu nombre (`Ctrl+F`).**
@@ -303,7 +304,7 @@ No cambies la lógica ni los contratos de mod/include/. Explica cada cambio en u
 | P1 ✅ (Sebas, 2026-11-04) | Esqueleto de la librería + pruebas con un `ITraceProvider` falso (suelo plano, pared, borde, portal). Puedes empezar con un header borrador y cambiarlo cuando S2 se fusione | 🟡 (S2) | Librería que compila y pasa pruebas |
 | P2 ✅ (Sebas, 2026-11-04) | Suelo: caminar, correr, **sprint con inercia** (157.5 → 283.5 u/s), aceleración, salto (248), gravedad de Faith (≈646), caer, aterrizaje suave y duro | 🟢 tras P1 | Pruebas de cada valor de la tabla de la sección 6 |
 | P3 ✅ (Sebas, 2026-11-04) | Parkour: wallrun izq./der., wallclimb, agarrar borde y subir, slide, coil (encoger en el aire), Skill Roll, giro de 180° | 🟢 tras P2 | Máquina de estados + pruebas |
-| P4 | Cruce de portales: conservar la velocidad y continuar el wallrun al pasar, usando `core/math.h` (`T = M_out · R_π · M_in⁻¹`) | 🟡 (S1, para tener `core/` en `mod/`) | Pruebas con portales en suelo y pared |
+| P4 ✅ (Sebas, 2026-11-04) | Cruce de portales: conservar la velocidad y continuar el wallrun al pasar, usando `core/math.h` (`T = M_out · R_π · M_in⁻¹`) | 🟡 (S1, para tener `core/` en `mod/`) | Pruebas con portales en suelo y pared |
 | P5 | Ajuste fino comparando con las grabaciones reales de Mirror's Edge (CSV de Benja) | 🔴 (B2) | Tabla de ajuste + gráficas |
 
 **Referencias:** `tnrjns/faith-runner` (MIT): valores y lógica de referencia, se puede citar. `docs/` de Benja: conversión de unidades.
@@ -354,7 +355,7 @@ No edites código: entrega una tabla.
 | G1 ✅ (Sebas, 2026-11-04) | Estudio: la copia de `GameMovement001` en `client.dll` (predicción), el hook de `CreateMove` y cómo engancharlo desde la misma DLL (es un solo proceso). Comprobar los offsets de `client.dll` que dejó Benja en `LESSONS.md` contra tu build | 🟢 | `docs/contratos/portal_client_offsets.md` |
 | G2 ⚪ no aplica con `cl_predict 0` (Sebas, 2026-11-04) | La predicción del cliente ejecuta el mismo `faith_move` que el servidor, sin tirones | 🔴 (Z3, P2) | Hito H2 |
 | G3 ✅ (Sebas, 2026-11-04) | Módulo de cámara en `mod/camera/` (C++ puro, con pruebas): enderezado del roll `exp(-λ·dt)`, balanceo al correr, subida del FOV con la velocidad, sacudida al aterrizar y al rodar | 🟡 (S2, para `FaithState`) | Módulo + pruebas |
-| G4 | Dibujar los brazos y el cuerpo de Faith en primera persona con el modelo de Antonio. Mientras no esté, usar un modelo provisional de Portal | 🔴 (A3) para el modelo final; 🟢 con el provisional | Hito H3 |
+| G4 🟡 cámara ✅ (Sebas, 2026-11-04); brazos ⛔ esperan A3 | Dibujar los brazos y el cuerpo de Faith en primera persona con el modelo de Antonio. Mientras no esté, usar un modelo provisional de Portal | 🔴 (A3) para el modelo final; 🟢 con el provisional | Hito H3 |
 
 **Agentes:**
 
@@ -447,7 +448,7 @@ Compila con <Portal>/bin/studiomdl.exe -game <Portal>/portal. Máximo 128 huesos
 |---|---|---|---|
 | B1 ✅ (Benja) | **Contrato del mapa** `testchmb_a_00`: partir de `docs/contratos/testchmb_a_00_entidades.txt` y hacer una checklist de lo que el jugador debe poder activar (botones, caja, puertas, temporizadores de portales, detectores, desintegrador, escenas, ascensor, cambio de nivel), en orden de partida | 🟢 **Lo necesitan Zarek (Z3) y QA. Prioridad, semana 1** | `docs/contratos/testchmb_a_00_checklist.md` |
 | B2 🟡 (Benja; CSV sintéticos, falta grabar en vivo) | Grabador de solo lectura en Mirror's Edge: posición, velocidad, `MovementState` (`ATdPawn`+0x04FE, verificar en GOG) y tiempo a 60–120 Hz → CSV. Grabar: arrancar a sprint, salto, wallrun izq./der., wallclimb, borde, slide, caída dura, Skill Roll. Puede reutilizar `GuestBridge` de `mod/core/` | 🟢 (`core` llega con S1; antes, un ejecutable suelto basado en `lean_external_bridge.cpp`) | CSV en `qa/telemetria/` + script |
-| B3 ✅ H1 y H2 (Sebas, 2026-11-04) | Matriz de pruebas en Portal: cada punto de la checklist con `ar_enable 0` y `1`, en cada hito. Grabar demos (`record`) | 🔴 (Z3) | `qa/resultados/H1.md`, `H2.md`… |
+| B3 ✅ H1, H2 y H3 (Sebas, 2026-11-04) | Matriz de pruebas en Portal: cada punto de la checklist con `ar_enable 0` y `1`, en cada hito. Grabar demos (`record`) | 🔴 (Z3) | `qa/resultados/H1.md`, `H2.md`… |
 | B4 ✅ (Benja) | Marcar como **archivadas** las skills `portal-me-*` (añadir `status: archivado` en su descripción, sin borrarlas) y dejar en `docs/artifacts/` una nota de qué se reutiliza | 🟢 | PR pequeño |
 | B5 | Vídeo final del nivel completo | 🔴 (H4) | Vídeo |
 

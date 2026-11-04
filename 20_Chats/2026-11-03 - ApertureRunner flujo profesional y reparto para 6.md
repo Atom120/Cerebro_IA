@@ -95,6 +95,7 @@ tags: [chat, apertureRunner, mod, investigacion, equipo, antigravity, gemini, so
   - **B3:** prueba automática de H2, 9/9 PASS. Incluye sprint, salto, portal y ascensor.
   - **Bloqueado:** G4 (falta el modelo de Antonio), B2b (falta Mirror's Edge) y B5 (H4).
   - **Truco:** la entrada para las pruebas se inyecta con `ar_qa_input`, porque Source suelta `+forward` si la ventana pierde el foco.
+- 2026-11-04 (noche): H2 cerrado y H3 casi completo. P4 (inercia por portales), cámara aplicada a la vista (giro de 180° e inclinación), casco agachado en el motor y QA de H3 9/9 en Portal. Lo único que bloquea el resto (A1–A4, brazos de G4, B2b, P5) es instalar Mirror's Edge.
 
 ## Relacionado
 - [[Inicio]]

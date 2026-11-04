@@ -3,6 +3,7 @@
 #include "movement_hook.h"
 #include "faith_driver.h"
 #include "client/client_movement_hook.h"
+#include "client/client_view.h"
 #include <cstdarg>
 #include <cstdlib>
 #include <cstdio>
@@ -95,6 +96,10 @@ bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn interfaceFactory
     // G1: copia de prediccion del cliente (client.dll), en el mismo proceso.
     LogMsg(ClientMovementHook::Install() ? "[ApertureRunner] Prediccion del cliente (client.dll GameMovement001) enganchada (G1).\n"
                                          : "[ApertureRunner] client.dll no disponible: sin hook de prediccion.\n");
+    // G4: angulos de la vista del jugador local (camara de Faith).
+    if (ClientView::Init()) {
+        LogMsg("[ApertureRunner] Vista del cliente disponible (%s) (G4).\n", ClientView::Version());
+    }
 
     is_loaded_ = true;
     return true;
@@ -209,13 +214,23 @@ source::PluginResult ApertureRunnerServerPlugin::ClientCommand(void* /*pEntity*/
     }
     if (std::strcmp(cmd, "ar_status") == 0) {
         faith.PrintStatus();
+        float view[3] = {};
+        if (ClientView::GetViewAngles(view)) {
+            LogMsg("[AR] vista=(%.1f %.1f %.1f) via %s\n", view[0], view[1], view[2], ClientView::Version());
+        }
+        return source::kPluginStop;
+    }
+    if (std::strcmp(cmd, "ar_camera") == 0) {  // ar_camera [0|1]: camara de Faith en la vista (G4)
+        faith.SetCamera(!arg || std::strcmp(arg, "0") != 0);
         return source::kPluginStop;
     }
     if (std::strcmp(cmd, "ar_debug") == 0) {
         faith.SetDebug(arg ? std::atoi(arg) : 1);
         return source::kPluginStop;
     }
-    // ar_qa_input <forward -1..1> <side -1..1> <buttons: j=Up d=Down t=Turn180 w=Walk, - = none> <ticks>
+    // ar_qa_input <forward -1..1> <side -1..1> <buttons: j=Up d=Down t=Turn180 w=Walk, - = none> <ticks> [press_tick]
+    // The buttons are pressed on press_tick (default 0) and held until the end: one command can run
+    // and then jump/slide at an exact tick, independent of console latency.
     if (std::strcmp(cmd, "ar_qa_input") == 0 && CommandArgc(args) >= 5) {
         uint32_t buttons = 0;
         for (const char* c = CommandArg(args, 3); *c; ++c) {
@@ -225,7 +240,8 @@ source::PluginResult ApertureRunnerServerPlugin::ClientCommand(void* /*pEntity*/
             if (*c == 'w') buttons |= kFaithButtonWalk;
         }
         faith.SetQaInput(static_cast<float>(std::atof(CommandArg(args, 1))), static_cast<float>(std::atof(CommandArg(args, 2))),
-                         buttons, std::atoi(CommandArg(args, 4)));
+                         buttons, std::atoi(CommandArg(args, 4)),
+                         CommandArgc(args) >= 6 ? std::atoi(CommandArg(args, 5)) : 0);
         return source::kPluginStop;
     }
     return source::kPluginContinue;

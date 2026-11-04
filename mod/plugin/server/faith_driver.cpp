@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstring>
 
+#include "client/client_view.h"
 #include "server_plugin.h"
 
 namespace ar {
@@ -174,15 +175,17 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
     if (!move_) move_ = CreateFaithMovement(FaithHostConfig{});
 
     // QA input override: written into CMoveData so the original movement (portal ticks) sees it too.
+    // The buttons are held from qa_press_tick_ on and count as pressed on that tick only.
     const bool qa_active = qa_ticks_left_ > 0;
-    const uint32_t qa_pressed = qa_first_tick_ ? qa_buttons_ : 0u;
+    const uint32_t qa_held = qa_active && qa_tick_ >= qa_press_tick_ ? qa_buttons_ : 0u;
+    const uint32_t qa_pressed = qa_active && qa_tick_ == qa_press_tick_ ? qa_buttons_ : 0u;
     if (qa_active) {
         --qa_ticks_left_;
-        qa_first_tick_ = false;
+        ++qa_tick_;
         mv->m_flForwardMove = qa_forward_ * source::kForwardSpeed;
         mv->m_flSideMove = qa_side_ * source::kForwardSpeed;
-        if (qa_buttons_ & kFaithButtonUp) mv->m_nButtons |= source::kInJump;
-        if (qa_buttons_ & kFaithButtonDown) mv->m_nButtons |= source::kInDuck;
+        if (qa_held & kFaithButtonUp) mv->m_nButtons |= source::kInJump;
+        if (qa_held & kFaithButtonDown) mv->m_nButtons |= source::kInDuck;
     }
 
     const Vec3 feet{mv->m_vecAbsOrigin[0], mv->m_vecAbsOrigin[1], mv->m_vecAbsOrigin[2]};
@@ -225,7 +228,7 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
     in.buttons = MapButtons(mv->m_nButtons);
     in.buttons_pressed = MapButtons(mv->m_nButtons & ~mv->m_nOldButtons);
     if (qa_active) {
-        in.buttons = qa_buttons_;
+        in.buttons = qa_held;
         in.buttons_pressed = qa_pressed;
     }
 
@@ -234,26 +237,53 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
     ++faith_ticks_;
     last_events_ |= r.events;
 
+    // The original movement still runs for the engine's side effects (duck hull + FL_DUCKING + eye
+    // height, ground entity, footsteps), with IN_DUCK matching Faith; then Faith's result replaces
+    // the position and velocity it computed.
+    if (original && engine_side_effects_) {
+        mv->m_nButtons = (mv->m_nButtons & ~source::kInDuck) | (state_.ducked ? source::kInDuck : 0);
+        original(game_movement, player, mv);
+    }
     for (int i = 0; i < 3; ++i) {
         mv->m_vecVelocity[i] = (&state_.velocity.x)[i];
         mv->m_vecAbsOrigin[i] = (&state_.origin.x)[i];
     }
     last_end_origin_ = state_.origin;
+    ApplyCamera(r);
 
     if (debug_ >= 2 || (debug_ == 1 && (faith_ticks_ % 33 == 0 || r.events))) {
-        ApertureRunnerServerPlugin::LogMsg("[AR] t=%.2f anim=%s vel2d=%.1f vz=%.1f suelo=%d pos=(%.1f %.1f %.1f) eventos=0x%x yaw=%.1f\n",
+        ApertureRunnerServerPlugin::LogMsg("[AR] t=%.2f anim=%s vel2d=%.1f vz=%.1f suelo=%d pos=(%.1f %.1f %.1f) eventos=0x%x yaw=%.1f roll=%.1f\n",
                                            time_, SequenceName(state_.anim), state_.speed_2d, state_.velocity.z,
                                            state_.on_ground ? 1 : 0, state_.origin.x, state_.origin.y,
-                                           state_.origin.z, r.events, in.view_angles.y);
+                                           state_.origin.z, r.events, in.view_angles.y, in.view_angles.z);
     }
 }
 
-void FaithDriver::SetQaInput(float forward, float side, uint32_t buttons, int ticks) {
+// G4 (camera part): mod/camera drives the local player's view through the client engine. Yaw gets
+// the 180 turn as per-tick deltas, roll is set absolutely (wallrun lean), and pitch gets the landing
+// shake as a delta that is taken back next tick. The Skill Roll somersault is left out: the engine
+// clamps view pitch to +-89 degrees.
+void FaithDriver::ApplyCamera(const FaithStepResult& r) {
+    const camera::CameraOutput co =
+        camera::UpdateCamera(camera_, state_, r.events, r.impact_speed, source_defaults::kTickInterval);
+    if (!camera_enabled_ || !ClientView::Ready()) return;
+    float view[3];
+    if (!ClientView::GetViewAngles(view)) return;
+    const float shake = camera_.roll_left > 0.0f ? 0.0f : std::clamp(co.pitch_offset, -12.0f, 12.0f);
+    view[0] += shake - applied_pitch_;
+    view[1] += co.yaw_delta;
+    view[2] = co.roll;
+    applied_pitch_ = shake;
+    ClientView::SetViewAngles(view);
+}
+
+void FaithDriver::SetQaInput(float forward, float side, uint32_t buttons, int ticks, int press_tick) {
     qa_forward_ = std::clamp(forward, -1.0f, 1.0f);
     qa_side_ = std::clamp(side, -1.0f, 1.0f);
     qa_buttons_ = buttons;
     qa_ticks_left_ = std::max(0, ticks);
-    qa_first_tick_ = true;
+    qa_tick_ = 0;
+    qa_press_tick_ = std::max(0, press_tick);
 }
 
 void FaithDriver::PrintStatus() const {

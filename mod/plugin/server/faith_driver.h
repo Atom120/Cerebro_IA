@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "ar/faith_movement.h"
+#include "camera/faith_camera.h"
 #include "source_interfaces.h"
 
 namespace ar {
@@ -35,19 +36,26 @@ public:
                  const ITraceProvider& trace);
 
     // QA (B3): for `ticks` ticks use this input instead of the player's, so automated tests do not
-    // depend on the Portal window having keyboard focus. buttons: FaithButton bits, pressed on tick 1.
-    void SetQaInput(float forward, float side, uint32_t buttons, int ticks);
+    // depend on the Portal window having keyboard focus. buttons: FaithButton bits, pressed on press_tick and held after it.
+    void SetQaInput(float forward, float side, uint32_t buttons, int ticks, int press_tick = 0);
 
     void PrintStatus() const;
     size_t PortalCount() const { return portals_.size(); }
+    void SetCamera(bool enabled) { camera_enabled_ = enabled; }
 
 private:
+    void ApplyCamera(const FaithStepResult& r);
+
     bool NearPortal(Vec3 feet) const;
     bool NearestPortalBasis(Vec3 p, Mat3* basis) const;
     void Sync(const source::CMoveData* mv, PortalTransportHint* hint);
 
     std::unique_ptr<IFaithMovement> move_;
     FaithState state_{};
+    camera::CameraState camera_{};
+    bool camera_enabled_ = true;
+    bool engine_side_effects_ = true;  // run the original movement too (duck hull, ground, footsteps)
+    float applied_pitch_ = 0.0f;  // landing-shake pitch currently added to the view
     Vec3 engine_origin_;  // last origin the engine passed in (for ar_status)
     std::vector<void*> portals_;  // IServerUnknown* of each prop_portal
     bool enabled_ = false;
@@ -68,7 +76,8 @@ private:
     float qa_side_ = 0.0f;
     uint32_t qa_buttons_ = 0;
     int qa_ticks_left_ = 0;
-    bool qa_first_tick_ = false;
+    int qa_tick_ = 0;        // ticks of the current QA input already used
+    int qa_press_tick_ = 0;  // tick on which the QA buttons are pressed
 };
 
 }  // namespace ar
