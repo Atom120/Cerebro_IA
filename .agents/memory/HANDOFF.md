@@ -19,6 +19,28 @@
   - B2: los 9 CSV de `qa/telemetria/` son **sintéticos** (salen de `--generate-reference` con las constantes de `ar::me_reference`). Se añadió un aviso en su README: no sirven para ajustar el movimiento hasta que haya trazas grabadas en vivo.
   - **Z1 probada en Portal (2026-11-03, build 19017868):** el `console.log` muestra `Plugins: found file "aperture_runner.vdf"`, `Loading unsigned module addons\aperture_runner` y, en `plugin_print`, `0: "ApertureRunner: Mirror's Edge movement in Portal 1 (testchmb_a_00)"`. `testchmb_a_00` carga sin cierres; los errores del log son los mismos del juego sin el mod. No hizo falta `-insecure`. `printf` no sale en la consola de Source; en Z2 conviene usar `Msg`/`ConColorMsg` de `tier0.dll`. **Hito H1 parcial: la DLL carga.**
 
+## Nota semanal S3 — semana 1 (2026-11-04, Sebas)
+**Build de integración:** `main` en `f5872f2`, compilado desde cero (Win32/x86, Release). Sin avisos; 4/4 pruebas OK (`test_contracts`, `test_core`, `test_plugin_load`, `test_me_telemetry`).
+
+**Prueba en Portal (build 19017868):**
+- El plugin carga y el hook `ProcessMovement` se instala en `testchmb_a_00`.
+- Unos 4 minutos de juego (16.500 ticks interceptados) sin cierres.
+- `changelevel testchmb_a_01` (enviado con `hl2.exe -hijack`): `LevelShutdown` → `LevelInit: testchmb_a_01` → `ServerActivate`, y el hook sigue interceptando (18.500 ticks en total).
+- Detalle para Zarek: `LevelShutdown` llega dos veces en cada cambio de mapa (la segunda con el nombre vacío) y una vez al arrancar. Es inofensivo, pero conviene ignorarlo si no hay mapa activo antes de liberar estado en Z5.
+
+| Persona | Hecho | En curso / siguiente | Estado |
+|---|---|---|---|
+| Sebas | S0, S1, S2, S3 (semana 1), S4 (PRs #1–#6) | S4 continuo; S3 cada semana | 🟢 |
+| Zarek | Z1, Z3 | **Z2 incompleta**: solo `GameMovement001`; faltan `PlayerInfoManager002`, `VEngineServer021` y documentar los campos de `CPortal_Player`. Luego Z4 (`ITraceProvider` real) | 🟢 |
+| Peña | — (sin ramas ni PRs) | **P1 y P2: ruta crítica de H2.** Sin `faith_move`, Z5 y G2 no pueden empezar | 🔴 atención |
+| Gonzalo | — (rama `G1` creada, vacía) | G1 (predicción en `client.dll`): falta para cerrar del todo H1. G3 (cámara) se puede hacer en paralelo | 🟡 |
+| Antonio | — (sin ramas ni PRs) | A1 (necesita Mirror's Edge instalado + UEViewer), A2 | 🟡 |
+| Benja | B1, B2 (CSV sintéticos), B3 (H1, provisional), B4 | Aclarar los tiempos de `H1.md` y adjuntar el log crudo; grabar trazas reales con `--record` (B2b) | 🟢 |
+
+**Hitos:** H1 "la DLL vive": servidor ✅, QA ✅ (provisional), cliente ⏳ (G1). H2 bloqueado por P2 + Z4 → Z5.
+
+**Para la semana 2:** Peña sube P1 cuanto antes (aunque sea el esqueleto con pruebas de `BoxWorld`). Gonzalo sube G1. Zarek cierra Z2 y empieza Z4. Ramas con el formato `nombre/ID-descripcion` (no `G1` a secas). Nada directo a `main`.
+
 ## Próximos Pasos (semana 1)
 - **Hito H1**: Completado en servidor y QA (`Z1`, `Z3`, `B1`, `B3`). Pendiente G1 de Gonzalo (hook de predicción en `client.dll`) para cerrar completamente la paridad cliente-servidor de H1.
 - Peña: P1 (`mod/faith_move/` núcleo puro), P2 (conectar `ProcessMovement` con `faith_move`), P4 (pruebas deterministas con `BoxWorld`).

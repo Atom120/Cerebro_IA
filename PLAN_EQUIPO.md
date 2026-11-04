@@ -218,7 +218,7 @@ Al terminar la sesión: *"prepara el handoff de mi tarea, añade mi línea a SES
 | S0 | Subir los agentes de este plan a `.agents/agents/` y las skills comunes (`build-x86`, `launch-portal-test`) | 🟢 | Archivos en `.agents/` |
 | S1 | Crear `mod/`: mover el núcleo de `aperture-runner-mashup` a `mod/core/`, `CMakeLists.txt` para Win32, CI (GitHub Actions, Windows, x86) | 🟢 | `main` compila en CI |
 | S2 | **Contratos** en `mod/include/ar/`: `faith_movement.h` (`FaithInput`, `FaithState`, `FaithAnimState`, `IFaithMovement`), `trace_provider.h` (`ITraceProvider`), `units.h`, y `docs/contratos/asset_manifest.json` | 🟢 **Bloquea a Z3, Z4, P1, G3 y A2. Prioridad máxima, día 1–2** | Headers fusionados en `main` |
-| S3 | Build de integración semanal y prueba en Portal | 🔴 (Z3) | Nota de estado semanal en `HANDOFF.md` |
+| S3 | Build de integración semanal y prueba en Portal (semana 1 ✅ 2026-11-04) | 🔴 (Z3) | Nota de estado semanal en `HANDOFF.md` |
 | S4 | Revisar y fusionar PRs; actualizar `DECISIONS.md` si cambia algo | continuo | — |
 | S5 | Instalador final (DLL + `addons/aperture_runner.vdf` + extractor) | 🔴 (Z5, A4) | Release |
 

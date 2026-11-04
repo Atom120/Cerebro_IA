@@ -80,6 +80,7 @@ tags: [chat, apertureRunner, mod, investigacion, equipo, antigravity, gemini, so
 - Lección: `git pull --rebase` después de `git merge --no-ff` aplana los merges y cambia los SHA, así que GitHub no marca los PRs como fusionados. Si `main` ya está al día, hay que subir sin rebase, o fusionar desde GitHub.
 - Prueba real de Z1: Portal (build 19017868) carga `aperture_runner.dll` desde `portal/addons`; `plugin_print` la lista y `testchmb_a_00` abre sin cierres. Truco: `-condebug` escribe la consola en `portal/console.log` y `+plugin_print` lista los plugins cargados.
 - Z3 de Zarek (PR #5; no hubo PR aparte para Z2, iba incluido): hook de vtable sobre `IGameMovement::ProcessMovement` (ranura 1 en MSVC) obtenido por `GameMovement001`, en modo passthrough. Probado en Portal: intercepta los ticks reales y el juego sigue estable. Se corrigió la prueba para que no se salte la vtable.
+- 2026-11-04: PR #6 (B3, QA H1) integrado con reservas (tiempos que no cuadran con B1). S3 semana 1: build limpia 4/4; en Portal el hook sobrevive a `changelevel` hacia `testchmb_a_01`. Truco: `hl2.exe -hijack -game portal +changelevel <mapa>` manda comandos al Portal abierto; un `alias` con 100 `wait` es demasiado largo para Source. Peña, Gonzalo y Antonio aún no han subido nada; P1/P2 es la ruta crítica de H2.
 
 ## Relacionado
 - [[Inicio]]
