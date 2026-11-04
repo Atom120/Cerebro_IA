@@ -82,6 +82,10 @@ tags: [chat, apertureRunner, mod, investigacion, equipo, antigravity, gemini, so
 - Z3 de Zarek (PR #5; no hubo PR aparte para Z2, iba incluido): hook de vtable sobre `IGameMovement::ProcessMovement` (ranura 1 en MSVC) obtenido por `GameMovement001`, en modo passthrough. Probado en Portal: intercepta los ticks reales y el juego sigue estable. Se corrigió la prueba para que no se salte la vtable.
 - 2026-11-04: PR #6 (B3, QA H1) integrado con reservas (tiempos que no cuadran con B1). S3 semana 1: build limpia 4/4; en Portal el hook sobrevive a `changelevel` hacia `testchmb_a_01`. Truco: `hl2.exe -hijack -game portal +changelevel <mapa>` manda comandos al Portal abierto; un `alias` con 100 `wait` es demasiado largo para Source. Peña, Gonzalo y Antonio aún no han subido nada; P1/P2 es la ruta crítica de H2.
 - 2026-11-04: Sebas hizo P1 y P2 porque Peña no podía. `mod/faith_move/` tiene el movimiento de suelo de Faith (sprint con inercia, salto, gravedad, aterrizajes, escalones y coyote time), con 104 pruebas sobre `BoxWorld` y repetición determinista. Para comprobar que las pruebas sirven, se cambiaron valores a propósito: las de la rampa de sprint no fallaban porque comparaban contra el propio parámetro, así que se añadieron comprobaciones absolutas.
+- 2026-11-04: Sebas hizo P3: parkour como máquina de estados en `faith_move` (wallrun, wallclimb, bordes, vault, slide, coil, Skill Roll y giro de 180°), con 212 pruebas. El contrato pasó a v2 con `kFaithEventTurn180`, porque la librería no puede girar la vista y el host tiene que hacerlo. Lecciones:
+  - el coil sube el origen 36 su, y eso no debe contar como altura de caída;
+  - los temporizadores en float terminan un tick tarde si no se redondean;
+  - las pruebas de mutación encontraron 3 pruebas que no comprobaban nada (cooldown del borde, ápice del coil, paredes físicas).
 
 ## Relacionado
 - [[Inicio]]
