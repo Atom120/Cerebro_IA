@@ -365,7 +365,7 @@ int main(int argc, char* argv[]) {
     plugin->ServerActivate(nullptr, 0, 1);
     plugin->GameFrame(true);
 
-    // Invocar varios ticks mas
+    // Invocar varios ticks mas en passthrough (ar_enable = 0)
     for (int i = 0; i < 10; ++i) {
         gm->ProcessMovement(&dummyPlayer, &dummyMove);
     }
@@ -375,6 +375,62 @@ int main(int argc, char* argv[]) {
         FreeLibrary(hModule);
         return 1;
     }
+
+    // 6b. Validar Z5 (ar_enable 1 activa FaithDriver y actualiza CMoveData)
+    std::printf("[test_plugin_load] Verificando integracion de Z5 (ar_enable y FaithDriver)...\n");
+    struct FakeCommand {
+        int argc = 0;
+        char pad[ar::source::kCommandArgvOffset - sizeof(int)] = {};
+        const char* argv[16] = {};
+    };
+    static_assert(offsetof(FakeCommand, argv) == ar::source::kCommandArgvOffset, "FakeCommand layout mismatch");
+
+    FakeCommand cmdEnable;
+    cmdEnable.argc = 2;
+    cmdEnable.argv[0] = "ar_enable";
+    cmdEnable.argv[1] = "1";
+    plugin->ClientCommand(nullptr, &cmdEnable);
+
+    // Preparar CMoveData valido con avance frontal
+    ar::source::CMoveData mvFaith = {};
+    mvFaith.m_vecAbsOrigin[0] = 0.0f;
+    mvFaith.m_vecAbsOrigin[1] = 0.0f;
+    mvFaith.m_vecAbsOrigin[2] = 50.0f;  // En el aire sobre el piso Z=0
+    mvFaith.m_flForwardMove = 450.0f;   // +forward a maxima velocidad
+
+    const int calls_before_z5 = g_mockGameMovement.process_movement_calls;
+    gm->ProcessMovement(&dummyPlayer, &mvFaith);
+
+    // Con ar_enable 1, ProcessMovement debe haber ejecutado tanto a Faith como al original (side-effects)
+    if (g_mockGameMovement.process_movement_calls != calls_before_z5 + 1) {
+        std::fprintf(stderr, "[test_plugin_load] Error: Z5 no ejecuto el side-effect de movimiento original\n");
+        FreeLibrary(hModule);
+        return 1;
+    }
+
+    // Faith debe haber generado velocidad hacia adelante en X (viewangles pitch=0, yaw=0)
+    if (mvFaith.m_vecVelocity[0] <= 0.0f) {
+        std::fprintf(stderr, "[test_plugin_load] Error: Z5 no genero aceleracion frontal de Faith (vx=%f)\n",
+                     mvFaith.m_vecVelocity[0]);
+        FreeLibrary(hModule);
+        return 1;
+    }
+
+    // Probar comando ar_status
+    FakeCommand cmdStatus;
+    cmdStatus.argc = 1;
+    cmdStatus.argv[0] = "ar_status";
+    plugin->ClientCommand(nullptr, &cmdStatus);
+
+    // Desactivar con ar_enable 0 y verificar retorno a passthrough limpio
+    FakeCommand cmdDisable;
+    cmdDisable.argc = 2;
+    cmdDisable.argv[0] = "ar_enable";
+    cmdDisable.argv[1] = "0";
+    plugin->ClientCommand(nullptr, &cmdDisable);
+
+    std::printf("[test_plugin_load] Z5 validado con exito (ar_enable 1 -> aceleracion de Faith vx=%.2f su/s -> ar_enable 0).\n",
+                mvFaith.m_vecVelocity[0]);
 
     plugin->LevelShutdown();
 
