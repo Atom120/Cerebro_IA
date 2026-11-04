@@ -49,7 +49,7 @@
 | Persona | Hecho | En curso / siguiente | Estado |
 |---|---|---|---|
 | Sebas | S0, S1, S2, S3 (semana 1), S4 (PRs #1–#6) | S4 continuo; S3 cada semana | 🟢 |
-| Zarek | Z1, Z3, Z4 (corregido e integrado por Sebas, 2026-11-04) | **Z5**: conectar `faith_move` con `ServerTraceProvider` en `ProcessMovement`. Lo que falta de Z2 (`PlayerInfoManager002`, `VEngineServer021`, campos de `CPortal_Player`) entra con Z5 | 🟢 |
+| Zarek | Z1, Z2, Z3, Z4, Z5 (integrado y validado en Portal y arnés headless) | Z-tareas al día. Pendiente: bordes/vault en el mapa o instalador S5 con Sebas | 🟢 |
 | Peña | P1, P2 y P3 (hechos por Sebas el 2026-11-04) | P4 (portales) y P5 (ajuste con trazas reales) | 🟡 |
 | Gonzalo | — (rama `G1` creada, vacía) | G1 (predicción en `client.dll`): falta para cerrar del todo H1. G3 (cámara) se puede hacer en paralelo | 🟡 |
 | Antonio | — (sin ramas ni PRs) | A1 (necesita Mirror's Edge instalado + UEViewer), A2 | 🟡 |
