@@ -55,11 +55,19 @@
   5. **La rama sale de `6d5adfd`** y choca con `main` en `qa/resultados/H1.md` (los dos lo crean) y en `HANDOFF.md`. Además, el `HANDOFF` del PR borra la regla de ramas, las notas de revisión y el estado de P1–P3.
   - **Qué hacer:** actualizar la rama con `main`, editar el `qa/resultados/H1.md` que ya existe (no crear otro), dejar `ar_enable 1` como `N/A (H2)` y adjuntar el log crudo o un recorte real. No marcar H1 como cerrado: falta G1 (cliente).
 
-- **PR #8 (Zarek, Z4 `ServerTraceProvider`): NO integrado, cambios pedidos (Sebas, 2026-11-04, comentario en el PR).** Se probó en Portal con una sonda: un rayo desde el `info_player_start` hacia abajo.
-  1. `IEngineTrace` tiene una función de más (`GetPointContents_WorldOnly`, de CS:GO). `TraceRay` está en la **ranura 4**; la suya cae en la 5 y **cuelga Portal**.
-  2. `Ray_t` tiene un campo de más (`m_pWorldAxisTransform`, de CS:GO), así que la traza **atraviesa el suelo**. Con el `Ray_t` de 2013 en la ranura 4 da suelo en z=160, normal (0,0,1).
-  3. `m_pEnt` no es null al chocar con el mundo, así que el mundo y la caja salen como `StaticProp`. La caja debe ser `Physics`.
-  - **Z5 espera** a que Z4 esté corregido y probado en Portal.
+- **Z4 (PR #8 de Zarek): integrado con correcciones de Sebas (2026-11-04, rama `sebas/Z4-fix`).** Probado en Portal 19017868.
+  - `IEngineTrace` con la vtable de Source 2013: `TraceRay` en la ranura 4 (antes la 5, que colgaba Portal).
+  - `Ray_t` sin `m_pWorldAxisTransform` (antes atravesaba el suelo).
+  - `static_assert` de desplazamientos de `Ray_t`, `CBaseTrace` y `trace_t`.
+  - `ClassifyHitEntity`: clasifica por el nombre de clase (`m_pEnt` → `GetNetworkable()` → `GetClassName()`, ranuras 4 y 3). En el juego dio: `worldspawn` → World, `prop_physics` (la caja) → Physics, `prop_dynamic`/`func_brush` → StaticProp, `npc_security_camera` → Physics.
+  - **Autotest en el mapa:** al cargar `testchmb_a_00`, la consola muestra `Autotest Z4 (...): OK  z=160.0 kind=1`. **Benja (QA): si sale FALLO, Z4 está roto.**
+  - **Zarek, ya puedes hacer Z5.** Ten en cuenta:
+    1. `ProcessMovement(pPlayer, pMove)`: lee y escribe origen y velocidad en `CMoveData` (`m_vecAbsOrigin`, `m_vecVelocity`, `m_vecViewAngles`, `m_nButtons`, `m_flForwardMove`, `m_flSideMove`). Comprueba los desplazamientos en el juego, como en Z4.
+    2. Botones: `IN_JUMP` → `kFaithButtonUp`, `IN_DUCK` → `Down`, `IN_RELOAD` → `Turn180`, `IN_WALK` → `Walk`. `buttons_pressed` = pulsados este tick y no el anterior.
+    3. Guarda un `FaithState` por jugador. `CreateFaithMovement(FaithHostConfig{})` una sola vez.
+    4. `ducked` → casco agachado y `FL_DUCKING`. El evento `Turn180` → sumar 180° al yaw de la vista.
+    5. **Portales:** la traza normal del motor no atraviesa los portales (Portal usa trazas especiales en `CPortalGameMovement`). Al principio, para cruzar un portal deja que el movimiento original de Portal haga el tick en el que se toca un portal, o investígalo antes de Z5. Es el riesgo n.º 1 de H2.
+    6. `ar_enable` (cvar) todavía no existe: créalo con `ICvar` (`VEngineCvar004`) o empieza con un comando de consola.
 
 ## Próximos Pasos (semana 1)
 - **Hito H1**: Completado en servidor y QA (`Z1`, `Z3`, `B1`, `B3`). Pendiente G1 de Gonzalo (hook de predicción en `client.dll`) para cerrar completamente la paridad cliente-servidor de H1.

@@ -86,6 +86,7 @@ tags: [chat, apertureRunner, mod, investigacion, equipo, antigravity, gemini, so
   - el coil sube el origen 36 su, y eso no debe contar como altura de caída;
   - los temporizadores en float terminan un tick tarde si no se redondean;
   - las pruebas de mutación encontraron 3 pruebas que no comprobaban nada (cooldown del borde, ápice del coil, paredes físicas).
+- 2026-11-04: Sebas revisó el PR #7 de Benja (cambios pedidos) y corrigió Z4 de Zarek después de probarlo en Portal con sondas temporales. Fallaban tres cosas, todas por ABI de CS:GO frente a Source 2013: la vtable de `IEngineTrace`, `Ray_t` y la clasificación de entidades. Ahora hay un autotest en el mapa. Los comentarios de los PR se publican con la credencial de Git y la API de GitHub (`gh` no está instalado). Z5 desbloqueado.
 
 ## Relacionado
 - [[Inicio]]

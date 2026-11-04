@@ -233,7 +233,7 @@ Al terminar la sesión: *"prepara el handoff de mi tarea, añade mi línea a SES
 | Z1 | DLL mínima x86 que implementa `IServerPluginCallbacks` (versión 003), carga con `plugin_load addons/aperture_runner` en `testchmb_a_00`, imprime el build y registra la ConVar `ar_enable` | 🟢 (usa el CMake de S1 cuando llegue; antes, un proyecto VS suelto) | La DLL carga sin errores |
 | Z2 | Obtener por fábrica de interfaces `GameMovement001` (`server.dll`), `PlayerInfoManager002` y `VEngineServer021`. Documentar los campos de `CPortal_Player` que necesitamos (velocidad, flags, duck, ground entity) leyendo sus datamaps, **sin offsets fijos si se puede** | 🟢 | `docs/contratos/portal_server_offsets.md` |
 | Z3 | Hook (vtable) de `IGameMovement::ProcessMovement` en **passthrough**: llama al original y no cambia nada. Prueba que portales, caja, botones, desintegrador y ascensor siguen funcionando | 🟡 (S2 para la firma; la prueba de la checklist de Benja B1 cuando llegue) | **Hito H1** |
-| Z4 | `ITraceProvider` real: trazas de casco y de rayo con `IEngineTrace` del servidor (paredes, bordes, suelo) | 🟡 (S2) | Implementación + prueba en el mapa |
+| Z4 ✅ (Zarek + correcciones de Sebas, 2026-11-04) | `ITraceProvider` real: trazas de casco y de rayo con `IEngineTrace` del servidor (paredes, bordes, suelo) | 🟡 (S2) | Implementación + prueba en el mapa |
 | Z5 | Con `ar_enable 1`, el movimiento lo calcula `faith_move` y se escribe en el jugador. Con 0, vuelve el de Portal | 🔴 (Z3, Z4, P2) | Hito H2 |
 
 **Referencias:** SourcePauseTool (solo lectura): cómo detecta Portal y busca `CPortalGameMovement` y los datamaps de `CPortal_Player`. `src/backend_source/portal_me_vsp.cpp` de Benja (esqueleto VSP anterior).
