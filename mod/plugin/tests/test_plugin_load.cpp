@@ -37,8 +37,7 @@ class MockEngineTrace : public ar::source::IEngineTrace {
 public:
     int trace_ray_calls = 0;
 
-    int GetPointContents(const float* /*vecAbsPosition*/, int /*contentsMask*/, void** /*ppEntity*/) override { return 0; }
-    int GetPointContents_WorldOnly(const float* /*vecAbsPosition*/, int /*contentsMask*/) override { return 0; }
+    int GetPointContents(const float* /*vecAbsPosition*/, void** /*ppEntity*/) override { return 0; }
     int GetPointContents_Collideable(void* /*pCollide*/, const float* /*vecAbsPosition*/) override { return 0; }
     void ClipRayToEntity(const ar::source::Ray_t& /*ray*/, unsigned int /*fMask*/, void* /*pEnt*/, ar::source::trace_t* /*pTrace*/) override {}
     void ClipRayToCollideable(const ar::source::Ray_t& /*ray*/, unsigned int /*fMask*/, void* /*pCollide*/, ar::source::trace_t* /*pTrace*/) override {}
@@ -116,6 +115,45 @@ public:
 };
 
 static MockEngineTrace g_mockEngineTrace;
+
+// The engine calls TraceRay through slot 4 of the SDK 2013 vtable; slot 5 crashes Portal.
+static bool TraceRayIsSlot4() {
+    void** vt = *reinterpret_cast<void***>(static_cast<ar::source::IEngineTrace*>(&g_mockEngineTrace));
+    auto fn = reinterpret_cast<void(__thiscall*)(void*, const ar::source::Ray_t*, unsigned int, void*, ar::source::trace_t*)>(vt[4]);
+    const int before = g_mockEngineTrace.trace_ray_calls;
+    ar::source::Ray_t ray;
+    ray.Init(ar::Vec3(0, 0, 50), ar::Vec3(0, 0, 40));
+    ar::source::trace_t tr;
+    fn(&g_mockEngineTrace, &ray, 0, nullptr, &tr);
+    return g_mockEngineTrace.trace_ray_calls == before + 1;
+}
+
+// Minimal stand-ins for CBaseEntity / IServerNetworkable with the SDK 2013 vtable slots that
+// ClassifyHitEntity reads (GetNetworkable = 4, GetClassName = 3).
+class FakeNetworkable {
+public:
+    explicit FakeNetworkable(const char* name) : name_(name) {}
+    virtual void* GetEntityHandle() { return nullptr; }
+    virtual void* GetServerClass() { return nullptr; }
+    virtual void* GetEdict() const { return nullptr; }
+    virtual const char* GetClassName() const { return name_; }
+
+private:
+    const char* name_;
+};
+
+class FakeEntity {
+public:
+    explicit FakeEntity(const char* name) : net_(name) {}
+    virtual ~FakeEntity() = default;
+    virtual void SetRefEHandle(const void*) {}
+    virtual const void* GetRefEHandle() const { return nullptr; }
+    virtual void* GetCollideable() { return nullptr; }
+    virtual FakeNetworkable* GetNetworkable() { return &net_; }
+
+private:
+    FakeNetworkable net_;
+};
 
 static void* MockEngineFactory(const char* pName, int* pReturnCode) {
     if (pName && std::strcmp(pName, ar::source::kEngineTraceServerVersion) == 0) {
@@ -288,10 +326,42 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::printf("[test_plugin_load] 6/6 comprobaciones de ServerTraceProvider aprobadas.\n");
+    // Test 5.7: TraceRay vive en la ranura 4 de la vtable (como en Portal 1 / SDK 2013)
+    if (!TraceRayIsSlot4()) {
+        std::fprintf(stderr, "[test_plugin_load] Error: TraceRay no esta en la ranura 4 de IEngineTrace\n");
+        FreeLibrary(hModule);
+        return 1;
+    }
+
+    // Test 5.8: clasificacion de lo golpeado por su nombre de clase
+    struct { const char* name; ar::TraceHitKind kind; } cases[] = {
+        {"worldspawn", ar::TraceHitKind::World},
+        {"prop_physics", ar::TraceHitKind::Physics},           // el cubo de testchmb_a_00
+        {"prop_physics_override", ar::TraceHitKind::Physics},
+        {"npc_portal_turret_floor", ar::TraceHitKind::Physics},
+        {"player", ar::TraceHitKind::Player},
+        {"func_door", ar::TraceHitKind::StaticProp},
+        {"prop_dynamic", ar::TraceHitKind::StaticProp},
+    };
+    for (const auto& c : cases) {
+        FakeEntity ent(c.name);
+        if (ar::ClassifyHitEntity(&ent) != c.kind) {
+            std::fprintf(stderr, "[test_plugin_load] Error: %s clasificado como %d\n", c.name,
+                         static_cast<int>(ar::ClassifyHitEntity(&ent)));
+            FreeLibrary(hModule);
+            return 1;
+        }
+    }
+    if (ar::ClassifyHitEntity(nullptr) != ar::TraceHitKind::World) {
+        std::fprintf(stderr, "[test_plugin_load] Error: m_pEnt nulo debe ser World\n");
+        FreeLibrary(hModule);
+        return 1;
+    }
+
+    std::printf("[test_plugin_load] 8/8 comprobaciones de ServerTraceProvider aprobadas.\n");
 
     // 6. Ciclo de eventos en mapa
-    plugin->LevelInit("testchmb_a_00");
+    plugin->LevelInit("ar_harness");  // otro nombre: el autotest Z4 solo vale en el mapa real
     plugin->ServerActivate(nullptr, 0, 1);
     plugin->GameFrame(true);
 

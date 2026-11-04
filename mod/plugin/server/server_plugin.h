@@ -41,6 +41,8 @@ public:
     static void LogMsg(const char* fmt, ...);
 
 private:
+    void RunTraceSelfTest();
+
     ApertureRunnerServerPlugin() = default;
     ~ApertureRunnerServerPlugin() = default;
     ApertureRunnerServerPlugin(const ApertureRunnerServerPlugin&) = delete;

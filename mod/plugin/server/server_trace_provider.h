@@ -5,6 +5,10 @@
 
 namespace ar {
 
+// TraceHitKind of what a server trace hit (trace_t::m_pEnt, a CBaseEntity*), from its class name.
+// The world is "worldspawn" (m_pEnt is NOT null for world hits). nullptr also counts as World.
+TraceHitKind ClassifyHitEntity(void* entity);
+
 class ServerTraceProvider final : public ITraceProvider {
 public:
     ServerTraceProvider() = default;
@@ -21,6 +25,8 @@ public:
     TraceResult TraceRay(Vec3 start, Vec3 end) const override;
 
 private:
+    TraceResult Run(const source::Ray_t& ray, Vec3 end) const;
+
     source::IEngineTrace* engine_trace_ = nullptr;
     void* ignore_player_ = nullptr;
 };
