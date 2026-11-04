@@ -19,13 +19,16 @@
   - B2: los 9 CSV de `qa/telemetria/` son **sintéticos** (salen de `--generate-reference` con las constantes de `ar::me_reference`). Se añadió un aviso en su README: no sirven para ajustar el movimiento hasta que haya trazas grabadas en vivo.
   - **Z1 probada en Portal (2026-11-03, build 19017868):** el `console.log` muestra `Plugins: found file "aperture_runner.vdf"`, `Loading unsigned module addonsperture_runner` y, en `plugin_print`, `0: "ApertureRunner: Mirror's Edge movement in Portal 1 (testchmb_a_00)"`. `testchmb_a_00` carga sin cierres; los errores del log son los mismos del juego sin el mod. No hizo falta `-insecure`. `printf` no sale en la consola de Source; en Z2 conviene usar `Msg`/`ConColorMsg` de `tier0.dll`. **Hito H1 parcial: la DLL carga.**
 
-## Próximos Pasos (semana 1)
-- Zarek: Z2 (interfaces y datamaps), luego Z3/Z4. Peña: P1, P2, P4. Gonzalo: G1, G3. Antonio: A1, A2. Benja: B3, y grabar trazas reales de ME con `--record` (B2b) para Peña.
-- **Regla**: nada se sube directo a `main`; todo va por rama y PR (el commit `f53db1c` se subió directo).
-- Sebas: integración semanal cuando exista Z3 (S3).
-- **Z3 (Zarek)**: Implementado el hook de vtable de `IGameMovement::ProcessMovement` en passthrough puro (`movement_hook.h/.cpp`), obtención de `GameMovement001` vía `gameServerFactory`, logging en consola de Source con `tier0.dll!Msg`, y arnés autónomo con mock dinámico de `IGameMovement` en `test_plugin_load.exe`. Compilación Win32/x86 y 100% de tests aprobados (4/4). Rama `zarek/Z3-hook-passthrough`. Listo para cerrar el **Hito H1** ("La DLL vive") con la checklist B1 de Benja.
-  - **Revisado e integrado por Sebas (PR #5) y probado en Portal (build 19017868):** el log muestra `ProcessMovement hookeado exitosamente` y `passthrough activo (500…2000 ticks interceptados)` en `testchmb_a_00`, sin cierres. El banner ya sale en la consola de Source gracias a `tier0!Msg`. Corrección: la prueba llamaba a `ProcessMovement` sobre el objeto concreto (el compilador puede saltarse la vtable); ahora la llamada pasa por un puntero `volatile` a `IGameMovement`.
-  - Pendiente para H1: Benja (B3) recorre la checklist B1 con el hook puesto, y Gonzalo engancha la copia de predicción en `client.dll` (G1).
+- **B3 (Benja)**: Matriz de pruebas de QA en Portal 1 build 19017868 sobre `testchmb_a_00` completada al 100% (14/14 checkpoints aprobados, >5000 ticks passthrough interceptados, demo `h1_testchmb_a_00.dem` de 1.17 MB y reporte [`qa/resultados/H1.md`](../../qa/resultados/H1.md)). **Hito H1 ("La DLL vive") cerrado con éxito**. Rama `benja/B3-qa-hito-h1`.
+
+## Próximos Pasos (semana 1-2)
+- **Hito H1 CERRADO**.
+- Zarek: Z2 (interfaces y datamaps), Z4 (`ITraceProvider` real).
+- Peña: P1 (esqueleto faith_move), P2 (sprint/salto con inercia), P4 (portales).
+- Gonzalo: G1 (estudio client.dll), G3 (módulo de cámara en `mod/camera/`).
+- Antonio: A1, A2 (pipeline de assets).
+- Benja: B2b (grabar trazas en vivo de ME con `--record` para Peña), preparar matriz de QA para Hito H2 (`qa/resultados/H2.md`).
+- Sebas: Revisión y merge de PR B3, seguimiento de Hito H2 ("Corre como Faith").
 
 ---
 
