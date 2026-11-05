@@ -44,6 +44,8 @@ tags: [proyecto, apertureRunner, mod, cpp, python]
 - [x] Instalar Portal (Steam): build 19017868, 32 bits.
 - [ ] Instalar Mirror's Edge.
 - [x] Comprobar arquitectura y versión del motor del Portal 1 instalado (x86, Source 2013 SP).
-- [ ] Decidir ruta (B recomendada) y mapa (`testchmb_a_00` vs `testchmb_a_01`).
+- [x] Decidir ruta y mapa: ruta B en `testchmb_a_00` (ADR-006). H2 y H3 ya pasan en Portal (ver `.agents/memory/HANDOFF.md`).
+- [x] Recon con universal-modder (2026-11-05): [`docs/MODDING_PLAN.md`](../../docs/MODDING_PLAN.md).
+- [ ] Leer offsets de red por nombre en vez de fijos (propuesto en el recon).
 - [ ] Conseguir el volcado de SDK de `MirrorsEdge.exe` e implementar `IGuestPawnAdapter`.
 - [ ] Plugin de servidor para Portal 1: portales y geometría de `testchmb_a_01`.

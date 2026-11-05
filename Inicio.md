@@ -15,6 +15,7 @@ Mapa principal de la bóveda. Cada proyecto y tema nuevo se enlaza aquí.
 - _(agrega aquí: [[30_Temas/NombreTema|NombreTema]])_
 
 ## Chats recientes
+- [[20_Chats/2026-11-05 - ApertureRunner recon con universal-modder]]
 - [[20_Chats/2026-11-03 - Implementación de skills del repositorio y universal-modder]]
 - [[20_Chats/2026-11-03 - ApertureRunner flujo profesional y reparto para 6]]
 - [[20_Chats/2026-11-03 - Instalación de universal-modder]]
