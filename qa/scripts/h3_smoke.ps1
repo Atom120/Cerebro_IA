@@ -39,6 +39,10 @@ function Result($id, $name, $pass, $detail) {
 
 Get-Process hl2 -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Sleep 2
+# Los ajustes del jugador (addons/aperture_runner.cfg) se guardan y se restauran al final: la prueba
+# cambia ar_enable y no debe dejarlo cambiado.
+$settings = Join-Path $portal "portal\addons\aperture_runner.cfg"
+$settingsBackup = if (Test-Path $settings) { [IO.File]::ReadAllText($settings) } else { $null }
 & (Join-Path $root ".agents\skills\launch-portal-test\scripts\launch-portal-test.ps1") -NoLaunch | Out-Null
 Remove-Item $log -ErrorAction SilentlyContinue
 Start-Process -FilePath (Join-Path $portal "hl2.exe") -WorkingDirectory $portal -ArgumentList @(
@@ -61,7 +65,7 @@ Result "H3-03" "La vista se inclina en el wallrun (camara G3/G4)" ($wr.Count -gt
 
 # Wallclimb: de frente a la pared sur.
 Send @("setpos -1000 -900 129", "setang 0 270 0"); Start-Sleep 1.5
-$m = Mark; Send @("ar_debug 1", "ar_qa_input 1 0 j 110 40"); Start-Sleep 2.0; Send @("ar_debug 0"); Start-Sleep 0.4
+$m = Mark; Send @("ar_debug 2", "ar_qa_input 1 0 j 110 40"); Start-Sleep 2.0; Send @("ar_debug 0"); Start-Sleep 0.4
 $s = @(Samples (LogFrom $m))
 $climb = @($s | Where-Object { $_.Events -band 0x40 })
 $top = ($s | Measure-Object Z -Maximum).Maximum - 128.0
@@ -101,8 +105,45 @@ for ($k = 1; $k -lt $s.Count; $k++) {
 $crossings = (($lines | Where-Object { $_ -match 'cruces=(\d+)' } | Select-Object -Last 1) -replace '.*cruces=(\d+).*', '$1')
 Result "H3-08" "Cruzar portal_red_0 -> portal_blue_0 conserva la velocidad (P4)" ($in -and $out -and $out.Speed -ge 0.9 * $in.Speed -and [int]$crossings -ge 1) ("{0:N1} su/s al entrar, {1:N1} al salir, cruces={2}" -f $in.Speed, $out.Speed, $crossings)
 
+# Vault sobre el borde biselado de la plataforma del boton de la sala 1 (23 su, World).
+Send @("setpos -400 -924 129", "setang 0 180 0"); Start-Sleep 1.5
+$m = Mark; Send @("ar_debug 2", "ar_qa_input 1 0 j 50 8"); Start-Sleep 1.3; Send @("ar_debug 0"); Start-Sleep 0.3
+$s = @(Samples (LogFrom $m))
+$vault = @($s | Where-Object { $_.Anim -eq "vault" }).Count
+$endZ = if ($s.Count) { $s[-1].Z } else { 0 }
+Result "H3-09" "Vault en una plataforma real (borde biselado)" ($vault -gt 0 -and $endZ -gt 140) ("{0} ticks en vault, termina en z={1:N1}" -f $vault, $endZ)
+
+# Mantle: repisa de 65.7 su junto al portal cerrado de la sala inicial (los portales cerrados no interfieren).
+Send @("setpos -560 -372 161", "setang 0 0 0"); Start-Sleep 1.5
+$m = Mark; Send @("ar_debug 1", "ar_qa_input 1 0 j 60 1"); Start-Sleep 1.6; Send @("ar_debug 0"); Start-Sleep 0.3
+$s = @(Samples (LogFrom $m))
+$grab = @($s | Where-Object { $_.Events -band 0x80 }).Count
+$endZ = if ($s.Count) { $s[-1].Z } else { 0 }
+Result "H3-10" "Mantle a una repisa de 65 su (salto + subir)" ($grab -ge 1 -and $endZ -gt 220) ("termina en z={0:N1} (repisa en 225.8)" -f $endZ)
+
+# FOV y balanceo de cabeza en el sprint (camara de G3 en la vista).
+Send @("setpos -1300 -864 129", "setang 0 0 0"); Start-Sleep 1.5
+$m = Mark; Send @("ar_qa_input 1 0 - 300")
+$z = @(); $t0 = Get-Date
+while (((Get-Date) - $t0).TotalSeconds -lt 0.8) { $z += (View).Z }
+Send @("fov"); Start-Sleep 0.5
+$fov = [int](((LogFrom $m) | Where-Object { $_ -match '"fov" is "(\d+)"' } | Select-Object -Last 1) -replace '.*"fov" is "(\d+)".*', '$1')
+$bob = ($z | Measure-Object -Maximum).Maximum - ($z | Measure-Object -Minimum).Minimum
+Result "H3-11" "El FOV se abre al esprintar (75 -> hasta 85)" ($fov -gt 75 -and $fov -le 90) ("fov={0}" -f $fov)
+Result "H3-12" "Balanceo de cabeza al correr" ($bob -gt 0.4 -and $bob -lt 4) ("vista z varia {0:N2} su en {1} muestras" -f $bob, $z.Count)
+
+# Ajustes recordados y sin ruido en la consola.
+$saved = (Test-Path $settings) -and ((Get-Content $settings -Raw) -match 'ar_enable=1')
+Result "H3-13" "ar_enable 1 queda guardado en addons/aperture_runner.cfg" $saved ""
+$spam = @(Select-String -Path $log -Pattern "Restoring player view height").Count
+Result "H3-14" "Sin 'Restoring player view height' en la consola" ($spam -eq 0) ("{0} mensajes" -f $spam)
+
 Remove-Item $cfg -ErrorAction SilentlyContinue
-Result "H3-09" "Portal sigue abierto (sin cierres)" ([bool](Get-Process hl2 -ErrorAction SilentlyContinue)) ""
+$alive = [bool](Get-Process hl2 -ErrorAction SilentlyContinue)  # antes de cerrar Portal nosotros
+Get-Process hl2 -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep 1
+if ($null -ne $settingsBackup) { [IO.File]::WriteAllText($settings, $settingsBackup) } else { Remove-Item $settings -ErrorAction SilentlyContinue }
+Result "H3-15" "Portal sigue abierto (sin cierres)" $alive ""
 
 if ($Report) {
     $md = @("| Id | Prueba | Resultado | Detalle |", "|---|---|---|---|")

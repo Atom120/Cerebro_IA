@@ -250,6 +250,14 @@ inline constexpr int kServerUnknownGetBaseEntitySlot = 5;
 // the portal's own bool block). Verified by qa/scripts h2-06 / h3-08 (crossing an open portal).
 inline constexpr int kPortalActivatedOffset = 0x56A;
 
+// CBasePlayer fields in Portal 19017868, found by diffing the player's memory and checked against
+// the client: "fov 90" moves 0xB38 (and 0x23C8) from 75 to 90, and only writing 0xB38 changes what
+// the client's "fov" reports, so 0xB38 is the networked m_iFOV. 0x23C8 is NOT a default FOV: it
+// follows other changes (it went to 1 during a test) and must not be used. Crouching moves the float
+// at 0x328 from 64 to 28: m_vecViewOffset.z (x/y at 0x320/0x324).
+inline constexpr int kPlayerViewOffsetOffset = 0x320;  // Vector m_vecViewOffset
+inline constexpr int kPlayerFovOffset = 0xB38;         // int m_iFOV
+
 // public/edict.h edict_t (x86): 20 bytes, IServerUnknown* m_pUnk at +12.
 inline constexpr int kEdictSize = 20;
 inline constexpr int kEdictUnknownOffset = 12;

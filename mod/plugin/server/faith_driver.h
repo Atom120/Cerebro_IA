@@ -49,6 +49,8 @@ public:
 
 private:
     void ApplyCamera(const FaithStepResult& r);
+    void ApplyPlayerView(const camera::CameraOutput& co);
+    void RestorePlayerView();
 
     bool NearPortal(Vec3 feet) const;
     bool NearestPortalBasis(Vec3 p, Mat3* basis) const;
@@ -60,7 +62,12 @@ private:
     bool camera_enabled_ = true;
     bool engine_side_effects_ = true;  // run the original movement too (duck hull, ground, footsteps)
     float applied_pitch_ = 0.0f;  // landing-shake pitch currently added to the view
+    float view_yaw_ = 0.0f;       // last view yaw (for the sideways head bob)
+    int written_fov_ = 0;         // m_iFOV the mod last wrote (0 = none)
+    int base_fov_ = 0;            // the player's own FOV when the mod took it over
+    float written_bob_[3] = {};   // head-bob offset the mod last added to m_vecViewOffset
     Vec3 engine_origin_;  // last origin the engine passed in (for ar_status)
+    void* last_player_ = nullptr;  // CBasePlayer* of the last ProcessMovement
     std::vector<void*> portals_;  // IServerUnknown* of each prop_portal
     bool enabled_ = false;
     int debug_ = 0;

@@ -96,6 +96,7 @@ tags: [chat, apertureRunner, mod, investigacion, equipo, antigravity, gemini, so
   - **Bloqueado:** G4 (falta el modelo de Antonio), B2b (falta Mirror's Edge) y B5 (H4).
   - **Truco:** la entrada para las pruebas se inyecta con `ar_qa_input`, porque Source suelta `+forward` si la ventana pierde el foco.
 - 2026-11-04 (noche): H2 cerrado y H3 casi completo. P4 (inercia por portales), cámara aplicada a la vista (giro de 180° e inclinación), casco agachado en el motor y QA de H3 9/9 en Portal. Lo único que bloquea el resto (A1–A4, brazos de G4, B2b, P5) es instalar Mirror's Edge.
+- 2026-11-04 (madrugada): pulido de H3 sin Mirror's Edge: ajustes recordados, instalador S5 v1 (zip), bordes/vault/mantle en el mapa real, portales cerrados ignorados, FOV y balanceo en la vista. H3 15/15 y H2 9/9. Se encontró a tiempo un fallo grave: un campo mal identificado llegaba a poner FOV 1.
 
 ## Relacionado
 - [[Inicio]]

@@ -182,7 +182,9 @@ void FaithDriver::Sync(const source::CMoveData* mv, PortalTransportHint* hint) {
 
 void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* mv, ProcessMovementFn original,
                           const ITraceProvider& trace) {
+    last_player_ = player;
     if (!enabled_ || !mv) {
+        RestorePlayerView();
         if (original) original(game_movement, player, mv);
         return;
     }
@@ -256,6 +258,16 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
     // the position and velocity it computed.
     if (original && engine_side_effects_) {
         mv->m_nButtons = (mv->m_nButtons & ~source::kInDuck) | (state_.ducked ? source::kInDuck : 0);
+        // Take the head bob out first: the engine "restores" any standing view height that is not
+        // exactly view_height (and logs it every tick). ApplyCamera puts it back afterwards.
+        if (player && (written_bob_[0] != 0.0f || written_bob_[1] != 0.0f || written_bob_[2] != 0.0f)) {
+            float* offset = reinterpret_cast<float*>(static_cast<char*>(player) + source::kPlayerViewOffsetOffset);
+            if (std::fabs(offset[2] - (FaithHostConfig{}.view_height + written_bob_[2])) < 0.01f) {
+                offset[0] = 0.0f;
+                offset[1] = 0.0f;
+                offset[2] = FaithHostConfig{}.view_height;
+            }
+        }
         original(game_movement, player, mv);
     }
     for (int i = 0; i < 3; ++i) {
@@ -280,20 +292,82 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
 void FaithDriver::ApplyCamera(const FaithStepResult& r) {
     const camera::CameraOutput co =
         camera::UpdateCamera(camera_, state_, r.events, r.impact_speed, source_defaults::kTickInterval);
-    if (!camera_enabled_ || !ClientView::Ready()) return;
-    float view[3];
-    if (!ClientView::GetViewAngles(view)) return;
-    const float shake = camera_.roll_left > 0.0f ? 0.0f : std::clamp(co.pitch_offset, -12.0f, 12.0f);
-    view[0] += shake - applied_pitch_;
-    view[1] += co.yaw_delta;
-    view[2] = co.roll;
-    applied_pitch_ = shake;
-    ClientView::SetViewAngles(view);
+    if (!camera_enabled_) {
+        RestorePlayerView();
+        return;
+    }
+    if (ClientView::Ready()) {
+        float view[3];
+        if (ClientView::GetViewAngles(view)) {
+            const float shake = camera_.roll_left > 0.0f ? 0.0f : std::clamp(co.pitch_offset, -12.0f, 12.0f);
+            view[0] += shake - applied_pitch_;
+            view[1] += co.yaw_delta;
+            view[2] = co.roll;
+            applied_pitch_ = shake;
+            ClientView::SetViewAngles(view);
+            view_yaw_ = view[1];
+        }
+    }
+    ApplyPlayerView(co);
 }
 
-// QA/map audit: scans a grid at floor height z for places where Faith can vault (obstacle 18-48 su
-// high) or grab a ledge (40-96 su), with the same probes and checks faith_move uses (reach 24 su,
-// hands 24 su above the head, 36 su over the edge along the wall normal, walkable top, free climb path). Logs one line per spot: position, facing yaw and height.
+// FOV and head bob go through the player's networked fields (m_iFOV, m_vecViewOffset). The mod only
+// writes a field while it still holds the value the mod wrote (or the default), so Portal's own
+// zoom or a duck transition always win.
+void FaithDriver::ApplyPlayerView(const camera::CameraOutput& co) {
+    if (!last_player_) return;
+    char* p = static_cast<char*>(last_player_);
+    // The base FOV is the player's own m_iFOV when the mod first takes it over (their fov setting).
+    // The mod only writes while m_iFOV still holds its last value or that base (Portal's zoom wins),
+    // and never leaves [base, base + 15] or [60, 110].
+    int& fov = *reinterpret_cast<int*>(p + source::kPlayerFovOffset);
+    if (written_fov_ == 0) base_fov_ = (fov >= 60 && fov <= 110) ? fov : 75;
+    if (fov == written_fov_ || fov == base_fov_) {
+        const float extra = std::clamp(co.fov - camera::CameraParams{}.fov_base, 0.0f, 15.0f);
+        const int want = std::clamp(static_cast<int>(std::lround(static_cast<float>(base_fov_) + extra)), 60, 110);
+        fov = want;
+        written_fov_ = want;
+    }
+
+    float* offset = reinterpret_cast<float*>(p + source::kPlayerViewOffsetOffset);
+    const FaithHostConfig cfg;
+    const float base = cfg.view_height;
+    // The engine's own movement (still run for its side effects) puts a standing player back at
+    // exactly view_height every tick; that value, or the one the mod wrote, is ours to replace.
+    const bool owned = std::fabs(offset[2] - base) < 0.01f || std::fabs(offset[2] - (base + written_bob_[2])) < 0.01f;
+    if (!state_.ducked && owned) {
+        const float yaw = view_yaw_ * aperture_runner::kDegToRad;
+        const float side = co.eye_offset.x;  // along the view's right axis
+        written_bob_[0] = std::sin(yaw) * side;
+        written_bob_[1] = -std::cos(yaw) * side;
+        written_bob_[2] = co.eye_offset.z;
+        offset[0] = written_bob_[0];
+        offset[1] = written_bob_[1];
+        offset[2] = base + written_bob_[2];
+    } else if (state_.ducked && written_bob_[2] != 0.0f) {
+        offset[0] = 0.0f;
+        offset[1] = 0.0f;
+        written_bob_[0] = written_bob_[1] = written_bob_[2] = 0.0f;
+    }
+}
+
+// Puts FOV and eye offset back when Faith or her camera is turned off.
+void FaithDriver::RestorePlayerView() {
+    if (!last_player_ || (written_fov_ == 0 && written_bob_[2] == 0.0f && written_bob_[0] == 0.0f)) return;
+    char* p = static_cast<char*>(last_player_);
+    int& fov = *reinterpret_cast<int*>(p + source::kPlayerFovOffset);
+    if (written_fov_ != 0 && fov == written_fov_ && base_fov_ != 0) fov = base_fov_;
+    float* offset = reinterpret_cast<float*>(p + source::kPlayerViewOffsetOffset);
+    const float stand = FaithHostConfig{}.view_height;
+    if (std::fabs(offset[2] - stand) < 0.01f || std::fabs(offset[2] - (stand + written_bob_[2])) < 0.01f) {
+        offset[0] = 0.0f;
+        offset[1] = 0.0f;
+        offset[2] = FaithHostConfig{}.view_height;
+    }
+    written_fov_ = 0;
+    written_bob_[0] = written_bob_[1] = written_bob_[2] = 0.0f;
+}
+
 void FaithDriver::FindLedges(const ITraceProvider& trace, float x0, float y0, float x1, float y1, float z,
                              float step) const {
     const FaithHostConfig cfg;
@@ -353,6 +427,13 @@ void FaithDriver::SetQaInput(float forward, float side, uint32_t buttons, int ti
 }
 
 void FaithDriver::PrintStatus() const {
+    if (last_player_) {
+        const char* p = static_cast<const char*>(last_player_);
+        const float* off = reinterpret_cast<const float*>(p + source::kPlayerViewOffsetOffset);
+        ApertureRunnerServerPlugin::LogMsg("[AR] jugador: m_iFOV=%d fov_base=%d fov_escrito=%d vista_offset=(%.2f %.2f %.2f)\n",
+                                           *reinterpret_cast<const int*>(p + source::kPlayerFovOffset), base_fov_, written_fov_,
+                                           off[0], off[1], off[2]);
+    }
     ApertureRunnerServerPlugin::LogMsg(
         "[AR] ar_enable=%d anim=%s vel2d=%.1f vz=%.1f suelo=%d agachada=%d pos=(%.1f %.1f %.1f) motor=(%.1f %.1f %.1f) "
         "ticks_faith=%llu ticks_portal=%llu portales=%u cruces=%llu eventos_acumulados=0x%x\n",

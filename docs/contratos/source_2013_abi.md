@@ -45,3 +45,15 @@ No hicieron falta `PlayerInfoManager002` ni `VEngineServer021`: los datos del ju
 - Los argumentos que empiezan por `-` (p. ej. `setpos -700 ...`) hay que pasarlos por un `.cfg`, porque en la línea de comandos se leen como opciones.
 - Hay que arrancar con `+sv_cheats 1` para usar `setpos`/`setang`/`ent_fire`.
 - Pasillo recto para probar: `setpos -660 -864 140` y `setang 0 180 0` (suelo z = 128, unos 600 su hasta x = -1300).
+
+## Campos encontrados por diferencia de memoria (2026-11-04, Portal 19017868)
+- Método: comando temporal que guarda la memoria de la entidad, provoca el cambio en el juego (`ent_fire`, `fov 90`, agacharse) y lista los bytes que cambiaron.
+- **No usar 0x23C8:** cambió con `fov 90`, pero no es el FOV por defecto (después valió 1).
+
+| Campo | Offset | Comprobación |
+|---|---|---|
+| `CProp_Portal::m_bActivated` | 0x56A | abre y cierra con `SetActivatedState 1/0`; el cruce de portales sigue pasando en H2-06 y H3-08 |
+| `CBasePlayer::m_iFOV` | 0xB38 | escribirlo cambia lo que dice `fov` en el cliente |
+| `CBasePlayer::m_vecViewOffset` | 0x320 (z en 0x328) | 64 de pie y 28 agachada |
+| `IServerUnknown::GetBaseEntity` | ranura 5 | — |
+| `IVEngineClient` (`VEngineClient014`) | `GetViewAngles` 19, `SetViewAngles` 20 | coincide con `MainViewAngles` de `client.dll` |
