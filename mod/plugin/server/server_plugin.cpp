@@ -2,6 +2,7 @@
 #include "server_plugin.h"
 #include "movement_hook.h"
 #include "faith_driver.h"
+#include "mod_settings.h"
 #include "client/client_movement_hook.h"
 #include "client/client_view.h"
 #include <cstdarg>
@@ -56,13 +57,18 @@ bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn interfaceFactory
     }
 #endif
 
+    // Ajustes recordados entre partidas (addons/aperture_runner.cfg).
+    const ModSettings settings = LoadModSettings();
+    FaithDriver::Instance().SetEnabled(settings.enabled);
+    FaithDriver::Instance().SetCamera(settings.camera);
+
     LogMsg(
         "\n======================================================\n"
         " [ApertureRunner] Plugin VSP cargado con exito.\n"
         " Target Engine : Portal 1 (Build %u, Win32/x86)\n"
-        " Estado Inicial: ar_enable = 0 (passthrough)\n"
+        " Estado Inicial: ar_enable = %d, ar_camera = %d (addons/aperture_runner.cfg)\n"
         "======================================================\n\n",
-        kPortalBuildId);
+        kPortalBuildId, settings.enabled ? 1 : 0, settings.camera ? 1 : 0);
 
     // Z4: Obtener EngineTraceServer003 para el trace provider del servidor
     if (interfaceFactory) {
@@ -208,8 +214,10 @@ source::PluginResult ApertureRunnerServerPlugin::ClientCommand(void* /*pEntity*/
     FaithDriver& faith = FaithDriver::Instance();
     if (std::strcmp(cmd, "ar_enable") == 0) {
         faith.SetEnabled(arg ? std::strcmp(arg, "0") != 0 : !faith.Enabled());
-        LogMsg("[ApertureRunner] ar_enable = %d (%s)\n", faith.Enabled() ? 1 : 0,
-               faith.Enabled() ? "movimiento de Faith" : "movimiento original de Portal");
+        const bool saved = SaveModSettings({faith.Enabled(), faith.CameraEnabled()});
+        LogMsg("[ApertureRunner] ar_enable = %d (%s)%s\n", faith.Enabled() ? 1 : 0,
+               faith.Enabled() ? "movimiento de Faith" : "movimiento original de Portal",
+               saved ? ", guardado en addons/aperture_runner.cfg" : "");
         return source::kPluginStop;
     }
     if (std::strcmp(cmd, "ar_status") == 0) {
@@ -222,6 +230,15 @@ source::PluginResult ApertureRunnerServerPlugin::ClientCommand(void* /*pEntity*/
     }
     if (std::strcmp(cmd, "ar_camera") == 0) {  // ar_camera [0|1]: camara de Faith en la vista (G4)
         faith.SetCamera(!arg || std::strcmp(arg, "0") != 0);
+        SaveModSettings({faith.Enabled(), faith.CameraEnabled()});
+        LogMsg("[ApertureRunner] ar_camera = %d\n", faith.CameraEnabled() ? 1 : 0);
+        return source::kPluginStop;
+    }
+    // ar_find_ledges <x0> <y0> <x1> <y1> <z_suelo> [paso]: busca sitios de vault y bordes (QA del mapa)
+    if (std::strcmp(cmd, "ar_find_ledges") == 0 && CommandArgc(args) >= 6) {
+        float v[6] = {0, 0, 0, 0, 0, 16.0f};
+        for (int i = 0; i < 6 && i + 1 < CommandArgc(args); ++i) v[i] = static_cast<float>(std::atof(CommandArg(args, i + 1)));
+        faith.FindLedges(trace_provider_, v[0], v[1], v[2], v[3], v[4], v[5] > 1.0f ? v[5] : 16.0f);
         return source::kPluginStop;
     }
     if (std::strcmp(cmd, "ar_debug") == 0) {

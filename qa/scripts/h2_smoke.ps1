@@ -15,6 +15,8 @@ $log = Join-Path $portal "portal\console.log"
 $cfg = Join-Path $portal "portal\cfg\ar_qa_tmp.cfg"
 
 function Send([string[]]$commands) {
+    # Sin Portal abierto, -hijack abriria un Portal nuevo y se quedaria esperando: mejor fallar.
+    if (-not (Get-Process hl2 -ErrorAction SilentlyContinue)) { throw "Portal se cerro durante la prueba." }
     [IO.File]::WriteAllText($cfg, ($commands -join "`n") + "`n")
     Start-Process -FilePath (Join-Path $portal "hl2.exe") -WorkingDirectory $portal -Wait `
         -ArgumentList @("-hijack", "-game", "portal", "+exec", "ar_qa_tmp")
@@ -45,6 +47,10 @@ function Result($id, $name, $pass, $detail) {
 # --- arranque -------------------------------------------------------------------------------
 Get-Process hl2 -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Sleep 2
+# Los ajustes del jugador (addons/aperture_runner.cfg) se guardan y se restauran al final: la prueba
+# cambia ar_enable y no debe dejarlo cambiado.
+$settings = Join-Path $portal "portal\addons\aperture_runner.cfg"
+$settingsBackup = if (Test-Path $settings) { [IO.File]::ReadAllText($settings) } else { $null }
 & (Join-Path $root ".agents\skills\launch-portal-test\scripts\launch-portal-test.ps1") -NoLaunch | Out-Null
 Remove-Item $log -ErrorAction SilentlyContinue
 Start-Process -FilePath (Join-Path $portal "hl2.exe") -WorkingDirectory $portal -ArgumentList @(
@@ -109,7 +115,10 @@ $off = (LogFrom $m) -match 'ar_enable = 0'
 Result "H2-08" "ar_enable 0 devuelve el movimiento original" ($off -and $st.Count -ge 2 -and ($st[-1] - $st[0]) -le 2) ("ticks de Faith {0} -> {1} tras desactivar" -f $st[0], $st[-1])
 
 Remove-Item $cfg -ErrorAction SilentlyContinue
-$crash = -not (Get-Process hl2 -ErrorAction SilentlyContinue)
+$crash = -not (Get-Process hl2 -ErrorAction SilentlyContinue)  # antes de cerrar Portal nosotros
+Get-Process hl2 -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep 1
+if ($null -ne $settingsBackup) { [IO.File]::WriteAllText($settings, $settingsBackup) } else { Remove-Item $settings -ErrorAction SilentlyContinue }
 Result "H2-09" "Portal sigue abierto al terminar (sin cierres)" (-not $crash) ""
 
 if ($Report) {

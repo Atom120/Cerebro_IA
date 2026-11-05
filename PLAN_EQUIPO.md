@@ -16,6 +16,7 @@ tags: [plan, equipo, apertureRunner, antigravity]
 > | Z2, Z5 (+ correcciones de Z4) | `ar_enable 1` mueve al jugador con Faith; portales híbridos; comandos `ar_*` | `mod/plugin/server/`, `docs/contratos/source_2013_abi.md` |
 > | G1, G3 (G2 no aplica) | estudio de `client.dll` (`cl_predict 0`), hook de predicción y módulo de cámara con 30 pruebas | `mod/plugin/client/`, `mod/camera/`, `docs/contratos/portal_client_offsets.md` |
 > | B3 (H1, H2 y H3) | pruebas automáticas en Portal: H2 9/9 y H3 9/9 PASS, e informes | `qa/scripts/h2_smoke.ps1`, `qa/scripts/h3_smoke.ps1`, `qa/resultados/` |
+> | S5 (v1), ajustes recordados | instalador y paquete zip; `ar_enable`/`ar_camera` guardados | `mod/tools/installer/`, `addons/aperture_runner.cfg` |
 > | P4, G4 (cámara), casco agachado | inercia y parkour a través de portales; giro de 180° e inclinación en la vista; `FL_DUCKING` en el motor | `mod/faith_move/`, `mod/plugin/` |
 >
 > **Lo que queda de cada uno:**
@@ -238,7 +239,7 @@ Al terminar la sesión: *"prepara el handoff de mi tarea, añade mi línea a SES
 | S2 | **Contratos** en `mod/include/ar/`: `faith_movement.h` (`FaithInput`, `FaithState`, `FaithAnimState`, `IFaithMovement`), `trace_provider.h` (`ITraceProvider`), `units.h`, y `docs/contratos/asset_manifest.json` | 🟢 **Bloquea a Z3, Z4, P1, G3 y A2. Prioridad máxima, día 1–2** | Headers fusionados en `main` |
 | S3 ✅ semana 1 | Build de integración semanal y prueba en Portal (semana 1 ✅ 2026-11-04) | 🔴 (Z3) | Nota de estado semanal en `HANDOFF.md` |
 | S4 | Revisar y fusionar PRs; actualizar `DECISIONS.md` si cambia algo | continuo | — |
-| S5 | Instalador final (DLL + `addons/aperture_runner.vdf` + extractor) | 🔴 (Z5, A4) | Release |
+| S5 🟡 instalador v1 ✅ (Sebas, 2026-11-04; falta el extractor de A4) | Instalador final (DLL + `addons/aperture_runner.vdf` + extractor) | 🔴 (Z5, A4) | Release |
 
 ---
 

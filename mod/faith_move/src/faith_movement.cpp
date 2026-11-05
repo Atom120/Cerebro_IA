@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <iterator>
 #include <memory>
 
 #include "ar/faith_movement.h"
@@ -385,10 +386,11 @@ private:
     // ---------------------------------------------------------------- walls
 
     // A wall within `reach` along dir: vertical enough and of a kind Faith can run or climb on.
-    bool FindWall(const Tick& t, Vec3 dir, float reach, Vec3* normal) const {
+    bool FindWall(const Tick& t, Vec3 dir, float reach, Vec3* normal, float* distance = nullptr) const {
         const TraceResult r = Hull(t, t.s.origin, t.s.origin + dir * reach);
         if (r.start_solid || !r.Hit() || std::fabs(r.normal.z) > kWallMaxNormalZ || !WallKind(r.kind)) return false;
         *normal = r.normal;
+        if (distance) *distance = r.fraction * reach;
         return true;
     }
 
@@ -552,32 +554,56 @@ private:
     // ---------------------------------------------------------------- ledges
 
     // Finds a floor Faith can stand on, over the obstacle in dir, low enough for her hands.
-    bool FindLedge(const Tick& t, Vec3 dir, Vec3* target) const {
+    // edge_distance: gap between the hull and the wall (from FindWall), if known. The first probe then
+    // lands the hull just past the edge, clear of the bevels real tops have on their rim.
+    bool FindLedge(const Tick& t, Vec3 dir, Vec3* target, float edge_distance = -1.0f) const {
         const FaithState& s = t.s;
         const float reach = cfg_.hull_maxs.z + kLedgeReach;
         const TraceResult up = t.trace.TraceHull(s.origin, s.origin + Vec3{0, 0, reach}, cfg_.hull_mins, cfg_.hull_maxs);
         if (up.start_solid || up.Hit()) return false;
-        const TraceResult over = t.trace.TraceHull(up.end_pos, up.end_pos + dir * kLedgeForward, cfg_.hull_mins,
-                                                   cfg_.hull_maxs);
-        if (over.Hit()) return false;
-        const TraceResult down = t.trace.TraceHull(over.end_pos, over.end_pos - Vec3{0, 0, reach}, cfg_.hull_mins,
-                                                   cfg_.hull_maxs);
-        if (down.start_solid || !down.Hit() || down.normal.z < kWalkableNormalZ) return false;
-        *target = down.end_pos + Vec3{0, 0, kSkin};
-        return target->z - s.origin.z > cfg_.step_height;
+        // Real tops have bevels and rounded edges: probe a few distances past the edge and take the
+        // first one that lands on a walkable surface.
+        float probes[1 + std::size(kLedgeForwardProbes)];
+        int count = 0;
+        if (edge_distance >= 0.0f) probes[count++] = edge_distance + 2.0f * cfg_.hull_maxs.x + 1.0f;
+        for (const float p : kLedgeForwardProbes) probes[count++] = p;
+        for (int i = 0; i < count; ++i) {
+            const float forward = probes[i];
+            const TraceResult over = t.trace.TraceHull(up.end_pos, up.end_pos + dir * forward, cfg_.hull_mins,
+                                                       cfg_.hull_maxs);
+            if (over.Hit()) continue;
+            const TraceResult down = t.trace.TraceHull(over.end_pos, over.end_pos - Vec3{0, 0, reach},
+                                                       cfg_.hull_mins, cfg_.hull_maxs);
+            if (down.start_solid || !down.Hit() || down.normal.z < kWalkableNormalZ) continue;
+            *target = down.end_pos + Vec3{0, 0, kSkin};
+            if (target->z - s.origin.z > kMantleMinHeight) return true;  // callers pick the height range
+        }
+        return false;
     }
 
     // The two-part path of a climb (straight up, then over) is free.
+    // Checked kClimbClearance above the ledge: real tops (props, bevelled brushes) are rarely
+    // perfectly flat, and a path grazing the top surface would reject a valid climb.
     bool ClimbPathFree(const Tick& t, Vec3 target) const {
-        const Vec3 top{t.s.origin.x, t.s.origin.y, target.z};
+        const Vec3 top{t.s.origin.x, t.s.origin.y, target.z + kClimbClearance};
+        const Vec3 over{target.x, target.y, target.z + kClimbClearance};
         return !t.trace.TraceHull(t.s.origin, top, cfg_.hull_mins, cfg_.hull_maxs).Hit() &&
-               !t.trace.TraceHull(top, target, cfg_.hull_mins, cfg_.hull_maxs).Hit();
+               !t.trace.TraceHull(top, over, cfg_.hull_mins, cfg_.hull_maxs).Hit();
     }
 
-    bool TryGrabLedge(Tick& t, Vec3 dir) const {
+    // allow_mantle (default): an edge 4-40 su above the feet is climbed straight away (mantle,
+    // vault animation) instead of hanging from it; higher edges, up to the hands' reach, are grabbed.
+    bool TryGrabLedge(Tick& t, Vec3 dir, bool allow_mantle = true, float edge_distance = -1.0f) const {
         if (t.in.ledge_cooldown > 0.0f || t.s.ducked) return false;
         Vec3 target;
-        if (!FindLedge(t, dir, &target) || target.z - t.s.origin.z < kLedgeMinHeight) return false;
+        if (!FindLedge(t, dir, &target, edge_distance)) return false;
+        if (target.z - t.s.origin.z < kLedgeMinHeight) {
+            if (!allow_mantle || !ClimbPathFree(t, target)) return false;
+            StartClimb(t, target, true);
+            t.s.wall_normal = -dir;
+            t.result.events |= kFaithEventLedgeGrab;
+            return true;
+        }
         SetMode(t.in, Mode::LedgeHang);
         t.in.ledge_target = target;
         t.in.air_kind = kAirFall;
@@ -600,8 +626,9 @@ private:
             return false;
         }
         Vec3 n;
-        if (!FindWall(t, dir, kWallReach, &n)) return false;
-        return TryGrabLedge(t, -n);
+        float gap = 0.0f;
+        if (!FindWall(t, dir, kWallReach, &n, &gap)) return false;
+        return TryGrabLedge(t, -n, true, gap);
     }
 
     bool TryVault(Tick& t) const {
@@ -609,8 +636,10 @@ private:
         if (s.ducked || s.speed_2d < kVaultMinSpeed) return false;
         const Vec3 dir = Normalized(Horizontal(s.velocity));
         Vec3 n, target;
-        if (!FindWall(t, dir, kVaultReach, &n) || !FindLedge(t, -n, &target)) return false;
-        if (target.z - s.origin.z > kVaultMaxHeight || !ClimbPathFree(t, target)) return false;
+        float gap = 0.0f;
+        if (!FindWall(t, dir, kVaultReach, &n, &gap) || !FindLedge(t, -n, &target, gap)) return false;
+        const float height = target.z - s.origin.z;
+        if (height <= cfg_.step_height || height > kVaultMaxHeight || !ClimbPathFree(t, target)) return false;
         StartClimb(t, target, true);
         t.s.wall_normal = n;
         return true;

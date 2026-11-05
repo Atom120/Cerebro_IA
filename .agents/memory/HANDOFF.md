@@ -20,6 +20,19 @@
   - B2: los 9 CSV de `qa/telemetria/` son **sintéticos** (salen de `--generate-reference` con las constantes de `ar::me_reference`). Se añadió un aviso en su README: no sirven para ajustar el movimiento hasta que haya trazas grabadas en vivo.
   - **Z1 probada en Portal (2026-11-03, build 19017868):** el `console.log` muestra `Plugins: found file "aperture_runner.vdf"`, `Loading unsigned module addons\aperture_runner` y, en `plugin_print`, `0: "ApertureRunner: Mirror's Edge movement in Portal 1 (testchmb_a_00)"`. `testchmb_a_00` carga sin cierres; los errores del log son los mismos del juego sin el mod. No hizo falta `-insecure`. `printf` no sale en la consola de Source; en Z2 conviene usar `Msg`/`ConColorMsg` de `tier0.dll`. **Hito H1 parcial: la DLL carga.**
 
+## ⚠️ 2026-11-04 (madrugada): pulido de H3 (Sebas) — NO rehacer ni modificar sin hablar con Sebas
+- **Ajustes recordados:** `addons/aperture_runner.cfg` (`ar_enable`, `ar_camera`) se lee al cargar el plugin y se guarda con esos comandos. Las pruebas automáticas lo guardan y lo restauran.
+- **S5 v1:** `mod/tools/installer/install.ps1` encuentra Portal (registro y bibliotecas de Steam, o `config/paths.local.json`), comprueba la build y copia la DLL y el `.vdf`; `-Uninstall` los quita. `package.ps1` genera `dist/ApertureRunner-<fecha>.zip` (DLL, instalar/desinstalar `.bat`, `LEEME.md`). Probado: desinstalar y volver a instalar desde el zip.
+- **Bordes y vault en el mapa real:**
+  - `ar_find_ledges x0 y0 x1 y1 z [paso]` audita el mapa con las mismas reglas que `faith_move`.
+  - Mantle de 4-40 su; vault robusto en bordes biselados.
+  - Los portales cerrados ya no activan el modo híbrido (`m_bActivated` 0x56A).
+- **Cámara completa salvo la voltereta:**
+  - FOV con `m_iFOV` (0xB38): 75 → 82 al esprintar, con límites y restauración.
+  - Balanceo con `m_vecViewOffset` (0x320), sin el mensaje «Restoring».
+  - Nunca usar 0x23C8.
+- **QA:** H3 da **15/15** (añade vault, mantle, FOV, balanceo, ajustes y consola limpia) y H2 sigue **9/9**. `qa/scripts/read_portal_view.py` lee la vista (solo lectura).
+
 ## ⚠️ 2026-11-04 (noche): H2 cerrado y H3 casi completo (Sebas) — NO rehacer ni modificar sin hablar con Sebas
 - **P4:** el contrato pasó a v3. El host refresca el origen y la velocidad tras un teletransporte, y la librería solo gira sus propios vectores. Al cruzar un portal se conservan el wallrun o el slide y la velocidad de entrada (Portal frenaba hasta un ~40%). Detección de cruces entre ticks (`cruces=` en `ar_status`).
 - **G4, parte de cámara:** `mod/plugin/client/client_view.*` (`IVEngineClient`, `VEngineClient014`, ranuras 19/20 verificadas). `mod/camera` se aplica a la vista: giro de 180°, inclinación en el wallrun y sacudida al aterrizar. `ar_camera 0|1`.

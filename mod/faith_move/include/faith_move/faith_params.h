@@ -69,8 +69,10 @@ inline constexpr float kWallClimbJumpOut = 200.0f;          // placeholder
 
 // Ledges and vault (P3).
 inline constexpr float kLedgeReach = 24.0f;       // hands reach this far above the head
-inline constexpr float kLedgeForward = 36.0f;     // probe this far over the ledge
-inline constexpr float kLedgeMinHeight = 40.0f;   // lower ledges are vaulted or stepped
+inline constexpr float kLedgeForward = 36.0f;     // probe this far over the ledge (first try)
+inline constexpr float kLedgeForwardProbes[] = {kLedgeForward, 24.0f, 48.0f};  // bevelled/rounded tops
+inline constexpr float kLedgeMinHeight = 40.0f;   // lower ledges are vaulted, stepped or (in the air) mantled
+inline constexpr float kMantleMinHeight = 4.0f;   // in the air, edges this far above the feet are climbed
 inline constexpr float kLedgeGrabMaxRiseSpeed = 150.0f;
 inline constexpr float kLedgeClimbSec = 0.6f;     // placeholder
 inline constexpr float kLedgeDropCooldownSec = 0.4f;
@@ -78,6 +80,7 @@ inline constexpr float kVaultMaxHeight = 48.0f;   // placeholder
 inline constexpr float kVaultReach = 24.0f;
 inline constexpr float kVaultMinSpeed = 50.0f;
 inline constexpr float kVaultSec = 0.35f;         // placeholder
+inline constexpr float kClimbClearance = 2.0f;    // the climb/vault path is checked this far above the top
 
 // Collision.
 inline constexpr float kWalkableNormalZ = 0.7f;  // Source: surfaces flatter than ~45 degrees are floor
