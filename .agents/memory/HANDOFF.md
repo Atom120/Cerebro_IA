@@ -3,8 +3,8 @@
 > **Instrucción para Antigravity**: Lee este archivo al iniciar cualquier conversación para retomar exactamente donde se quedó la última sesión/computadora. Actualízalo al terminar una tarea relevante o cuando el usuario indique que cambiará de dispositivo/cuenta.
 
 ## Última Actualización
-- **Fecha**: 2026-11-03
-- **Quién**: Sebas (Claude Code) — Repositorio `Cerebro_IA` (`main`)
+- **Fecha**: 2026-11-04
+- **Quién**: Gonzalo Robles — Repositorio `Cerebro_IA` (`G1` / `gonzalo/G1-estudio-cliente` y `gonzalo/G3-modulo-camara`)
 - **Estado general**: **Cambio de dirección (ADR-006).** El proyecto ahora es *Mirror's Edge dentro de Portal*: Faith en el primer mapa de Portal 1 (`testchmb_a_00`). **El plan, el reparto por persona, las dependencias y los agentes están en [`PLAN_EQUIPO.md`](../../PLAN_EQUIPO.md). Léelo antes de proponer cambios y trabaja solo en las tareas y carpetas de tu persona.**
 - **Equipo**: Sebas (líder/integración), Zarek (plugin servidor), Peña (movimiento de Faith), Gonzalo (cliente y cámara), Antonio (assets de Faith), Benja (telemetría ME, contrato del mapa y QA).
 
@@ -26,6 +26,11 @@
 - **Z3 (Zarek)**: Implementado el hook de vtable de `IGameMovement::ProcessMovement` en passthrough puro (`movement_hook.h/.cpp`), obtención de `GameMovement001` vía `gameServerFactory`, logging en consola de Source con `tier0.dll!Msg`, y arnés autónomo con mock dinámico de `IGameMovement` en `test_plugin_load.exe`. Compilación Win32/x86 y 100% de tests aprobados (4/4). Rama `zarek/Z3-hook-passthrough`. Listo para cerrar el **Hito H1** ("La DLL vive") con la checklist B1 de Benja.
   - **Revisado e integrado por Sebas (PR #5) y probado en Portal (build 19017868):** el log muestra `ProcessMovement hookeado exitosamente` y `passthrough activo (500…2000 ticks interceptados)` en `testchmb_a_00`, sin cierres. El banner ya sale en la consola de Source gracias a `tier0!Msg`. Corrección: la prueba llamaba a `ProcessMovement` sobre el objeto concreto (el compilador puede saltarse la vtable); ahora la llamada pasa por un puntero `volatile` a `IGameMovement`.
   - Pendiente para H1: Benja (B3) recorre la checklist B1 con el hook puesto, y Gonzalo engancha la copia de predicción en `client.dll` (G1).
+- **G1, G3 y G4 provisional (Gonzalo, 2026-11-04)**:
+  - **G1**: Documentadas las interfaces y offsets de `client.dll` (build `19017868`, `0x68362D89`) en `docs/contratos/portal_client_offsets.md` (`GameMovement001`, `VClient017`, `VClientPrediction001`, `VClientEntityList003`, layout de `CMoveData` y tabla `Source IN_*` $\rightarrow$ `ar::FaithButton`), e implementado `ClientPredictionHook` en `mod/plugin/client/` (`client_interfaces.h`, `client_prediction_hook.h/.cpp`) con soporte de passthrough y rebobinado determinista (`FaithState` de 196 B).
+  - **G3**: Implementado el módulo C++20 puro de cámara estilo Mirror's Edge en `mod/camera/` (`camera_feel.h/.cpp`, `camera_controller.h`, `CMakeLists.txt`) con decaimiento exponencial de roll `roll(t+dt) = roll(t)·exp(-λ·dt)`, supresión de roll al mirar recto arriba/abajo ($|\text{pitch}| \ge 85^\circ$), *view bobbing* armónico en carrera/sprint, FOV dinámico por velocidad (`+8°` en sprint, `+12°` en flings) y sacudidas de aterrizaje suave/duro + vuelta de campana de 360° en `SkillRoll`.
+  - **G4 (provisional)**: Implementado en `mod/plugin/client/render/` (`faith_render.h/.cpp`) el selector de modelos 1P según `docs/contratos/asset_manifest.json` (con fallback automático y aviso único en consola a los modelos provisionales de Portal mientras llega `A3` de Antonio) y el mapeo de los 24 estados de `FaithAnimState` a `SequenceName()`.
+  - **Pruebas x86**: 6/6 suites de CTest aprobadas al 100% (`test_contracts`, `test_core`, `test_camera` con 127 checks, `test_client_hooks` con 120 checks, `test_plugin_load`, `test_me_telemetry`).
 
 ---
 
