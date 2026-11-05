@@ -17,7 +17,7 @@ Benja, tu PC es la única del equipo con **Portal y Mirror's Edge**. Esta guía 
 - **Mirror's Edge GOG v1.01** solo para el paso 4.
 
 ## 1. Bajar `main`
-En **GitHub Desktop**: *Current branch* → `main` → *Fetch origin* → *Pull origin*. Tiene que aparecer el merge `973c3df` o uno posterior.
+En **GitHub Desktop**: *Current branch* → `main` → *Fetch origin* → *Pull origin*. Tiene que aparecer el merge `bf7df5d` o uno posterior.
 
 ## 2. Prueba automática en Portal (≈ 6 min, no toques el teclado)
 Cierra Portal, abre PowerShell en la carpeta del repo y elige:
@@ -26,7 +26,7 @@ Cierra Portal, abre PowerShell en la carpeta del repo y elige:
 ```
 powershell -ExecutionPolicy Bypass -File qa\scripts\probar_todo.ps1
 ```
-**2b. Sin Visual Studio:** descarga `ApertureRunner-2026-11-04.zip` del release **v0.3-h3** del repo (GitHub → *Releases*), extráelo y ejecuta:
+**2b. Sin Visual Studio:** descarga `ApertureRunner-2026-11-05.zip` del release **v0.3-h3** del repo (GitHub → *Releases*), extráelo y ejecuta:
 ```
 powershell -ExecutionPolicy Bypass -File qa\scripts\probar_todo.ps1 -Dll "C:\ruta\donde\extrajiste\aperture_runner.dll"
 ```
