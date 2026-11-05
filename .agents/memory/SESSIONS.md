@@ -33,3 +33,4 @@
 - **2026-11-04 (Sebas - Claude Code - tareas de Zarek, Gonzalo y Benja)**: Z2/Z5 (Faith mueve al jugador en Portal, portales híbridos), G1 (`cl_predict 0`, G2 no aplica), G3 (módulo de cámara, 30 pruebas) y B3 (H2 automático 9/9 PASS en Portal). Build 6/6. Aviso al equipo en GitHub.
 - **2026-11-04 (Sebas - Claude Code - H3)**: P4 (portales, contrato v3), cámara de G4 en la vista (giro de 180° e inclinación), casco agachado en el motor y QA de H3 en Portal 9/9 PASS (H2 sigue 9/9). Bloqueado por Mirror's Edge: A1–A4, G4 (brazos), B2b y P5.
 - **2026-11-04 (Sebas - Claude Code - pulido de H3)**: ajustes recordados, instalador S5 v1, bordes/vault/mantle en el mapa real, portales cerrados ignorados, FOV y balanceo en la vista. H3 15/15 y H2 9/9 en Portal.
+- **2026-11-05 (Sebas - Claude Code - paquete para Benja)**: `probar_todo.ps1` y guía `qa/GUIA_PRUEBA_BENJA.md`, probados desde una copia limpia (H2 9/9, H3 15/15). Release v0.3-h3 con el zip.

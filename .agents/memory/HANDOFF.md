@@ -20,6 +20,12 @@
   - B2: los 9 CSV de `qa/telemetria/` son **sintéticos** (salen de `--generate-reference` con las constantes de `ar::me_reference`). Se añadió un aviso en su README: no sirven para ajustar el movimiento hasta que haya trazas grabadas en vivo.
   - **Z1 probada en Portal (2026-11-03, build 19017868):** el `console.log` muestra `Plugins: found file "aperture_runner.vdf"`, `Loading unsigned module addons\aperture_runner` y, en `plugin_print`, `0: "ApertureRunner: Mirror's Edge movement in Portal 1 (testchmb_a_00)"`. `testchmb_a_00` carga sin cierres; los errores del log son los mismos del juego sin el mod. No hizo falta `-insecure`. `printf` no sale en la consola de Source; en Z2 conviene usar `Msg`/`ConColorMsg` de `tier0.dll`. **Hito H1 parcial: la DLL carga.**
 
+## 2026-11-05: para Benja, probar en tu PC (Portal + Mirror's Edge)
+- **Guía:** `qa/GUIA_PRUEBA_BENJA.md`. Un comando lo hace todo: `qa/scripts/probar_todo.ps1` (o `-Dll <ruta>` si no puedes compilar).
+- **Release v0.3-h3** con `ApertureRunner-2026-11-05.zip` (DLL + instalador): https://github.com/Atom120/Cerebro_IA/releases/tag/v0.3-h3
+- Probado en una copia limpia del repo: crea `config/paths.local.json` solo, compila (6/6), H2 9/9 y H3 15/15.
+- **Tareas para Benja:** correr la prueba, jugar a mano y apuntar cómo se siente, y grabar las trazas reales de Mirror's Edge (B2b, `*_live.csv`). Subir todo en `benja/B3-prueba-<pc>` con un PR.
+
 ## ⚠️ 2026-11-04 (madrugada): pulido de H3 (Sebas) — NO rehacer ni modificar sin hablar con Sebas
 - **Ajustes recordados:** `addons/aperture_runner.cfg` (`ar_enable`, `ar_camera`) se lee al cargar el plugin y se guarda con esos comandos. Las pruebas automáticas lo guardan y lo restauran.
 - **S5 v1:** `mod/tools/installer/install.ps1` encuentra Portal (registro y bibliotecas de Steam, o `config/paths.local.json`), comprueba la build y copia la DLL y el `.vdf`; `-Uninstall` los quita. `package.ps1` genera `dist/ApertureRunner-<fecha>.zip` (DLL, instalar/desinstalar `.bat`, `LEEME.md`). Probado: desinstalar y volver a instalar desde el zip.
