@@ -7,6 +7,7 @@
 - **Quién**: Sebas (Claude Code) — Repositorio `Cerebro_IA` (`main`)
 - **Estado general**: **Cambio de dirección (ADR-006).** El proyecto ahora es *Mirror's Edge dentro de Portal*: Faith en el primer mapa de Portal 1 (`testchmb_a_00`). **El plan, el reparto por persona, las dependencias y los agentes están en [`PLAN_EQUIPO.md`](../../PLAN_EQUIPO.md). Léelo antes de proponer cambios y trabaja solo en las tareas y carpetas de tu persona.**
 - **Equipo**: Sebas (líder/integración), Zarek (plugin servidor), Peña (movimiento de Faith), Gonzalo (cliente y cámara), Antonio (assets de Faith), Benja (telemetría ME, contrato del mapa y QA).
+- **Usuarios de GitHub**: Sebas `Atom120`, Zarek `zarek21`, Benja `Flextus`, Gonzalo `DaddyGanzux`. Peña y Antonio: pendiente (entre los colaboradores también está `j0emike`, sin confirmar).
 
 ## Hecho (2026-11-03)
 - S0: 16 agentes en `.agents/agents/` y skills `build-x86` y `launch-portal-test`.
@@ -18,6 +19,32 @@
   - Z1: `DisableThreadLibraryCalls` recibe ahora `hinstDLL` (antes `nullptr`).
   - B2: los 9 CSV de `qa/telemetria/` son **sintéticos** (salen de `--generate-reference` con las constantes de `ar::me_reference`). Se añadió un aviso en su README: no sirven para ajustar el movimiento hasta que haya trazas grabadas en vivo.
   - **Z1 probada en Portal (2026-11-03, build 19017868):** el `console.log` muestra `Plugins: found file "aperture_runner.vdf"`, `Loading unsigned module addons\aperture_runner` y, en `plugin_print`, `0: "ApertureRunner: Mirror's Edge movement in Portal 1 (testchmb_a_00)"`. `testchmb_a_00` carga sin cierres; los errores del log son los mismos del juego sin el mod. No hizo falta `-insecure`. `printf` no sale en la consola de Source; en Z2 conviene usar `Msg`/`ConColorMsg` de `tier0.dll`. **Hito H1 parcial: la DLL carga.**
+
+## 2026-11-05: para Benja, probar en tu PC (Portal + Mirror's Edge)
+- **Guía:** `qa/GUIA_PRUEBA_BENJA.md`. Un comando lo hace todo: `qa/scripts/probar_todo.ps1` (o `-Dll <ruta>` si no puedes compilar).
+- **Release v0.3-h3** con `ApertureRunner-2026-11-05.zip` (DLL + instalador): https://github.com/Atom120/Cerebro_IA/releases/tag/v0.3-h3
+- Probado en una copia limpia del repo: crea `config/paths.local.json` solo, compila (6/6), H2 9/9 y H3 15/15.
+- **Tareas para Benja:** correr la prueba, jugar a mano y apuntar cómo se siente, y grabar las trazas reales de Mirror's Edge (B2b, `*_live.csv`). Subir todo en `benja/B3-prueba-<pc>` con un PR.
+
+## ⚠️ 2026-11-04 (madrugada): pulido de H3 (Sebas) — NO rehacer ni modificar sin hablar con Sebas
+- **Ajustes recordados:** `addons/aperture_runner.cfg` (`ar_enable`, `ar_camera`) se lee al cargar el plugin y se guarda con esos comandos. Las pruebas automáticas lo guardan y lo restauran.
+- **S5 v1:** `mod/tools/installer/install.ps1` encuentra Portal (registro y bibliotecas de Steam, o `config/paths.local.json`), comprueba la build y copia la DLL y el `.vdf`; `-Uninstall` los quita. `package.ps1` genera `dist/ApertureRunner-<fecha>.zip` (DLL, instalar/desinstalar `.bat`, `LEEME.md`). Probado: desinstalar y volver a instalar desde el zip.
+- **Bordes y vault en el mapa real:**
+  - `ar_find_ledges x0 y0 x1 y1 z [paso]` audita el mapa con las mismas reglas que `faith_move`.
+  - Mantle de 4-40 su; vault robusto en bordes biselados.
+  - Los portales cerrados ya no activan el modo híbrido (`m_bActivated` 0x56A).
+- **Cámara completa salvo la voltereta:**
+  - FOV con `m_iFOV` (0xB38): 75 → 82 al esprintar, con límites y restauración.
+  - Balanceo con `m_vecViewOffset` (0x320), sin el mensaje «Restoring».
+  - Nunca usar 0x23C8.
+- **QA:** H3 da **15/15** (añade vault, mantle, FOV, balanceo, ajustes y consola limpia) y H2 sigue **9/9**. `qa/scripts/read_portal_view.py` lee la vista (solo lectura).
+
+## ⚠️ 2026-11-04 (noche): H2 cerrado y H3 casi completo (Sebas) — NO rehacer ni modificar sin hablar con Sebas
+- **P4:** el contrato pasó a v3. El host refresca el origen y la velocidad tras un teletransporte, y la librería solo gira sus propios vectores. Al cruzar un portal se conservan el wallrun o el slide y la velocidad de entrada (Portal frenaba hasta un ~40%). Detección de cruces entre ticks (`cruces=` en `ar_status`).
+- **G4, parte de cámara:** `mod/plugin/client/client_view.*` (`IVEngineClient`, `VEngineClient014`, ranuras 19/20 verificadas). `mod/camera` se aplica a la vista: giro de 180°, inclinación en el wallrun y sacudida al aterrizar. `ar_camera 0|1`.
+- **Casco agachado en el motor:** en los ticks de Faith también corre el movimiento original con `IN_DUCK` según Faith (efectos secundarios: casco, `FL_DUCKING`, altura de la vista, entidad de suelo, pasos), y después se escribe encima la posición y la velocidad de Faith.
+- **QA:** `qa/scripts/h3_smoke.ps1` da **9/9 PASS**: wallrun real, inclinación de -13.4°, wallclimb de 47 su, giro de 180°, vista agachada (192 → 156), slide, portal (192.8 → 194.0 su/s). H2 sigue en 9/9. `ar_qa_input` acepta un tick de pulsación.
+- **Bloqueado:** brazos de Faith (G4) ← A3 ← Mirror's Edge instalado (Antonio). Sin ME tampoco se pueden hacer B2b, P5 ni A1–A4.
 
 ## ⚠️ 2026-11-04: Sebas hizo las tareas pendientes de Zarek, Gonzalo y Benja (NO rehacer ni modificar sin hablar con Sebas)
 - **Z5 + Z2:** con `ar_enable 1`, Faith mueve al jugador en Portal (`mod/plugin/server/faith_driver.*`).

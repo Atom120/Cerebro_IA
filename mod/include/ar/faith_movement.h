@@ -12,6 +12,10 @@
 //   ducked back into the player. Portal teleports are still done by the engine (prop_portal touch);
 //   the host reports them through FaithInput::portal so the library can rotate its own vectors
 //   (wall normal, wallrun direction) and keep a wallrun going through a portal.
+//
+//   v3 (P4): after a teleport the host refreshes FaithState::origin AND velocity from the engine (the
+//   engine already rotated the velocity); the library no longer rotates velocity itself, only its
+//   private vectors, so nothing is rotated twice.
 #pragma once
 
 #include <cstdint>
@@ -23,8 +27,9 @@
 
 namespace ar {
 
-// v2 (P3): kFaithEventTurn180. FaithState layout unchanged.
-inline constexpr uint32_t kFaithMovementContractVersion = 2;
+// v2 (P3): kFaithEventTurn180. v3 (P4): portal teleports, see the model notes above.
+// FaithState layout unchanged.
+inline constexpr uint32_t kFaithMovementContractVersion = 3;
 
 // Semantic buttons. The host maps engine input to these (proposal, confirmed in G1):
 //   Up <- IN_JUMP, Down <- IN_DUCK, Turn180 <- IN_RELOAD, Walk <- IN_WALK. IN_USE stays with the engine.
