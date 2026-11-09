@@ -36,6 +36,13 @@ Esto es lo más cercano y lo que aporta:
 3. Técnica general **"motor invitado reconstruido dentro de un anfitrión"**
    (`knowledge/techniques/rebuilt-guest-engine-inside-a-host.md`): es la familia de nuestra ruta B.
 
+## Revisión de `levels/` (2026-11-09)
+- Los 4 `.vmf` y los 2 `.bsp` de la ruta archivada **no contienen contenido de Mirror's Edge**. Son 11–15 bloques
+  hechos a mano con materiales de serie de Source (`CONCRETE_MODULAR_*`, `METALWALL048B`, `TOOLSSKYBOX`).
+- El pakfile de cada `.bsp` solo tiene lo que genera el compilador: cubemaps por defecto y un `.vmt` parcheado.
+- Lo único que viene de Mirror's Edge son coordenadas (puntos de inicio y anclas de `Edge_p`) en los `slice_manifest.json`.
+  Son medidas, no assets. Sin acción necesaria.
+
 ## Pendiente que sale del recon
 - [ ] Resolver los offsets de `CPortal_Player`/`CProp_Portal` por nombre al cargar (dejando los actuales como
       comprobación). Propuesto, no hecho.

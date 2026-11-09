@@ -29,3 +29,6 @@ tags: [chat, apertureRunner, universal-modder, recon, source, ue3]
 - [[10_Proyectos/ApertureRunner/README|ApertureRunner]]
 - [[20_Chats/2026-11-03 - Instalación de universal-modder]]
 - [[Inicio]]
+
+## Revisión de levels/ (2026-11-09)
+- Los .bsp y .vmf de la ruta archivada no tienen contenido de Mirror's Edge: bloques hechos a mano con materiales de serie de Source; solo hay coordenadas de Edge_p en los manifiestos. Detalle en `docs/MODDING_PLAN.md`.
