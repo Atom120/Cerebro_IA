@@ -6,7 +6,10 @@
     "Se prueba cada lista en orden y gana la primera animación que tiene todas las palabras. 'exact' fija un nombre concreto y tiene prioridad.",
     "Nombres 'exact' revisados contra la lista real de AS_C1P_Unarmed (ME GOG v1.01, 281 animaciones) el 2026-11-09. 'any' queda como respaldo para otras versiones.",
     "'fallback' indica qué secuencia usar si no se encuentra ninguna (el modelo compila igual).",
-    "'meshes': qué malla de CH_TKY_Crim_Fixer_1P va en cada modelo del manifiesto (en ME los brazos y las piernas en 1P son mallas separadas)."
+    "'meshes': qué malla de CH_TKY_Crim_Fixer_1P va en cada modelo del manifiesto (en ME los brazos y las piernas en 1P son mallas separadas).",
+    "'anchors': hueso que se pone en el origen del modelo en cada frame. Los brazos se dibujan como viewmodel (origen = ojo), así que CameraJoint va al origen y los brazos se mueven respecto a la cámara como en ME.",
+    "'anchor_offsets': el ojo va 8 su detras de CameraJoint para que, con el viewmodel_fov 54 de Portal, los brazos se vean como con la camara de ME a 90 grados. 'drop_materials': el torso de baja resolucion de SK_LowerBody tapa la vista al mirar abajo; en primera persona solo se dejan pantalon y zapatillas.",
+    "'near_cull': se quitan los triangulos a menos de N su del ojo (el corte del hombro). Source mueve el viewmodel segun la inclinacion de la vista (CalcViewModelLag) y al mirar abajo ese corte entraba en cuadro."
   ],
   "sequences": {
     "idle": {
@@ -340,5 +343,23 @@
   "meshes": {
     "arms_1p": "SK_UpperBody",
     "body_1p": "SK_LowerBody"
+  },
+  "anchors": {
+    "arms_1p": "CameraJoint"
+  },
+  "anchor_offsets": {
+    "arms_1p": [
+      -8.0,
+      0.0,
+      1.0
+    ]
+  },
+  "drop_materials": {
+    "body_1p": [
+      "MI_Faith_Lowres_Upper"
+    ]
+  },
+  "near_cull": {
+    "arms_1p": 10.0
   }
 }

@@ -2,6 +2,7 @@
 #include "server_plugin.h"
 #include "movement_hook.h"
 #include "faith_driver.h"
+#include "faith_viewmodel.h"
 #include "mod_settings.h"
 #include "client/client_movement_hook.h"
 #include "client/client_view.h"
@@ -99,6 +100,19 @@ bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn interfaceFactory
         }
     }
 
+    // G4: brazos de Faith (viewmodel). VSERVERTOOLS002 en server.dll, VEngineServer021 en engine.dll.
+    {
+        int rc_tools = 0, rc_engine = 0;
+        void* tools = gameServerFactory ? gameServerFactory("VSERVERTOOLS002", &rc_tools) : nullptr;
+        void* engine = interfaceFactory ? interfaceFactory("VEngineServer021", &rc_engine) : nullptr;
+        if (tools && rc_tools == 0 && engine && rc_engine == 0) {
+            FaithViewModel::Instance().Init(tools, engine);
+            LogMsg("[ApertureRunner] VSERVERTOOLS002 y VEngineServer021 adquiridos (G4, brazos de Faith).\n");
+        } else {
+            LogMsg("[ApertureRunner] AVISO: sin VSERVERTOOLS002/VEngineServer021: no habra brazos de Faith.\n");
+        }
+    }
+
     // G1: copia de prediccion del cliente (client.dll), en el mismo proceso.
     LogMsg(ClientMovementHook::Install() ? "[ApertureRunner] Prediccion del cliente (client.dll GameMovement001) enganchada (G1).\n"
                                          : "[ApertureRunner] client.dll no disponible: sin hook de prediccion.\n");
@@ -176,6 +190,7 @@ void ApertureRunnerServerPlugin::GameFrame(bool /*simulating*/) {
 void ApertureRunnerServerPlugin::LevelShutdown() {
     LogMsg("[ApertureRunner] LevelShutdown en mapa %s\n", current_map_);
     FaithDriver::Instance().OnLevelShutdown();
+    FaithViewModel::Instance().OnLevelShutdown();
     current_map_[0] = '\0';
 }
 
@@ -226,6 +241,12 @@ source::PluginResult ApertureRunnerServerPlugin::ClientCommand(void* /*pEntity*/
         if (ClientView::GetViewAngles(view)) {
             LogMsg("[AR] vista=(%.1f %.1f %.1f) via %s\n", view[0], view[1], view[2], ClientView::Version());
         }
+        return source::kPluginStop;
+    }
+    if (std::strcmp(cmd, "ar_brazos_seq") == 0) {  // diagnostico G4: fuerza una secuencia (-1 = la de Faith)
+        const int seq = arg ? std::atoi(arg) : -1;
+        FaithViewModel::Instance().SetOverride(seq);
+        LogMsg("[ApertureRunner] ar_brazos_seq = %d\n", seq);
         return source::kPluginStop;
     }
     if (std::strcmp(cmd, "ar_camera") == 0) {  // ar_camera [0|1]: camara de Faith en la vista (G4)

@@ -20,9 +20,9 @@ tags: [plan, equipo, apertureRunner, antigravity]
 > | P4, G4 (cámara), casco agachado | inercia y parkour a través de portales; giro de 180° e inclinación en la vista; `FL_DUCKING` en el motor | `mod/faith_move/`, `mod/plugin/` |
 >
 > **Lo que queda de cada uno:**
-> - **Zarek:** Z-tareas al día. Pendiente opcional: S5 con Sebas (instalador), y bordes/vault en el mapa (ver `qa/resultados/H3.md`).
-> - **Gonzalo:** G4, los brazos y el cuerpo de Faith (la cámara ya está aplicada a la vista). Espera al modelo de Antonio (A3); antes puede usar uno provisional. También FOV y balanceo en la vista (hay que enganchar el cálculo de la vista del cliente).
-> - **Benja:** B2b (grabar trazas reales de Mirror's Edge con `--record`; necesita ME instalado) y B5 (vídeo, H4).
+> - **Zarek:** Z-tareas al día. S5 ✅ (Sebas, 2026-11-10).
+> - **Gonzalo:** G4 ✅ hecho por Sebas (2026-11-10): brazos y piernas de Faith en primera persona. También FOV y balanceo en la vista (hay que enganchar el cálculo de la vista del cliente).
+> - **Benja:** B2b ✅ (trazas reales grabadas por Sebas, 2026-11-09). B5 (vídeo, H4): guion en `qa/GUION_VIDEO_B5.md`.
 > - **Peña:** P1–P5 hechos. P5 ✅ (Sebas, 2026-11-09): ajuste con las 9 trazas reales, en `docs/tuning/P5_ajuste.md`.
 > - **Antonio:** A1–A4 hechos (Sebas, 2026-11-09/10, `mod/tools/extractor/`), revisados en `hlmv`. Falta probar el extractor en otro PC. Ya se puede hacer G4 con el modelo real.
 
@@ -239,7 +239,7 @@ Al terminar la sesión: *"prepara el handoff de mi tarea, añade mi línea a SES
 | S2 | **Contratos** en `mod/include/ar/`: `faith_movement.h` (`FaithInput`, `FaithState`, `FaithAnimState`, `IFaithMovement`), `trace_provider.h` (`ITraceProvider`), `units.h`, y `docs/contratos/asset_manifest.json` | 🟢 **Bloquea a Z3, Z4, P1, G3 y A2. Prioridad máxima, día 1–2** | Headers fusionados en `main` |
 | S3 ✅ semana 1 | Build de integración semanal y prueba en Portal (semana 1 ✅ 2026-11-04) | 🔴 (Z3) | Nota de estado semanal en `HANDOFF.md` |
 | S4 | Revisar y fusionar PRs; actualizar `DECISIONS.md` si cambia algo | continuo | — |
-| S5 🟡 instalador v1 ✅ (Sebas, 2026-11-04; falta el extractor de A4) | Instalador final (DLL + `addons/aperture_runner.vdf` + extractor) | 🔴 (Z5, A4) | Release |
+| S5 ✅ (Sebas, 2026-11-10; el paquete trae el extractor) | Instalador final (DLL + `addons/aperture_runner.vdf` + extractor) | 🔴 (Z5, A4) | Release |
 
 ---
 
@@ -356,7 +356,7 @@ No edites código: entrega una tabla.
 | G1 ✅ (Sebas, 2026-11-04) | Estudio: la copia de `GameMovement001` en `client.dll` (predicción), el hook de `CreateMove` y cómo engancharlo desde la misma DLL (es un solo proceso). Comprobar los offsets de `client.dll` que dejó Benja en `LESSONS.md` contra tu build | 🟢 | `docs/contratos/portal_client_offsets.md` |
 | G2 ⚪ no aplica con `cl_predict 0` (Sebas, 2026-11-04) | La predicción del cliente ejecuta el mismo `faith_move` que el servidor, sin tirones | 🔴 (Z3, P2) | Hito H2 |
 | G3 ✅ (Sebas, 2026-11-04) | Módulo de cámara en `mod/camera/` (C++ puro, con pruebas): enderezado del roll `exp(-λ·dt)`, balanceo al correr, subida del FOV con la velocidad, sacudida al aterrizar y al rodar | 🟡 (S2, para `FaithState`) | Módulo + pruebas |
-| G4 🟡 cámara ✅ (Sebas, 2026-11-04); brazos ⛔ esperan A3 | Dibujar los brazos y el cuerpo de Faith en primera persona con el modelo de Antonio. Mientras no esté, usar un modelo provisional de Portal | 🔴 (A3) para el modelo final; 🟢 con el provisional | Hito H3 |
+| G4 ✅ (Sebas, 2026-11-10; brazos = viewmodel, piernas = prop con padre de red; ver `qa/resultados/H4.md`) | Dibujar los brazos y el cuerpo de Faith en primera persona con el modelo de Antonio. Mientras no esté, usar un modelo provisional de Portal | 🔴 (A3) para el modelo final; 🟢 con el provisional | Hito H3 |
 
 **Agentes:**
 
@@ -451,7 +451,7 @@ Compila con <Portal>/bin/studiomdl.exe -game <Portal>/portal. Máximo 128 huesos
 | B2 🟡 (Benja; CSV sintéticos, falta grabar en vivo) | Grabador de solo lectura en Mirror's Edge: posición, velocidad, `MovementState` (`ATdPawn`+0x04FE, verificar en GOG) y tiempo a 60–120 Hz → CSV. Grabar: arrancar a sprint, salto, wallrun izq./der., wallclimb, borde, slide, caída dura, Skill Roll. Puede reutilizar `GuestBridge` de `mod/core/` | 🟢 (`core` llega con S1; antes, un ejecutable suelto basado en `lean_external_bridge.cpp`) | CSV en `qa/telemetria/` + script |
 | B3 ✅ H1, H2 y H3 (Sebas, 2026-11-04) | Matriz de pruebas en Portal: cada punto de la checklist con `ar_enable 0` y `1`, en cada hito. Grabar demos (`record`) | 🔴 (Z3) | `qa/resultados/H1.md`, `H2.md`… |
 | B4 ✅ (Benja) | Marcar como **archivadas** las skills `portal-me-*` (añadir `status: archivado` en su descripción, sin borrarlas) y dejar en `docs/artifacts/` una nota de qué se reutiliza | 🟢 | PR pequeño |
-| B5 | Vídeo final del nivel completo | 🔴 (H4) | Vídeo |
+| B5 ⏳ guion listo (`qa/GUION_VIDEO_B5.md`); falta grabarlo | Vídeo final del nivel completo | 🔴 (H4) | Vídeo |
 
 **Agentes:**
 

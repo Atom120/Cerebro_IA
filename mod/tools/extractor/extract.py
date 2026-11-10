@@ -5,8 +5,10 @@
     python mod/tools/extractor/extract.py --step a2    # only PSK/PSA -> SMD
     python mod/tools/extractor/extract.py --step a3    # only .qc + studiomdl
     python mod/tools/extractor/extract.py --check      # only check paths and tools, change nothing
+    python extract.py --me-root "D:/Games/Mirror's Edge" --portal-root "C:/.../Portal"   # outside the repo (S5)
 
-Reads config/paths.local.json. Work files go to %TEMP%/aperture_runner_extract (never into the repo); the
+Reads config/paths.local.json when run from the repo; --me-root, --portal-root and --umodel override it (the
+installer package has no config file). Needs Python 3.10+. Work files go to %TEMP%/aperture_runner_extract (never into the repo); the
 compiled models go to <Portal>/portal/custom/aperture_runner/. Contract: docs/contratos/asset_manifest.json.
 Owner: Antonio. Standard library only (plus umodel.exe and Portal's studiomdl.exe).
 """
@@ -28,7 +30,11 @@ import smd  # noqa: E402
 import ue_psk  # noqa: E402
 
 REPO = HERE.parents[2]
-MANIFEST = json.loads((REPO / "docs" / "contratos" / "asset_manifest.json").read_text(encoding="utf-8"))
+# In the repo the contract lives in docs/contratos/; the installer package copies it next to this script.
+_MANIFEST_PATH = next(p for p in (HERE / "asset_manifest.json", REPO / "docs" / "contratos" / "asset_manifest.json")
+                      if p.exists())
+MANIFEST = json.loads(_MANIFEST_PATH.read_text(encoding="utf-8"))
+IN_REPO = (REPO / "docs" / "contratos").is_dir()
 ANIM_MAP = json.loads((HERE / "anim_map.json").read_text(encoding="utf-8"))
 WORK = Path(tempfile.gettempdir()) / "aperture_runner_extract"
 GOG_101_TIMESTAMP = 0x4965FFF1
@@ -39,12 +45,28 @@ class ExtractError(RuntimeError):
     pass
 
 
-def load_paths() -> dict[str, Path]:
+def load_paths(me_root: str = "", portal_root: str = "", umodel_exe: str = "") -> dict[str, Path]:
+    paths: dict[str, Path] = {}
     cfg = REPO / "config" / "paths.local.json"
-    if not cfg.exists():
-        raise ExtractError("Falta config/paths.local.json: copia config/paths.example.json y pon tus rutas.")
-    raw = json.loads(cfg.read_text(encoding="utf-8-sig"))["paths"]
-    paths = {k: Path(v) if Path(v).is_absolute() else REPO / v for k, v in raw.items()}
+    if cfg.exists():
+        raw = json.loads(cfg.read_text(encoding="utf-8-sig"))["paths"]
+        paths = {k: Path(v) if Path(v).is_absolute() else REPO / v for k, v in raw.items()}
+    if me_root:
+        me = Path(me_root)
+        paths["mirrors_edge_root"] = me
+        paths["mirrors_edge_exe"] = me / "Binaries" / "MirrorsEdge.exe"
+        paths["mirrors_edge_cooked_pc"] = me / "TdGame" / "CookedPC"
+    if portal_root:
+        portal = Path(portal_root)
+        paths["portal_root"] = portal
+        paths["portal_exe"] = portal / "hl2.exe"
+        paths["source_sdk_bin"] = portal / "bin"
+    if umodel_exe:
+        paths["umodel_exe"] = Path(umodel_exe)
+    elif "umodel_exe" not in paths:
+        paths["umodel_exe"] = HERE / "umodel" / "umodel.exe"  # installer package: extractor/umodel/
+    if not paths.get("mirrors_edge_root") or not paths.get("portal_root"):
+        raise ExtractError("Faltan rutas: usa --me-root y --portal-root, o config/paths.local.json en el repositorio.")
     umodel = paths.get("umodel_exe")
     if umodel and not umodel.exists():  # the zip unpacks into a subfolder (tools/umodel/umodel_win32/)
         found = sorted(umodel.parent.glob("**/umodel.exe"))
@@ -80,7 +102,7 @@ def check(paths: dict[str, Path]) -> list[str]:
     umodel = paths.get("umodel_exe")
     if not umodel or not umodel.exists():
         problems.append(f"No encuentro UE Viewer (umodel.exe) en {umodel}. Descárgalo de https://www.gildor.org/en/projects/umodel "
-                        "y ponlo en tools/umodel/ (o cambia umodel_exe en config/paths.local.json).")
+                        "y ponlo en tools/umodel/ del repositorio o en extractor/umodel/ del paquete (o usa --umodel).")
     studiomdl = paths.get("source_sdk_bin", Path()) / "studiomdl.exe"
     if not studiomdl.exists():
         problems.append(f"No encuentro studiomdl.exe en {studiomdl.parent}")
@@ -165,9 +187,9 @@ def write_skeleton_doc(psks: list[Path], psas: list[Path]) -> None:
     lines += ["## Asignación a `FaithAnimState`", "", "| Secuencia | Animación de ME |", "|---|---|"]
     for k, v in resolved.items():
         lines.append(f"| `{k}` | {f'`{v[1]}`' if v else '⚠️ sin animación (usa el fallback)'} |")
-    out = REPO / "docs" / "contratos" / "faith_esqueleto.md"
+    out = (REPO / "docs" / "contratos" / "faith_esqueleto.md") if IN_REPO else (WORK / "faith_esqueleto.md")
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"  Escrito {out.relative_to(REPO)}")
+    print(f"  Escrito {out}")
 
 
 def resolve_anims(psas: list[Path]) -> dict[str, tuple[Path, str] | None]:
@@ -201,7 +223,12 @@ def step_a2() -> None:
         mesh = ue_psk.read_psk(mesh_path)
         out = root / key
         (out / "anims").mkdir(parents=True)
-        (out / "faith_ref.smd").write_text(smd.reference_smd(mesh), encoding="utf-8")
+        anchor = ANIM_MAP.get("anchors", {}).get(key)  # arms: drawn as a viewmodel, from the camera
+        offset = tuple(ANIM_MAP.get("anchor_offsets", {}).get(key, (0.0, 0.0, 0.0)))
+        skip = tuple(ANIM_MAP.get("drop_materials", {}).get(key, ()))  # body: no low-res torso in first person
+        near = float(ANIM_MAP.get("near_cull", {}).get(key, 0.0))  # arms: shoulder cut next to the eye
+        (out / "faith_ref.smd").write_text(
+            smd.reference_smd(mesh, anchor=anchor, offset=offset, skip_materials=skip, near_cull=near), encoding="utf-8")
         missing = []
         for seq, hit in resolved.items():
             if not hit:
@@ -209,7 +236,7 @@ def step_a2() -> None:
                 continue
             psa = cache.setdefault(hit[0], ue_psk.read_psa(hit[0]))
             idx = next(i for i, s in enumerate(psa.sequences) if s.name == hit[1])
-            (out / "anims" / f"{seq}.smd").write_text(smd.animation_smd(mesh, psa, idx), encoding="utf-8")
+            (out / "anims" / f"{seq}.smd").write_text(smd.animation_smd(mesh, psa, idx, anchor=anchor, offset=offset), encoding="utf-8")
         print(f"  {key} ({mesh_path.stem}, {len(mesh.bones)} huesos): {len(resolved) - len(missing)} animaciones; "
               f"sin animación propia: {', '.join(missing) or 'ninguna'}")
 
@@ -345,9 +372,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--step", choices=["a1", "a2", "a3", "all"], default="all")
     ap.add_argument("--check", action="store_true", help="solo comprobar rutas y herramientas")
+    ap.add_argument("--me-root", default="", help="carpeta de Mirror's Edge (la que tiene Binaries y TdGame)")
+    ap.add_argument("--portal-root", default="", help="carpeta de Portal (la que tiene hl2.exe)")
+    ap.add_argument("--umodel", default="", help="ruta de umodel.exe (UE Viewer)")
     args = ap.parse_args()
     try:
-        paths = load_paths()
+        paths = load_paths(args.me_root, args.portal_root, args.umodel)
         problems = check(paths)
         if args.check or problems:
             for p in problems:

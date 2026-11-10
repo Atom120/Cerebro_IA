@@ -137,6 +137,10 @@ $saved = (Test-Path $settings) -and ((Get-Content $settings -Raw) -match 'ar_ena
 Result "H3-13" "ar_enable 1 queda guardado en addons/aperture_runner.cfg" $saved ""
 $spam = @(Select-String -Path $log -Pattern "Restoring player view height").Count
 Result "H3-14" "Sin 'Restoring player view height' en la consola" ($spam -eq 0) ("{0} mensajes" -f $spam)
+# G4: brazos (viewmodel) y piernas (cuerpo) de Faith creados con el modelo del extractor.
+$arms = (Get-Content $log | Select-String "brazos de Faith creados").Count
+$body = (Get-Content $log | Select-String "cuerpo de Faith creado").Count
+Result "H3-16" "Brazos y piernas de Faith en primera persona (G4)" ($arms -ge 1 -and $body -ge 1) ("brazos={0} cuerpo={1} (si es 0: corre mod/tools/extractor/extract.py)" -f $arms, $body)
 
 Remove-Item $cfg -ErrorAction SilentlyContinue
 $alive = [bool](Get-Process hl2 -ErrorAction SilentlyContinue)  # antes de cerrar Portal nosotros
