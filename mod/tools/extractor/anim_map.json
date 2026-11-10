@@ -373,6 +373,9 @@
   "near_cull": {
     "arms_1p": 10.0
   },
+  "model_yaw": {
+    "player_3p": 90.0
+  },
   "rename_bones": {
     "player_3p": {
       "RightWeapon": "weapon_bone"

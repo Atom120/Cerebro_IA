@@ -29,7 +29,10 @@ public:
     void SetDebug(int level) { debug_ = level; }  // 0 off, 1 twice a second + events, 2 every tick
 
     // Finds the prop_portal entities of the map (ServerActivate) / forgets them (LevelShutdown).
+    // prop_portal list. The map's portals exist at ServerActivate, but the Portal gun creates its two
+    // portals later: the list is rebuilt every kPortalRescanTicks and after any entity is freed.
     void ScanPortals(void* edict_list, int edict_count);
+    void OnEdictFreed() { portals_dirty_ = true; portals_.clear(); }
     void OnLevelShutdown();
 
     void Process(void* game_movement, void* player, source::CMoveData* mv, ProcessMovementFn original,
@@ -58,6 +61,7 @@ private:
     void StripHeadBob(void* player);
 
     bool NearPortal(Vec3 feet) const;
+    bool FallingOntoFloorPortal(Vec3 feet, Vec3 velocity) const;
     bool NearestPortalBasis(Vec3 p, Mat3* basis) const;
     void Sync(const source::CMoveData* mv, PortalTransportHint* hint);
 
@@ -76,6 +80,12 @@ private:
     Vec3 engine_origin_;  // last origin the engine passed in (for ar_status)
     void* last_player_ = nullptr;  // CBasePlayer* of the last ProcessMovement
     std::vector<void*> portals_;  // IServerUnknown* of each prop_portal
+    void RescanPortals();
+    void* edict_list_ = nullptr;  // sv.edicts, kept from ServerActivate
+    int edict_count_ = 0;
+    bool portals_dirty_ = false;
+    bool funnel_handover_ = false;  // Portal's movement took over to funnel a fall into a floor portal
+    int ticks_since_scan_ = 0;
     bool enabled_ = false;
     int debug_ = 0;
     bool initialized_ = false;

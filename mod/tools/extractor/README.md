@@ -41,6 +41,7 @@ No hace falta Blender: la conversión de PSK/PSA a SMD se hace en Python puro (`
 
 - `faith_player.mdl` (`player_3p` en el manifiesto) sale de `SK_TKY_Crim_Fixer` (108 huesos) con las animaciones de `AS_F3P_Unarmed`. Además de las 24 secuencias de Faith, lleva las 13 que pide el jugador de Portal por actividad (`portal_Idle` = `ACT_MP_STAND_IDLE`, `portal_Run` = `ACT_MP_RUN`…), que se leyeron de `models/player/chell_animations.mdl`.
 - `RightWeapon` se renombra a `weapon_bone`, para que el arma de portales se enganche a la mano de Faith.
+- Las mallas de UE miran hacia +Y y los modelos de Source hacia +X: `model_yaw` (`player_3p`: 90) añade `$origin 0 0 0 90` al `.qc`, que gira la malla y todas las secuencias. Sin él, Faith miraba 90° a un lado (visto a través de un portal, 2026-11-10).
 - La cabeza es la de baja resolución. Sus ojos y su boca van pintados, así que se quitan los globos oculares y las pestañas de la cara de alta resolución (sobresalían). La boca (`material_0`) se pinta color piel y el pelo usa `Faith_Hair_C_shaded` con alfa.
 
 ## Revisión a ojo y pendientes

@@ -284,6 +284,8 @@ def write_qc(model_key: str, mesh: ue_psk.Psk) -> Path:
     lines = [f"// Generado por mod/tools/extractor/extract.py ({model['use']}). No editar a mano.",
              f'$modelname "{model["path"].removeprefix("models/")}"',
              f'$cdmaterials "models/{MODEL_DIR}/faith/"',
+             # UE skeletal meshes face +Y; Source models face +X. $origin turns $body and every $sequence.
+             f'$origin 0 0 0 {ANIM_MAP["model_yaw"][model_key]:g}' if model_key in ANIM_MAP.get("model_yaw", {}) else "",
              f'$body body "faith_ref.smd"',
              "$surfaceprop flesh",
              f'$attachment "camera" "{camera_bone(mesh)}" 0 0 0 rotate 0 0 0']
