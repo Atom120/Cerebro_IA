@@ -56,13 +56,21 @@ def test_roundtrip(tmp: Path) -> None:
 
 
 def test_conversion() -> None:
-    # Root: stored as-is, then mirrored: +90 about Z becomes -90.
-    q, p = smd.ue_local(0, (0.0, 0.0, S45, S45), (0.0, 0.0, 0.0))
-    check(near(smd.quat_to_euler_xyz(q)[2], -math.pi / 2), "root rotation mirrored")
-    # Non-root: ActorX stores it conjugated, so it comes out +90 after the mirror.
+    # Points: (x, y, z) uu -> (z, x, y) / 2.54 su (upright, not mirrored).
+    check(all(near(a, b) for a, b in zip(smd.to_source((25.4, 50.8, 76.2)), (30.0, 10.0, 20.0))), "point axes")
+    # The rotation is proper: forward (+Z) x left (+X) = up (+Y) before, +X x +Y = +Z after.
+    f, l, u = smd.to_source((0, 0, 1)), smd.to_source((1, 0, 0)), smd.to_source((0, 1, 0))
+    cross = (f[1] * l[2] - f[2] * l[1], f[2] * l[0] - f[0] * l[2], f[0] * l[1] - f[1] * l[0])
+    check(all(near(a * 2.54, b) for a, b in zip(cross, u)), "no mirror (right-handed)")
+    # Root with identity rotation: becomes the upright rotation, whose matrix maps x -> y.
+    q, p = smd.ue_local(0, (0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 25.4))
+    check(all(near(a, b) for a, b in zip(p, (10.0, 0.0, 0.0))), "root position rotated")
+    rx, ry, rz = smd.quat_to_euler_xyz(q)
+    check(near(rx, math.pi / 2) and near(ry, 0) and near(rz, math.pi / 2), "upright euler (90, 0, 90)")
+    # Non-root: ActorX stores it conjugated; position stays local.
     q, p = smd.ue_local(1, (0.0, 0.0, S45, S45), (25.4, 50.8, 0.0))
-    check(near(smd.quat_to_euler_xyz(q)[2], math.pi / 2), "child rotation conjugated and mirrored")
-    check(near(p[0], 10.0) and near(p[1], -20.0) and near(p[2], 0.0), "uu -> su and Y mirrored")
+    check(near(smd.quat_to_euler_xyz(q)[2], -math.pi / 2), "child rotation conjugated")
+    check(near(p[0], 10.0) and near(p[1], 20.0) and near(p[2], 0.0), "child position local, uu -> su")
     rx, ry, rz = smd.quat_to_euler_xyz((math.sin(0.2), 0, 0, math.cos(0.2)))
     check(near(rx, 0.4) and near(ry, 0) and near(rz, 0), "euler X")
     rx, ry, rz = smd.quat_to_euler_xyz((0, math.sin(0.3), 0, math.cos(0.3)))
@@ -76,12 +84,12 @@ def test_reference_smd() -> None:
     check('0 "Root" -1' in lines and '1 "Hand" 0' in lines, "smd nodes")
     tri = lines[lines.index("triangles") + 1: lines.index("triangles") + 5]
     check(tri[0] == "faith_arms", "material line")
-    # Winding reversed: the first vertex written is wedge 2 = point (0, 25.4, 0) -> (0, -10, 0).
+    # Same winding; the first vertex is wedge 0 = point (0, 0, 0). Its triangle lies in the uu XY plane, which
+    # becomes the Source YZ plane, so the normal is +X (or -X).
     v = tri[1].split()
-    check(near(float(v[1]), 0.0) and near(float(v[2]), -10.0), "first vertex mirrored and reversed")
-    # Normal of the mirrored, reversed triangle still points up (+Z).
-    check(near(float(v[6]), 1.0), "normal +Z")
-    check(near(float(v[8]), 0.0), "V flipped (1 - 1 = 0)")
+    check(all(near(float(c), 0.0) for c in v[1:4]), "first vertex")
+    check(near(abs(float(v[4])), 1.0), "normal along X")
+    check(near(float(v[8]), 1.0), "V flipped (1 - 0 = 1)")
     # Point 1 has two influences, normalised and sorted.
     v1 = tri[2].split()
     check(v1[9] == "2" and v1[10] == "1" and near(float(v1[11]), 0.75), "two weights, heaviest first")

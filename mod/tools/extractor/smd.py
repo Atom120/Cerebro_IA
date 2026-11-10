@@ -1,8 +1,13 @@
 """A2: convert ActorX .psk/.psa (from UE Viewer) to Source .smd (reference mesh + one .smd per animation).
 
-Pure Python, no Blender needed. Conversion UE3 -> Source: scale 1/2.54 (uu -> su), mirror Y (left-handed ->
-right-handed), conjugate the ActorX rotations of every non-root bone (ActorX stores them inverted, like the
-io_scene_psk_psa importer does), reverse the triangle winding (the mirror flips it) and flip V.
+Pure Python, no Blender needed. Conversion UE3 -> Source: scale 1/2.54 (uu -> su), conjugate the ActorX rotations
+of every non-root bone (ActorX stores them inverted, like the io_scene_psk_psa importer does), turn the model
+upright and flip V.
+
+Axes (measured on Faith's 1P meshes, 2026-11-09): in the .psk she faces +Z, her left is +X and up is +Y, which is
+already a proper (non-mirrored) frame. Source wants forward +X, left +Y, up +Z, so every point and the root bone
+are ROTATED by (x, y, z) -> (z, x, y) (120 degrees about (1,1,1)). No mirror: mirroring Y would put her left
+hand on her right.
 Owner: Antonio. The output goes to a temporary folder, never into the repo.
 """
 from __future__ import annotations
@@ -17,16 +22,31 @@ Quat = tuple[float, float, float, float]
 Vec = tuple[float, float, float]
 
 
+UPRIGHT: Quat = (0.5, 0.5, 0.5, 0.5)  # (x, y, z) -> (z, x, y)
+
+
+def to_source(p: Vec) -> Vec:
+    return (p[2] * UU_TO_SU, p[0] * UU_TO_SU, p[1] * UU_TO_SU)
+
+
+def _qmul(a: Quat, b: Quat) -> Quat:
+    ax, ay, az, aw = a
+    bx, by, bz, bw = b
+    return (aw * bx + ax * bw + ay * bz - az * by,
+            aw * by - ax * bz + ay * bw + az * bx,
+            aw * bz + ax * by - ay * bx + az * bw,
+            aw * bw - ax * bx - ay * by - az * bz)
+
+
 def ue_local(bone_index: int, rot: Quat, pos: Vec, scale: float = UU_TO_SU) -> tuple[Quat, Vec]:
     """ActorX local bone transform -> Source local transform (quaternion xyzw, position)."""
     x, y, z, w = rot
+    n = math.sqrt(x * x + y * y + z * z + w * w) or 1.0
+    q = (x / n, y / n, z / n, w / n)
     if bone_index != 0:
-        x, y, z = -x, -y, -z          # ActorX keeps non-root rotations conjugated
-    # Mirror across the XZ plane (y -> -y): a rotation q maps to (-x, y, -z, w).
-    q = (-x, y, -z, w)
-    n = math.sqrt(sum(c * c for c in q)) or 1.0
-    q = tuple(c / n for c in q)
-    return q, (pos[0] * scale, -pos[1] * scale, pos[2] * scale)
+        return (-q[0], -q[1], -q[2], q[3]), (pos[0] * scale, pos[1] * scale, pos[2] * scale)  # conjugated in ActorX
+    # The root lives in model space: turn it upright with the mesh.
+    return _qmul(UPRIGHT, q), to_source(pos)
 
 
 def quat_to_euler_xyz(q: Quat) -> Vec:
@@ -89,12 +109,12 @@ def reference_smd(psk: Psk, material_names: list[str] | None = None) -> str:
     for weight, point, bone in psk.weights:
         if weight > 0.0:
             influences.setdefault(point, []).append((bone, weight))
-    pts = [(p[0] * UU_TO_SU, -p[1] * UU_TO_SU, p[2] * UU_TO_SU) for p in psk.points]
+    pts = [to_source(p) for p in psk.points]
     mats = material_names or psk.materials or ["faith"]
 
     lines.append("triangles")
     for face in psk.faces:
-        ws = [psk.wedges[i] for i in reversed(face.wedges)]  # mirrored: reverse the winding
+        ws = [psk.wedges[i] for i in face.wedges]
         a, b, c = (pts[w.point] for w in ws)
         normal = _norm(_cross(_sub(b, a), _sub(c, a)))
         mat = mats[face.material] if face.material < len(mats) else mats[0]

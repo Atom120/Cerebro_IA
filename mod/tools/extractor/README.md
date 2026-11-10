@@ -23,7 +23,7 @@ No hace falta Blender: la conversión de PSK/PSA a SMD se hace en Python puro (`
 | Archivo | Tarea | Qué hace |
 |---|---|---|
 | `ue_psk.py` | A1/A2 | Lee los `.psk`/`.psa` de ActorX (y los escribe, solo para las pruebas) |
-| `smd.py` | A2 | Convierte de UE3 a Source: ÷2.54, refleja el eje Y, conjuga las rotaciones de los huesos hijos, invierte el orden de los triángulos y voltea la V |
+| `smd.py` | A2 | Convierte de UE3 a Source: ÷2.54, conjuga las rotaciones de los huesos hijos, pone el modelo de pie con una rotación (x, y, z) → (z, x, y), sin reflejar, y voltea la V |
 | `anim_map.json` | A2 | Asigna cada animación de ME a una secuencia de `FaithAnimState`. Usa nombres exactos revisados contra la lista real de A1, y además qué malla va en cada modelo |
 | `extract.py` | A1–A4 | Orquesta todo: UE Viewer, SMD, `.qc`, `studiomdl`, instalación y verificación |
 | `test_extractor.py` | — | Pruebas con PSK/PSA sintéticos (se registran en `ctest`) |
@@ -35,9 +35,10 @@ No hace falta Blender: la conversión de PSK/PSA a SMD se hace en Python puro (`
 - **A2:** `faith_arms` usa `SK_UpperBody` y `faith_body` usa `SK_LowerBody`; cada una tiene 74 huesos y las 24 secuencias asignadas con nombres exactos (`anim_map.json` v2).
 - **A3:** `studiomdl` compila los dos `.mdl` y `vtex` convierte 8 texturas (difusa y normal) de 4 materiales.
 - **Esqueleto comprobado con números:** en la pose de referencia, los vértices de los brazos quedan a 1 su de su hueso (mediana); con la convención contraria quedarían a 34 su. La convención de `smd.ue_local` es la correcta.
+- **Orientación comprobada:** en el `.psk`, Faith mira hacia +Z, su izquierda está en +X y arriba es +Y. La primera versión reflejaba el eje Y, lo que la dejaba acostada y con la izquierda a la derecha; ahora se rota sin reflejar. En Source la cabeza queda a z ≈ 61, los dedos de los pies hacia +X, la mano izquierda en +Y y `CameraJoint` a 62–65 su (los ojos de Source están a 64). Se revisó también con renders del sprint.
 
 ## Qué falta comprobar a ojo
 
-- Abrir `faith_arms.mdl` y `faith_body.mdl` en `hlmv` y revisar las animaciones: que no salgan giradas, que la escala esté bien y que los materiales se vean.
+- Abrir los modelos en `hlmv` para ver los materiales (los renders de la comprobación no tienen texturas).
 - `MI_SHtest` (material de prueba en `SK_LowerBody`) y la transparencia de la piel (`Female_1p_Trans`) todavía no se convierten.
 - Algunas asignaciones son aproximadas: `wallclimb_jump` usa `JumpTurnFly` y `ledge_climb_up` usa `HangHeaveUp`.

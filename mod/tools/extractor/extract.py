@@ -322,6 +322,9 @@ def step_textures(paths: dict[str, Path]) -> None:
             (out / f"{mat}.vmt").write_text("\n".join(vmt) + "\n", encoding="utf-8")
     finally:
         shutil.rmtree(game / "materialsrc" / "models" / MODEL_DIR, ignore_errors=True)
+        for d in (game / "materialsrc" / "models", game / "materialsrc"):  # only if we left them empty
+            if d.is_dir() and not any(d.iterdir()):
+                d.rmdir()
     print(f"  {len(materials)} materiales, {len(done)} texturas en {out}")
 
 
