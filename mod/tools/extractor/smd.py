@@ -70,11 +70,11 @@ def quat_to_euler_xyz(q: Quat) -> Vec:
     return rx, ry, rz
 
 
-def _nodes(bones: list[Bone]) -> list[str]:
+def _nodes(bones: list[Bone], rename: dict[str, str] | None = None) -> list[str]:
     out = ["nodes"]
     for i, b in enumerate(bones):
         parent = -1 if i == 0 or b.parent == i else b.parent
-        out.append(f'{i} "{b.name}" {parent}')
+        out.append(f'{i} "{(rename or {}).get(b.name, b.name)}" {parent}')
     out.append("end")
     return out
 
@@ -142,11 +142,11 @@ def _anchor(bones: list[Bone], locals_: list[tuple[Quat, Vec]], anchor: str | No
 
 def reference_smd(psk: Psk, material_names: list[str] | None = None, anchor: str | None = None,
                   offset: Vec = (0.0, 0.0, 0.0), skip_materials: tuple[str, ...] = (),
-                  near_cull: float = 0.0) -> str:
+                  near_cull: float = 0.0, rename: dict[str, str] | None = None, flip_v: bool = True) -> str:
     """Reference .smd: skeleton in bind pose + skinned triangles. With `anchor`, that bone is the origin.
     Triangles whose material is in `skip_materials`, or whose centre is closer than `near_cull` su to the
     origin (the eye, for a viewmodel), are left out."""
-    lines = ["version 1"] + _nodes(psk.bones) + ["skeleton"]
+    lines = ["version 1"] + _nodes(psk.bones, rename) + ["skeleton"]
     bind = [ue_local(i, b.rot, b.pos) for i, b in enumerate(psk.bones)]
     shifted = _anchor(psk.bones, bind, anchor, offset)
     shift = tuple(shifted[0][1][k] - bind[0][1][k] for k in range(3))
@@ -179,23 +179,28 @@ def reference_smd(psk: Psk, material_names: list[str] | None = None, anchor: str
             link_txt = " ".join(f"{bone} {wt / total:.6f}" for bone, wt in links)
             lines.append(f"{links[0][0]} {p[0]:.6f} {p[1]:.6f} {p[2]:.6f} "
                          f"{normal[0]:.6f} {normal[1]:.6f} {normal[2]:.6f} "
-                         f"{w.u:.6f} {1.0 - w.v:.6f} {len(links)} {link_txt}")
+                         f"{w.u:.6f} {(1.0 - w.v) if flip_v else w.v:.6f} {len(links)} {link_txt}")
     lines.append("end")
     return "\n".join(lines) + "\n"
 
 
 def animation_smd(psk: Psk, psa: Psa, seq_index: int, anchor: str | None = None,
-                  offset: Vec = (0.0, 0.0, 0.0)) -> str:
-    """One animation as an .smd. Bones are matched by name; bones missing in the PSA keep the bind pose."""
+                  offset: Vec = (0.0, 0.0, 0.0), rename: dict[str, str] | None = None,
+                  rest_pose: dict[str, tuple[Vec, Quat]] | None = None) -> str:
+    """One animation as an .smd. Bones are matched by name; bones missing in the PSA take `rest_pose`
+    (by name, ActorX pos/rot: e.g. the face from AS_F3P_Face) or else the bind pose."""
     seq = psa.sequences[seq_index]
     frames = psa.sequence_keys(seq)
     by_name = {b.name.lower(): i for i, b in enumerate(psa.bones)}
-    lines = ["version 1"] + _nodes(psk.bones) + ["skeleton"]
+    lines = ["version 1"] + _nodes(psk.bones, rename) + ["skeleton"]
     for f, keys in enumerate(frames):
         locals_ = []
         for i, b in enumerate(psk.bones):
             j = by_name.get(b.name.lower())
-            if j is None:
+            if j is None and rest_pose and b.name.lower() in rest_pose:
+                pos, rot = rest_pose[b.name.lower()]
+                locals_.append(ue_local(i, rot, pos))
+            elif j is None:
                 locals_.append(ue_local(i, b.rot, b.pos))
             else:
                 pos, rot = keys[j]

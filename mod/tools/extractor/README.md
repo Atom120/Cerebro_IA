@@ -37,6 +37,12 @@ No hace falta Blender: la conversión de PSK/PSA a SMD se hace en Python puro (`
 - **Esqueleto comprobado con números:** en la pose de referencia, los vértices de los brazos quedan a 1 su de su hueso (mediana); con la convención contraria quedarían a 34 su. La convención de `smd.ue_local` es la correcta.
 - **Orientación comprobada:** en el `.psk`, Faith mira hacia +Z, su izquierda está en +X y arriba es +Y. La primera versión reflejaba el eje Y, lo que la dejaba acostada y con la izquierda a la derecha; ahora se rota sin reflejar. En Source la cabeza queda a z ≈ 61, los dedos de los pies hacia +X, la mano izquierda en +Y y `CameraJoint` a 62–65 su (los ojos de Source están a 64). Se revisó también con renders del sprint.
 
+## Faith en tercera persona (2026-11-10)
+
+- `faith_player.mdl` (`player_3p` en el manifiesto) sale de `SK_TKY_Crim_Fixer` (108 huesos) con las animaciones de `AS_F3P_Unarmed`. Además de las 24 secuencias de Faith, lleva las 13 que pide el jugador de Portal por actividad (`portal_Idle` = `ACT_MP_STAND_IDLE`, `portal_Run` = `ACT_MP_RUN`…), que se leyeron de `models/player/chell_animations.mdl`.
+- `RightWeapon` se renombra a `weapon_bone`, para que el arma de portales se enganche a la mano de Faith.
+- La cabeza es la de baja resolución. Sus ojos y su boca van pintados, así que se quitan los globos oculares y las pestañas de la cara de alta resolución (sobresalían). La boca (`material_0`) se pinta color piel y el pelo usa `Faith_Hair_C_shaded` con alfa.
+
 ## Revisión a ojo y pendientes
 
 - ✅ Revisado en `hlmv` el 2026-11-10: brazos (piel, manga del codo, guante rojo y tatuaje en el brazo derecho) y piernas (pantalón blanco, top negro y zapatillas rojas) con textura; `sprint` y `slide` se animan bien.

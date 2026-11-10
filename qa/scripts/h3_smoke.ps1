@@ -137,6 +137,12 @@ $saved = (Test-Path $settings) -and ((Get-Content $settings -Raw) -match 'ar_ena
 Result "H3-13" "ar_enable 1 queda guardado en addons/aperture_runner.cfg" $saved ""
 $spam = @(Select-String -Path $log -Pattern "Restoring player view height").Count
 Result "H3-14" "Sin 'Restoring player view height' en la consola" ($spam -eq 0) ("{0} mensajes" -f $spam)
+# Personaje Chell (tecla H, ar_personaje): el parkour sigue funcionando sin el aspecto de Faith.
+Send @("ar_personaje chell"); Start-Sleep 1.0
+Send @("setpos -1100 -970 129", "setang 0 0 0"); Start-Sleep 1.5
+$m = Mark; Send @("ar_debug 2", "ar_qa_input 1 0 j 100 25"); Start-Sleep 2.0; Send @("ar_debug 0", "ar_personaje faith"); Start-Sleep 0.6
+$wrChell = @(Samples (LogFrom $m) | Where-Object { $_.Anim -eq "wallrun_right" }).Count
+Result "H3-17" "Con Chell (ar_personaje) el parkour sigue: wallrun" ($wrChell -ge 10) ("{0} ticks en wallrun_right con Chell" -f $wrChell)
 # G4: brazos (viewmodel) y piernas (cuerpo) de Faith creados con el modelo del extractor.
 $arms = (Get-Content $log | Select-String "brazos de Faith creados").Count
 $body = (Get-Content $log | Select-String "cuerpo de Faith creado").Count

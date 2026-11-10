@@ -25,6 +25,7 @@ public:
     // Every Faith tick. `player` is the CBasePlayer* of ProcessMovement.
     // `visible`: Faith is drawn at all (legs and arms); `arms_visible`: the arms viewmodel too.
     void Update(void* player, FaithAnimState anim, bool visible, bool arms_visible);
+
     void OnLevelShutdown();
     void PrintStatus() const;
     void SetOverride(int sequence) { override_sequence_ = sequence; }  // diagnostics: -1 = follow Faith
@@ -35,6 +36,7 @@ public:
 
     static constexpr const char* kModel = "models/aperture_runner/faith_arms.mdl";
     static constexpr const char* kBodyModel = "models/aperture_runner/faith_body.mdl";
+    static constexpr const char* kPlayerModel = "models/aperture_runner/faith_player.mdl";
     static constexpr int kSlot = 1;
 
 private:
@@ -42,6 +44,7 @@ private:
     bool ResolveOffsets(void* player, void* vm);
     bool CreateBody(void* player);
     bool SetKeyValue(void* entity, const char* key, const char* value);
+    void UpdatePlayerModel(void* player, bool faith);
 
     void* tools_ = nullptr;
     void* engine_ = nullptr;
@@ -68,6 +71,15 @@ private:
     int off_body_effects_ = -1;
     int off_body_new_seq_parity_ = -1;
     char body_status_[120] = "sin crear";
+
+    // Third person and portal views: the player's own model becomes Faith (faith_player.mdl), so Portal
+    // draws her wherever it would draw Chell (never in first person).
+    int off_player_model_index_ = -1;
+    int player_model_faith_ = -1;      // model index of faith_player.mdl (0 or less: missing)
+    int player_model_original_ = -1;   // Chell's model index, put back in Chell mode
+    bool player_model_tried_ = false;
+    int off_player_studio_hdr_ = -1;
+   // CBaseAnimating::m_pStudioHdr (found by scanning, see FindStudioHdr)
     char status_[160] = "sin crear";
 
     // Offsets (bytes) found in the SendTables.

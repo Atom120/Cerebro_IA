@@ -1,6 +1,8 @@
 # ApertureRunner: Mirror's Edge dentro de Portal
 
-Juega el primer nivel de Portal (`testchmb_a_00`) moviéndote como Faith: sprint con inercia, salto, wallrun, wallclimb, agarrar bordes, slide, Skill Roll y giro de 180°. Los portales se cruzan sin perder velocidad. Si tienes Mirror's Edge, además verás los brazos y las piernas de Faith en primera persona.
+Juega el primer nivel de Portal (`testchmb_a_00`) moviéndote como Faith: sprint con inercia, salto, wallrun, wallclimb, agarrar bordes, slide, Skill Roll y giro de 180°. Los portales se cruzan sin perder velocidad. Si tienes Mirror's Edge, además juegas **como Faith**: ves sus brazos y piernas en primera persona, y en tercera persona o a través de los portales se ve Faith en vez de Chell.
+
+**Tecla H:** cambia entre Faith y Chell. El parkour funciona igual con las dos: solo cambia el personaje que se ve.
 
 ## Requisitos
 - **Portal (Steam)**, build 19017868. El instalador te avisa si tienes otra.
@@ -27,12 +29,14 @@ Juega el primer nivel de Portal (`testchmb_a_00`) moviéndote como Faith: sprint
 | Agacharse | agacharse, slide (corriendo), coil en el aire, Skill Roll (justo antes de aterrizar), soltarse de un borde |
 | Recargar | giro de 180° |
 | Caminar | caminar despacio |
+| **H** | cambiar de personaje: Faith ↔ Chell |
 
 Si miras hacia abajo, se ocultan los brazos y ves tus piernas.
 
 ## Comandos de consola
 - `ar_enable 0|1`: activa o desactiva el movimiento de Faith (se guarda).
 - `ar_camera 0|1`: activa o desactiva la cámara de Faith: giro, inclinación, FOV y balanceo (se guarda).
+- `ar_personaje faith|chell`: elige el personaje que se ve; sin argumento alterna (es lo que hace la tecla H). Se guarda.
 - `ar_status`: muestra el estado actual, incluido si están activos los brazos y el cuerpo de Faith.
 
 ## Desinstalar

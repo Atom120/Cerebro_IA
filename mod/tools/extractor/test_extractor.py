@@ -118,6 +118,19 @@ def test_skip_materials() -> None:
     check(len(text.split("triangles")[1].strip().splitlines()) == 5, "near_cull keeps the rest")
 
 
+def test_rename_and_rest_pose() -> None:
+    psk = sample_psk()
+    text = smd.reference_smd(psk, rename={"Hand": "weapon_bone"})
+    check('1 "weapon_bone" 0' in text.splitlines(), "bone renamed in the nodes block")
+    psa = Psa(bones=[psk.bones[0]], sequences=[AnimSequence("A", "None", 1, 30, 0, 1)],
+              keys=[((0, 0, 0), (0, 0, 0, 1))])
+    # "Hand" is not in the PSA: it takes the rest pose (moved 25.4 uu = 10 su in X) instead of the bind pose.
+    anim = smd.animation_smd(psk, psa, 0, rest_pose={"hand": ((25.4, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0))})
+    lines = anim.splitlines()
+    line = next(l for l in lines[lines.index("time 0"):] if l.startswith("1 "))
+    check(near(float(line.split()[1]), 10.0), "missing bone takes the rest pose")
+
+
 def test_anim_map() -> None:
     names = ["Idle_Stand", "Run_Fwd", "Sprint_Fwd", "WallRun_Left", "WallRun_Right", "SkillRoll", "Slide_Loop",
              "Grab_Idle", "Grab_PullUp", "SpeedVault", "Jump_Start", "Fall_Loop", "Land_Soft", "Land_Hard"]
@@ -146,6 +159,7 @@ def main() -> int:
     test_reference_smd()
     test_anchor()
     test_skip_materials()
+    test_rename_and_rest_pose()
     test_anim_map()
     print("  OK" if FAILS == 0 else f"  {FAILS} fallos")
     return 1 if FAILS else 0

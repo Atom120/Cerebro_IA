@@ -95,7 +95,9 @@ def check(paths: dict[str, Path]) -> list[str]:
         if ts != GOG_101_TIMESTAMP:
             print("  Aviso: solo se probó con GOG v1.01. Steam/EA deberían servir (mismos .upk), pero avisa si falla.")
     cooked = paths.get("mirrors_edge_cooked_pc")
-    for key in ("body_1p", "anims_1p"):
+    for key in MANIFEST["source_files_me"]:
+        if key == "cooked_pc":
+            continue
         f = cooked / MANIFEST["source_files_me"][key] if cooked else None
         if not f or not f.exists():
             problems.append(f"No encuentro {MANIFEST['source_files_me'][key]} en {cooked}")
@@ -130,8 +132,10 @@ def step_a1(paths: dict[str, Path]) -> None:
         shutil.rmtree(export)
     export.mkdir(parents=True)
     cooked = paths["mirrors_edge_cooked_pc"]
-    for key in ("body_1p", "anims_1p"):
-        pkg = cooked / MANIFEST["source_files_me"][key]
+    for key, rel in MANIFEST["source_files_me"].items():
+        if key == "cooked_pc":
+            continue
+        pkg = cooked / rel
         run([paths["umodel_exe"], "-game=medge", f"-path={cooked}", "-export", "-psk", "-nooverwrite",
              f"-out={export}", str(pkg)])
     psks, psas = find_exports()
@@ -161,7 +165,8 @@ def model_mesh(psks: list[Path], model_key: str) -> Path:
 
 def write_skeleton_doc(psks: list[Path], psas: list[Path]) -> None:
     """A1 deliverable: bone and animation NAMES only (no game data), for the team to map to FaithAnimState."""
-    mesh_path = pick_mesh(psks)
+    psas = [p for p in psas if p.stem == MANIFEST["models"]["arms_1p"].get("anims", p.stem)]
+    mesh_path = model_mesh(psks, "arms_1p")
     mesh = ue_psk.read_psk(mesh_path)
     lines = ["# Esqueleto y animaciones de Faith en primera persona (A1)", "",
              "> Generado por `python mod/tools/extractor/extract.py --step a1`. Solo nombres: ningún archivo del juego.",
@@ -192,14 +197,20 @@ def write_skeleton_doc(psks: list[Path], psas: list[Path]) -> None:
     print(f"  Escrito {out}")
 
 
-def resolve_anims(psas: list[Path]) -> dict[str, tuple[Path, str] | None]:
+def resolve_anims(psas: list[Path], model_key: str | None = None) -> dict[str, tuple[Path, str] | None]:
+    """FaithAnimState sequence -> (psa file, ME animation). With a model, only its anim set and its overrides."""
+    anim_set = MANIFEST["models"].get(model_key, {}).get("anims") if model_key else None
+    if anim_set:
+        psas = [p for p in psas if p.stem == anim_set]
+    overrides = ANIM_MAP.get("overrides", {}).get(model_key, {}) if model_key else {}
     names = [(p, s.name) for p in psas for s in ue_psk.read_psa(p).sequences]
     out: dict[str, tuple[Path, str] | None] = {}
     for seq in MANIFEST["sequences"]:
         rule = ANIM_MAP["sequences"].get(seq, {})
         hit = None
-        if rule.get("exact"):
-            hit = next(((p, n) for p, n in names if n.lower() == rule["exact"].lower()), None)
+        exact = overrides.get(seq) or rule.get("exact")
+        if exact:
+            hit = next(((p, n) for p, n in names if n.lower() == exact.lower()), None)
         for words in rule.get("any", []):
             if hit:
                 break
@@ -216,9 +227,10 @@ def step_a2() -> None:
     root = WORK / "smd"
     if root.exists():
         shutil.rmtree(root)
-    resolved = resolve_anims(psas)
     cache: dict[Path, ue_psk.Psa] = {}
     for key in MANIFEST["models"]:
+        resolved = resolve_anims(psas, key)
+        rename = ANIM_MAP.get("rename_bones", {}).get(key)  # player_3p: RightWeapon -> weapon_bone (portal gun)
         mesh_path = model_mesh(psks, key)
         mesh = ue_psk.read_psk(mesh_path)
         out = root / key
@@ -228,7 +240,9 @@ def step_a2() -> None:
         skip = tuple(ANIM_MAP.get("drop_materials", {}).get(key, ()))  # body: no low-res torso in first person
         near = float(ANIM_MAP.get("near_cull", {}).get(key, 0.0))  # arms: shoulder cut next to the eye
         (out / "faith_ref.smd").write_text(
-            smd.reference_smd(mesh, anchor=anchor, offset=offset, skip_materials=skip, near_cull=near), encoding="utf-8")
+            smd.reference_smd(mesh, anchor=anchor, offset=offset, skip_materials=skip, near_cull=near, rename=rename,
+                              flip_v=key not in ANIM_MAP.get("no_flip_v", [])),
+            encoding="utf-8")
         missing = []
         for seq, hit in resolved.items():
             if not hit:
@@ -236,7 +250,7 @@ def step_a2() -> None:
                 continue
             psa = cache.setdefault(hit[0], ue_psk.read_psa(hit[0]))
             idx = next(i for i, s in enumerate(psa.sequences) if s.name == hit[1])
-            (out / "anims" / f"{seq}.smd").write_text(smd.animation_smd(mesh, psa, idx, anchor=anchor, offset=offset), encoding="utf-8")
+            (out / "anims" / f"{seq}.smd").write_text(smd.animation_smd(mesh, psa, idx, anchor=anchor, offset=offset, rename=rename), encoding="utf-8")
         print(f"  {key} ({mesh_path.stem}, {len(mesh.bones)} huesos): {len(resolved) - len(missing)} animaciones; "
               f"sin animación propia: {', '.join(missing) or 'ninguna'}")
 
@@ -273,11 +287,21 @@ def write_qc(model_key: str, mesh: ue_psk.Psk) -> Path:
              f'$body body "faith_ref.smd"',
              "$surfaceprop flesh",
              f'$attachment "camera" "{camera_bone(mesh)}" 0 0 0 rotate 0 0 0']
+    if model.get("portal_player"):
+        lines.append('$attachment "eyes" "CameraJoint" 0 0 0 rotate 0 0 0')
+    # FaithAnimState order first: the plugin uses the sequence index = FaithAnimState.
     for seq in MANIFEST["sequences"]:
         rule = ANIM_MAP["sequences"].get(seq, {})
         src = seq if seq in have else fallback_chain(seq, have)
         loop = " loop" if rule.get("loop") else ""
         lines.append(f'$sequence "{seq}" "anims/{src}.smd" fps 30{loop}')
+    if model.get("portal_player"):
+        # What Portal's player animation state looks for (by activity).
+        for name, activity, faith_seq, loop in ANIM_MAP.get("portal_player_sequences", []):
+            src = faith_seq if faith_seq in have else fallback_chain(faith_seq, have)
+            # Portal picks these by activity; the prefix avoids clashing with Faith's names (studiomdl
+            # compares names without case: "Idle" == "idle").
+            lines.append(f'$sequence "portal_{name}" "anims/{src}.smd" fps 30{" loop" if loop else ""} {activity} 1')
     qc = smd_dir / f"{Path(model['path']).stem}.qc"
     qc.write_text("\n".join(l for l in lines if l) + "\n", encoding="utf-8")
     return qc
@@ -324,12 +348,20 @@ def step_textures(paths: dict[str, Path]) -> None:
     out = Path(MANIFEST["install_root"].replace("<Portal>", str(portal))) / "materials" / rel
     out.mkdir(parents=True, exist_ok=True)
     src.mkdir(parents=True, exist_ok=True)
-    materials = {m for key in MANIFEST["models"] for m in ue_psk.read_psk(model_mesh(psks, key)).materials}
+    materials = {m for key in MANIFEST["models"] for m in ue_psk.read_psk(model_mesh(psks, key)).materials
+                 if m not in ANIM_MAP.get("drop_materials", {}).get(key, ())}
     done: set[str] = set()
     try:
         for mat in sorted(materials):
             props = read_mat(mat)
             vmt = ['"VertexLitGeneric"', "{"]
+            override = ANIM_MAP.get("texture_overrides", {}).get(mat, {})
+            if override.get("diffuse"):  # e.g. Faith's hair (diffuse multiplier 0 in ME) and her eyes
+                props["Diffuse"] = override["diffuse"]
+            if "Diffuse" not in props and props.get("Other[0]"):  # only a tint texture
+                props["Diffuse"] = props["Other[0]"]
+            if override.get("no_bump"):  # a normal map made for other UVs (the face uses the body's)
+                props.pop("Normal", None)
             for slot, key, normal in (("Diffuse", "$basetexture", False), ("Normal", "$bumpmap", True)):
                 tex = props.get(slot, "")
                 tga = next((WORK / "export").rglob(f"{tex}.tga"), None) if tex else None
@@ -342,9 +374,23 @@ def step_textures(paths: dict[str, Path]) -> None:
                     run([paths["source_sdk_bin"] / "vtex.exe", "-nopause", "-game", game, "-outdir", out, src / tga.name])
                     done.add(tex)
                 vmt.append(f'\t"{key}" "{(rel / tex).as_posix()}"')
+            if len(vmt) == 2 and override.get("solid"):  # flat colour: a 4x4 texture made here
+                name = f"faith_solid_{mat}"
+                if name not in done:
+                    r, g, b = (max(0, min(255, int(c * 255))) for c in override["solid"])
+                    header = struct.pack("<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, 4, 4, 24, 0)
+                    (src / f"{name}.tga").write_bytes(header + bytes((b, g, r)) * 16)
+                    run([paths["source_sdk_bin"] / "vtex.exe", "-nopause", "-game", game, "-outdir", out,
+                         src / f"{name}.tga"])
+                    done.add(name)
+                vmt.append(f'\t"$basetexture" "{(rel / name).as_posix()}"')
+            if override.get("color2"):  # tint
+                vmt.append('\t"$color2" "[{:.2f} {:.2f} {:.2f}]"'.format(*override["color2"]))
             if len(vmt) == 2:
                 vmt.append('\t"$basetexture" "dev/dev_measuregeneric01"')
                 print(f"  Aviso: {mat} sin textura difusa; usa una de prueba")
+            if "alpha" in mat.lower() or override.get("alphatest"):  # eyelashes, hair strands: cut-out alpha
+                vmt.append('\t"$alphatest" "1"')
             vmt += ['\t"$model" "1"', "}"]
             (out / f"{mat}.vmt").write_text("\n".join(vmt) + "\n", encoding="utf-8")
     finally:

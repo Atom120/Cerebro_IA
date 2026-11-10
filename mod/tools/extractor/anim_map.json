@@ -1,6 +1,6 @@
 {
   "contract": "anim_map",
-  "version": 2,
+  "version": 3,
   "notes": [
     "Para cada secuencia de docs/contratos/asset_manifest.json: palabras que debe tener el nombre de la animación de AS_C1P_Unarmed (sin distinguir mayúsculas).",
     "Se prueba cada lista en orden y gana la primera animación que tiene todas las palabras. 'exact' fija un nombre concreto y tiene prioridad.",
@@ -9,7 +9,13 @@
     "'meshes': qué malla de CH_TKY_Crim_Fixer_1P va en cada modelo del manifiesto (en ME los brazos y las piernas en 1P son mallas separadas).",
     "'anchors': hueso que se pone en el origen del modelo en cada frame. Los brazos se dibujan como viewmodel (origen = ojo), así que CameraJoint va al origen y los brazos se mueven respecto a la cámara como en ME.",
     "'anchor_offsets': el ojo va 8 su detras de CameraJoint para que, con el viewmodel_fov 54 de Portal, los brazos se vean como con la camara de ME a 90 grados. 'drop_materials': el torso de baja resolucion de SK_LowerBody tapa la vista al mirar abajo; en primera persona solo se dejan pantalon y zapatillas.",
-    "'near_cull': se quitan los triangulos a menos de N su del ojo (el corte del hombro). Source mueve el viewmodel segun la inclinacion de la vista (CalcViewModelLag) y al mirar abajo ese corte entraba en cuadro."
+    "'near_cull': se quitan los triangulos a menos de N su del ojo (el corte del hombro). Source mueve el viewmodel segun la inclinacion de la vista (CalcViewModelLag) y al mirar abajo ese corte entraba en cuadro.",
+    "v3: 'player_3p' (Faith en tercera persona) usa AS_F3P_Unarmed; 'overrides' cambia una animacion para un modelo; 'rename_bones' renombra huesos en el SMD; 'portal_player_sequences' son las secuencias que pide el jugador de Portal (nombre, actividad, secuencia de Faith de origen, bucle).",
+    "'texture_overrides': textura difusa forzada para materiales de ME que no la nombran (el pelo de baja resolucion usa un multiplicador 0; los ojos, una textura de prueba). 'alphatest' para los mechones del pelo.",
+    "player_3p: la cabeza de baja resolucion ya trae ojos y boca pintados; los globos oculares, la boca (material_0) y las pestanas son de la cara de alta resolucion y sobresalen, asi que se quitan.",
+    "material_0 (labios y dientes de la cara de alta resolucion) tapa el hueco de la boca de la cabeza de baja resolucion: se pinta color piel para que la boca parezca cerrada.",
+    "'color2' tinta un material ($color2); 'solid' crea una textura lisa de ese color (la boca de player_3p).",
+    "'no_bump': sin mapa de normales. La cara de baja resolucion usa Faith_Body_N, que es del cuerpo y deja la boca y la nariz en negro."
   ],
   "sequences": {
     "idle": {
@@ -342,7 +348,8 @@
   },
   "meshes": {
     "arms_1p": "SK_UpperBody",
-    "body_1p": "SK_LowerBody"
+    "body_1p": "SK_LowerBody",
+    "player_3p": "SK_TKY_Crim_Fixer"
   },
   "anchors": {
     "arms_1p": "CameraJoint"
@@ -357,9 +364,127 @@
   "drop_materials": {
     "body_1p": [
       "MI_Faith_Lowres_Upper"
+    ],
+    "player_3p": [
+      "M_Faith_Eyes",
+      "unlitAlpha"
     ]
   },
   "near_cull": {
     "arms_1p": 10.0
+  },
+  "rename_bones": {
+    "player_3p": {
+      "RightWeapon": "weapon_bone"
+    }
+  },
+  "overrides": {
+    "player_3p": {
+      "fall": "jumpstill"
+    }
+  },
+  "portal_player_sequences": [
+    [
+      "Idle",
+      "ACT_MP_STAND_IDLE",
+      "idle",
+      true
+    ],
+    [
+      "idle_PORTALGUN",
+      "ACT_MP_STAND_PRIMARY",
+      "idle",
+      true
+    ],
+    [
+      "Run",
+      "ACT_MP_RUN",
+      "run",
+      true
+    ],
+    [
+      "Run_PORTALGUN",
+      "ACT_MP_RUN_PRIMARY",
+      "run",
+      true
+    ],
+    [
+      "CrouchIdle",
+      "ACT_MP_CROUCH_IDLE",
+      "crouch",
+      true
+    ],
+    [
+      "idleCROUCH_PORTALGUN",
+      "ACT_MP_CROUCH_PRIMARY",
+      "crouch",
+      true
+    ],
+    [
+      "CrouchWalk",
+      "ACT_MP_CROUCHWALK",
+      "crouch_walk",
+      true
+    ],
+    [
+      "Crouch_walk_PORTALGUN",
+      "ACT_MP_CROUCHWALK_PRIMARY",
+      "crouch_walk",
+      true
+    ],
+    [
+      "standing_jump",
+      "ACT_MP_JUMP_START",
+      "jump",
+      false
+    ],
+    [
+      "portalgun_standing_jump",
+      "ACT_MP_JUMP_START_primary",
+      "jump",
+      false
+    ],
+    [
+      "stand_fire_PORTALGUN",
+      "ACT_MP_ATTACK_STAND_PRIMARYFIRE",
+      "idle",
+      false
+    ],
+    [
+      "crouch_fire_PORTALGUN",
+      "ACT_MP_ATTACK_CROUCH_PRIMARYFIRE",
+      "crouch",
+      false
+    ],
+    [
+      "ragdoll",
+      "ACT_DIERAGDOLL",
+      "idle",
+      false
+    ]
+  ],
+  "texture_overrides": {
+    "MI_Faith_Lowres_Hair": {
+      "diffuse": "Faith_Hair_C_shaded",
+      "alphatest": true
+    },
+    "M_Faith_Eyes": {
+      "diffuse": "Asia_Fixer_Eye_D",
+      "color2": [
+        0.7,
+        0.7,
+        0.7
+      ]
+    },
+    "material_0": {
+      "solid": [
+        0.66,
+        0.48,
+        0.4
+      ]
+    },
+    "MI_Faith_Lowres_Face": {
+      "no_bump": true
+    }
   }
 }

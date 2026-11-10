@@ -21,7 +21,7 @@ tags: [plan, equipo, apertureRunner, antigravity]
 >
 > **Lo que queda de cada uno:**
 > - **Zarek:** Z-tareas al día. S5 ✅ (Sebas, 2026-11-10).
-> - **Gonzalo:** G4 ✅ hecho por Sebas (2026-11-10): brazos y piernas de Faith en primera persona. También FOV y balanceo en la vista (hay que enganchar el cálculo de la vista del cliente).
+> - **Gonzalo:** G4 ✅ hecho por Sebas (2026-11-10): brazos y piernas de Faith en primera persona, Faith en tercera persona y tecla H para cambiar entre Faith y Chell (el parkour sigue con las dos). También FOV y balanceo en la vista (hay que enganchar el cálculo de la vista del cliente).
 > - **Benja:** B2b ✅ (trazas reales grabadas por Sebas, 2026-11-09). B5 (vídeo, H4): guion en `qa/GUION_VIDEO_B5.md`.
 > - **Peña:** P1–P5 hechos. P5 ✅ (Sebas, 2026-11-09): ajuste con las 9 trazas reales, en `docs/tuning/P5_ajuste.md`.
 > - **Antonio:** A1–A4 hechos (Sebas, 2026-11-09/10, `mod/tools/extractor/`), revisados en `hlmv`. Falta probar el extractor en otro PC. Ya se puede hacer G4 con el modelo real.
