@@ -201,7 +201,9 @@ def step_a2() -> None:
         mesh = ue_psk.read_psk(mesh_path)
         out = root / key
         (out / "anims").mkdir(parents=True)
-        (out / "faith_ref.smd").write_text(smd.reference_smd(mesh), encoding="utf-8")
+        anchor = ANIM_MAP.get("anchors", {}).get(key)  # arms: drawn as a viewmodel, from the camera
+        offset = tuple(ANIM_MAP.get("anchor_offsets", {}).get(key, (0.0, 0.0, 0.0)))
+        (out / "faith_ref.smd").write_text(smd.reference_smd(mesh, anchor=anchor, offset=offset), encoding="utf-8")
         missing = []
         for seq, hit in resolved.items():
             if not hit:
@@ -209,7 +211,7 @@ def step_a2() -> None:
                 continue
             psa = cache.setdefault(hit[0], ue_psk.read_psa(hit[0]))
             idx = next(i for i, s in enumerate(psa.sequences) if s.name == hit[1])
-            (out / "anims" / f"{seq}.smd").write_text(smd.animation_smd(mesh, psa, idx), encoding="utf-8")
+            (out / "anims" / f"{seq}.smd").write_text(smd.animation_smd(mesh, psa, idx, anchor=anchor, offset=offset), encoding="utf-8")
         print(f"  {key} ({mesh_path.stem}, {len(mesh.bones)} huesos): {len(resolved) - len(missing)} animaciones; "
               f"sin animación propia: {', '.join(missing) or 'ninguna'}")
 

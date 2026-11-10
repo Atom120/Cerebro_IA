@@ -7,6 +7,7 @@ add_library(aperture_runner SHARED
     server/movement_hook.cpp
     server/server_trace_provider.cpp
     server/faith_driver.cpp
+    server/faith_viewmodel.cpp
     server/mod_settings.cpp
     client/client_movement_hook.cpp
     client/client_view.cpp

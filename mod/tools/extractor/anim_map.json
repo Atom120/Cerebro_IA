@@ -6,7 +6,8 @@
     "Se prueba cada lista en orden y gana la primera animación que tiene todas las palabras. 'exact' fija un nombre concreto y tiene prioridad.",
     "Nombres 'exact' revisados contra la lista real de AS_C1P_Unarmed (ME GOG v1.01, 281 animaciones) el 2026-11-09. 'any' queda como respaldo para otras versiones.",
     "'fallback' indica qué secuencia usar si no se encuentra ninguna (el modelo compila igual).",
-    "'meshes': qué malla de CH_TKY_Crim_Fixer_1P va en cada modelo del manifiesto (en ME los brazos y las piernas en 1P son mallas separadas)."
+    "'meshes': qué malla de CH_TKY_Crim_Fixer_1P va en cada modelo del manifiesto (en ME los brazos y las piernas en 1P son mallas separadas).",
+    "'anchors': hueso que se pone en el origen del modelo en cada frame. Los brazos se dibujan como viewmodel (origen = ojo), así que CameraJoint va al origen y los brazos se mueven respecto a la cámara como en ME."
   ],
   "sequences": {
     "idle": {
@@ -340,5 +341,15 @@
   "meshes": {
     "arms_1p": "SK_UpperBody",
     "body_1p": "SK_LowerBody"
+  },
+  "anchors": {
+    "arms_1p": "CameraJoint"
+  },
+  "anchor_offsets": {
+    "arms_1p": [
+      -8.0,
+      0.0,
+      1.0
+    ]
   }
 }

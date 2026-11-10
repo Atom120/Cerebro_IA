@@ -95,6 +95,19 @@ def test_reference_smd() -> None:
     check(v1[9] == "2" and v1[10] == "1" and near(float(v1[11]), 0.75), "two weights, heaviest first")
 
 
+def test_anchor() -> None:
+    # Hand bone (child of the root) moved to the origin: its world position becomes (0, 0, 0).
+    psk = sample_psk()
+    bind = [smd.ue_local(i, b.rot, b.pos) for i, b in enumerate(psk.bones)]
+    moved = smd._anchor(psk.bones, bind, "Hand")
+    w = smd.world_position(psk.bones, moved, 1)
+    check(all(near(c, 0.0) for c in w), "anchor bone at the origin")
+    text = smd.reference_smd(psk, anchor="Hand")
+    tri = text.splitlines()[text.splitlines().index("triangles") + 2].split()
+    before = smd.world_position(psk.bones, bind, 1)
+    check(near(float(tri[1]), -before[0]) and near(float(tri[2]), -before[1]), "points shifted with the root")
+
+
 def test_anim_map() -> None:
     names = ["Idle_Stand", "Run_Fwd", "Sprint_Fwd", "WallRun_Left", "WallRun_Right", "SkillRoll", "Slide_Loop",
              "Grab_Idle", "Grab_PullUp", "SpeedVault", "Jump_Start", "Fall_Loop", "Land_Soft", "Land_Hard"]
@@ -121,6 +134,7 @@ def main() -> int:
         test_roundtrip(Path(d))
     test_conversion()
     test_reference_smd()
+    test_anchor()
     test_anim_map()
     print("  OK" if FAILS == 0 else f"  {FAILS} fallos")
     return 1 if FAILS else 0

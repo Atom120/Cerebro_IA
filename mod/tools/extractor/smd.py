@@ -99,17 +99,62 @@ def _norm(v: Vec) -> Vec:
     return (v[0] / n, v[1] / n, v[2] / n)
 
 
-def reference_smd(psk: Psk, material_names: list[str] | None = None) -> str:
-    """Reference .smd: skeleton in bind pose + skinned triangles."""
+def _rotate(q: Quat, v: Vec) -> Vec:
+    x, y, z, w = q
+    # v + 2w (q x v) + 2 q x (q x v)
+    tx, ty, tz = 2 * (y * v[2] - z * v[1]), 2 * (z * v[0] - x * v[2]), 2 * (x * v[1] - y * v[0])
+    return (v[0] + w * tx + (y * tz - z * ty), v[1] + w * ty + (z * tx - x * tz), v[2] + w * tz + (x * ty - y * tx))
+
+
+def world_position(bones: list[Bone], locals_: list[tuple[Quat, Vec]], index: int) -> Vec:
+    """Model-space position of one bone, from Source local transforms."""
+    chain = []
+    i = index
+    while True:
+        chain.append(i)
+        if i == 0 or bones[i].parent == i:
+            break
+        i = bones[i].parent
+    rot: Quat = (0.0, 0.0, 0.0, 1.0)
+    pos: Vec = (0.0, 0.0, 0.0)
+    for i in reversed(chain):
+        q, p = locals_[i]
+        r = _rotate(rot, p)
+        pos = (pos[0] + r[0], pos[1] + r[1], pos[2] + r[2])
+        rot = _qmul(rot, q)
+    return pos
+
+
+def _anchor(bones: list[Bone], locals_: list[tuple[Quat, Vec]], anchor: str | None,
+            offset: Vec = (0.0, 0.0, 0.0)) -> list[tuple[Quat, Vec]]:
+    """Moves the root so that bone `anchor` (+ `offset`, in su) sits at the model origin (viewmodels are drawn
+    from the eye). A negative X offset puts the eye behind the bone, so more of the arms is in view."""
+    if not anchor:
+        return locals_
+    idx = next((i for i, b in enumerate(bones) if b.name.lower() == anchor.lower()), None)
+    if idx is None:
+        return locals_
+    a = world_position(bones, locals_, idx)
+    a = (a[0] + offset[0], a[1] + offset[1], a[2] + offset[2])
+    q, p = locals_[0]
+    return [(q, (p[0] - a[0], p[1] - a[1], p[2] - a[2]))] + locals_[1:]
+
+
+def reference_smd(psk: Psk, material_names: list[str] | None = None, anchor: str | None = None,
+                  offset: Vec = (0.0, 0.0, 0.0)) -> str:
+    """Reference .smd: skeleton in bind pose + skinned triangles. With `anchor`, that bone is the origin."""
     lines = ["version 1"] + _nodes(psk.bones) + ["skeleton"]
-    _frame(lines, 0, [ue_local(i, b.rot, b.pos) for i, b in enumerate(psk.bones)])
+    bind = [ue_local(i, b.rot, b.pos) for i, b in enumerate(psk.bones)]
+    shifted = _anchor(psk.bones, bind, anchor, offset)
+    shift = tuple(shifted[0][1][k] - bind[0][1][k] for k in range(3))
+    _frame(lines, 0, shifted)
     lines.append("end")
 
     influences: dict[int, list[tuple[int, float]]] = {}
     for weight, point, bone in psk.weights:
         if weight > 0.0:
             influences.setdefault(point, []).append((bone, weight))
-    pts = [to_source(p) for p in psk.points]
+    pts = [tuple(c + d for c, d in zip(to_source(p), shift)) for p in psk.points]
     mats = material_names or psk.materials or ["faith"]
 
     lines.append("triangles")
@@ -131,7 +176,8 @@ def reference_smd(psk: Psk, material_names: list[str] | None = None) -> str:
     return "\n".join(lines) + "\n"
 
 
-def animation_smd(psk: Psk, psa: Psa, seq_index: int) -> str:
+def animation_smd(psk: Psk, psa: Psa, seq_index: int, anchor: str | None = None,
+                  offset: Vec = (0.0, 0.0, 0.0)) -> str:
     """One animation as an .smd. Bones are matched by name; bones missing in the PSA keep the bind pose."""
     seq = psa.sequences[seq_index]
     frames = psa.sequence_keys(seq)
@@ -146,6 +192,6 @@ def animation_smd(psk: Psk, psa: Psa, seq_index: int) -> str:
             else:
                 pos, rot = keys[j]
                 locals_.append(ue_local(i, rot, pos))
-        _frame(lines, f, locals_)
+        _frame(lines, f, _anchor(psk.bones, locals_, anchor, offset))
     lines.append("end")
     return "\n".join(lines) + "\n"
