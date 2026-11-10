@@ -56,6 +56,8 @@ Azul: Mirror's Edge. Rojo, discontinuo: modelo anterior. Verde, discontinuo: mod
 - No hay grabación de aterrizaje suave (`MOVE_SoftLanding`) ni de coil.
 ## Prueba en Portal (2026-11-09)
 
-- **H2: 9/9 PASS.** Se ajustaron dos umbrales de `qa/scripts/h2_smoke.ps1`: H2-03 ahora espera la rampa exponencial y H2-04 el salto de 237.8 su/s.
-- **H3: 11/15.** Fallan H3-06 (agacharse baja la vista), H3-11 (FOV), H3-12 (balanceo) y H3-14 (mensaje "Restoring player view height"). **No los causa P5:** con la DLL de `main` sin estos cambios, el mismo diagnóstico falla igual (la vista no baja al agacharse y el FOV queda en 75). Esa misma tarde, a las 19:41, habían pasado 15/15. Lo que cambió fue el entorno: Mirror's Edge estaba abierto mientras corría la prueba. Hay que repetirla con Mirror's Edge cerrado.
-- Ojo con H3-11: con el sprint real (más lento de llenar), en el pasillo de la prueba Faith llega a la pared con unos 225 su/s, así que el FOV solo se abre unos 3°. Si sigue fallando con Mirror's Edge cerrado, hay que buscar un pasillo más largo para esa prueba.
+- **H2: 9/9 PASS y H3: 15/15 PASS**, con Mirror's Edge cerrado (`qa/resultados/H2_auto_p5.md`, `H3_auto_p5.md`).
+- Se ajustaron dos umbrales de `qa/scripts/h2_smoke.ps1`: H2-03 ahora espera la rampa exponencial y H2-04 el salto de 237.8 su/s.
+- Con Mirror's Edge abierto, H3-06, H3-11 y H3-12 fallaban también con la DLL de `main`: el juego abierto al mismo tiempo afecta la prueba. Hay que cerrarlo antes de correr el QA.
+- P5 destapó un error de tiempos en el plugin: cerca de un portal se dejaba correr el movimiento de Portal sin quitar antes el balanceo de cabeza, y el motor escribía "Restoring player view height" (H3-14). Antes pasaba de suerte, porque el cruce caía en una fase del balanceo cercana a cero. Lo arregla `FaithDriver::StripHeadBob`.
+- Ojo con H3-11: con el sprint real, en el pasillo de la prueba Faith llega a la pared con unos 225 su/s y el FOV solo sube a 76. Pasa, pero con poco margen.
