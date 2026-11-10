@@ -141,8 +141,11 @@ def _anchor(bones: list[Bone], locals_: list[tuple[Quat, Vec]], anchor: str | No
 
 
 def reference_smd(psk: Psk, material_names: list[str] | None = None, anchor: str | None = None,
-                  offset: Vec = (0.0, 0.0, 0.0)) -> str:
-    """Reference .smd: skeleton in bind pose + skinned triangles. With `anchor`, that bone is the origin."""
+                  offset: Vec = (0.0, 0.0, 0.0), skip_materials: tuple[str, ...] = (),
+                  near_cull: float = 0.0) -> str:
+    """Reference .smd: skeleton in bind pose + skinned triangles. With `anchor`, that bone is the origin.
+    Triangles whose material is in `skip_materials`, or whose centre is closer than `near_cull` su to the
+    origin (the eye, for a viewmodel), are left out."""
     lines = ["version 1"] + _nodes(psk.bones) + ["skeleton"]
     bind = [ue_local(i, b.rot, b.pos) for i, b in enumerate(psk.bones)]
     shifted = _anchor(psk.bones, bind, anchor, offset)
@@ -161,8 +164,13 @@ def reference_smd(psk: Psk, material_names: list[str] | None = None, anchor: str
     for face in psk.faces:
         ws = [psk.wedges[i] for i in face.wedges]
         a, b, c = (pts[w.point] for w in ws)
+        if near_cull > 0.0 and math.dist(((a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3,
+                                          (a[2] + b[2] + c[2]) / 3), (0.0, 0.0, 0.0)) < near_cull:
+            continue
         normal = _norm(_cross(_sub(b, a), _sub(c, a)))
         mat = mats[face.material] if face.material < len(mats) else mats[0]
+        if mat in skip_materials:
+            continue
         lines.append(mat)
         for w in ws:
             p = pts[w.point]

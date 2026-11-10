@@ -23,17 +23,21 @@ public:
     bool Ready() const { return tools_ && engine_; }
 
     // Every Faith tick. `player` is the CBasePlayer* of ProcessMovement.
-    void Update(void* player, FaithAnimState anim, bool visible);
+    // `visible`: Faith is drawn at all (legs and arms); `arms_visible`: the arms viewmodel too.
+    void Update(void* player, FaithAnimState anim, bool visible, bool arms_visible);
     void OnLevelShutdown();
     void PrintStatus() const;
     void SetOverride(int sequence) { override_sequence_ = sequence; }  // diagnostics: -1 = follow Faith
 
     static constexpr const char* kModel = "models/aperture_runner/faith_arms.mdl";
+    static constexpr const char* kBodyModel = "models/aperture_runner/faith_body.mdl";
     static constexpr int kSlot = 1;
 
 private:
     bool Create(void* player);
     bool ResolveOffsets(void* player, void* vm);
+    bool CreateBody(void* player);
+    bool SetKeyValue(void* entity, const char* key, const char* value);
 
     void* tools_ = nullptr;
     void* engine_ = nullptr;
@@ -43,7 +47,23 @@ private:
     int model_index_ = -1;
     int last_sequence_ = -1;
     bool last_visible_ = false;
+    bool last_arms_visible_ = false;
+    bool last_body_visible_ = false;
     int override_sequence_ = -1;
+
+    // Legs and body (faith_body.mdl): a prop_dynamic whose network parent is the player, so it moves
+    // with her without interpolation lag; the client animates it (m_bClientSideAnimation).
+    void* body_ = nullptr;
+    bool body_failed_ = false;
+    int set_kv_slot_ = -1;
+    int off_move_parent_ = -1;     // body moveparent
+    int off_local_origin_ = -1;    // body m_vecOrigin (local to the parent)
+    int off_client_anim_ = -1;     // body m_bClientSideAnimation
+    int off_body_sequence_ = -1;
+    int off_body_playback_ = -1;
+    int off_body_effects_ = -1;
+    int off_body_new_seq_parity_ = -1;
+    char body_status_[120] = "sin crear";
     char status_[160] = "sin crear";
 
     // Offsets (bytes) found in the SendTables.

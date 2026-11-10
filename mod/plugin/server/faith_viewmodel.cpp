@@ -25,6 +25,13 @@ constexpr int kNetworkableGetEdictSlot = 2;
 // edict_t::m_fStateFlags (public/edict.h): FL_EDICT_CHANGED | FL_FULL_EDICT_CHANGED.
 constexpr int kEdictChangedFlags = (1 << 0) | (1 << 8);
 constexpr int kEffectNoDraw = 0x20;  // EF_NODRAW
+constexpr int kEdictAlways = 1 << 3;  // FL_EDICT_ALWAYS: send the body even if the server thinks it is far away
+// IServerTools [10] GetKeyValue(ent, key, buf, len); the string SetKeyValue is [11] or [13] (MSVC may
+// reorder overloads): checked at run time by reading the value back.
+constexpr int kToolsGetKeyValueSlot = 10;
+constexpr int kToolsSetKeyValueSlots[] = {11, 13};
+// The body stands this far behind the player's origin, so the camera never looks into the torso.
+constexpr float kBodyBack = -14.0f;
 // Known in this build (source_interfaces.h, checked in the game by the crouch test 64 -> 28):
 // m_vecViewOffset (x at 0x320). Calibrates the SendProp layout.
 constexpr const char* kKnownField = "m_vecViewOffset[0]";
@@ -255,7 +262,102 @@ void FaithViewModel::Init(void* server_tools, void* engine_server) {
     engine_ = engine_server;
 }
 
+bool FaithViewModel::SetKeyValue(void* entity, const char* key, const char* value) {
+#ifdef _WIN32
+    __try {
+        for (int slot : kToolsSetKeyValueSlots) {
+            if (set_kv_slot_ >= 0 && slot != set_kv_slot_) continue;
+            VCall<bool(__thiscall*)(void*, void*, const char*, const char*)>(tools_, slot)(tools_, entity, key, value);
+            if (set_kv_slot_ >= 0) return true;
+            char back[128] = {};
+            VCall<bool(__thiscall*)(void*, void*, const char*, char*, int)>(tools_, kToolsGetKeyValueSlot)(
+                tools_, entity, "targetname", back, sizeof(back));
+            if (std::strcmp(key, "targetname") == 0 && std::strcmp(back, value) == 0) {
+                set_kv_slot_ = slot;
+                return true;
+            }
+        }
+    } __except (1) {
+    }
+#else
+    (void)entity;
+    (void)key;
+    (void)value;
+#endif
+    return false;
+}
+
+bool FaithViewModel::CreateBody(void* player) {
+#ifdef _WIN32
+    const char* volatile stage = "PrecacheModel";
+    __try {
+        if (VCall<int(__thiscall*)(void*, const char*, bool)>(engine_, kEnginePrecacheModelSlot)(engine_, kBodyModel, true) <= 0) {
+            std::snprintf(body_status_, sizeof(body_status_), "falta %s", kBodyModel);
+            return false;
+        }
+        stage = "CreateEntityByName";
+        void* body = VCall<void*(__thiscall*)(void*, const char*)>(tools_, kToolsCreateEntityByNameSlot)(tools_, "prop_dynamic_override");
+        if (!body) {
+            std::snprintf(body_status_, sizeof(body_status_), "CreateEntityByName(prop_dynamic_override) fallo");
+            return false;
+        }
+        stage = "SetKeyValue";
+        if (!SetKeyValue(body, "targetname", "ar_faith_body")) {  // also finds the SetKeyValue slot
+            std::snprintf(body_status_, sizeof(body_status_), "SetKeyValue no encontrado");
+            return false;
+        }
+        SetKeyValue(body, "model", kBodyModel);
+        SetKeyValue(body, "solid", "0");
+        SetKeyValue(body, "disableshadows", "1");
+        SetKeyValue(body, "DefaultAnim", "idle");
+        stage = "DispatchSpawn";
+        VCall<void(__thiscall*)(void*, void*)>(tools_, kToolsDispatchSpawnSlot)(tools_, body);
+        stage = "netvars";
+        const RawTable* bt = TableOf(body);
+        off_move_parent_ = SafeFind(bt, "moveparent", g_layout);
+        off_local_origin_ = SafeFind(bt, "m_vecOrigin", g_layout);
+        off_client_anim_ = SafeFind(bt, "m_bClientSideAnimation", g_layout);
+        off_body_sequence_ = SafeFind(bt, "m_nSequence", g_layout);
+        off_body_playback_ = SafeFind(bt, "m_flPlaybackRate", g_layout);
+        off_body_effects_ = SafeFind(bt, "m_fEffects", g_layout);
+        off_body_new_seq_parity_ = SafeFind(bt, "m_nNewSequenceParity", g_layout);
+        ApertureRunnerServerPlugin::LogMsg(
+            "[ApertureRunner] G4 cuerpo: SetKeyValue=[%d] moveparent=0x%X m_vecOrigin=0x%X m_bClientSideAnimation=0x%X "
+            "m_nSequence=0x%X m_flPlaybackRate=0x%X m_fEffects=0x%X\n",
+            set_kv_slot_, off_move_parent_, off_local_origin_, off_client_anim_, off_body_sequence_, off_body_playback_,
+            off_body_effects_);
+        if (off_move_parent_ <= 0 || off_local_origin_ <= 0 || off_body_sequence_ <= 0) {
+            std::snprintf(body_status_, sizeof(body_status_), "faltan netvars del cuerpo");
+            return false;
+        }
+        Put<uint32_t>(body, off_move_parent_, EHandleOf(player));
+        Put<float>(body, off_local_origin_, kBodyBack);
+        Put<float>(body, off_local_origin_ + 4, 0.0f);
+        Put<float>(body, off_local_origin_ + 8, 0.0f);
+        if (off_client_anim_ > 0) Put<uint8_t>(body, off_client_anim_, 1);
+        Put<float>(body, off_body_playback_, 1.0f);
+        MarkChanged(body);
+        body_ = body;
+        last_body_visible_ = true;
+        std::snprintf(body_status_, sizeof(body_status_), "activo (ehandle 0x%X)", EHandleOf(body));
+        ApertureRunnerServerPlugin::LogMsg("[ApertureRunner] G4: cuerpo de Faith creado (%s).\n", kBodyModel);
+        return true;
+    } __except (1) {
+        std::snprintf(body_status_, sizeof(body_status_), "excepcion al crear el cuerpo (paso %s)", stage);
+        return false;
+    }
+#else
+    (void)player;
+    return false;
+#endif
+}
+
 void FaithViewModel::OnLevelShutdown() {
+    last_arms_visible_ = false;
+    last_body_visible_ = false;
+    body_ = nullptr;
+    body_failed_ = false;
+    std::snprintf(body_status_, sizeof(body_status_), "sin crear");
     vm_ = nullptr;  // the engine deletes the entity with the level
     vm_player_ = nullptr;
     failed_ = false;
@@ -336,6 +438,7 @@ bool FaithViewModel::Create(void* player) {
         MarkChanged(player);
         vm_ = vm;
         vm_player_ = player;
+        last_arms_visible_ = true;  // a new entity is drawn until EF_NODRAW is set
         std::snprintf(status_, sizeof(status_), "activo (modelo %d, ehandle 0x%X)", model_index_, EHandleOf(vm));
         ApertureRunnerServerPlugin::LogMsg("[ApertureRunner] G4: brazos de Faith creados (%s, modelo %d).\n", kModel, model_index_);
         return true;
@@ -349,7 +452,7 @@ bool FaithViewModel::Create(void* player) {
 #endif
 }
 
-void FaithViewModel::Update(void* player, FaithAnimState anim, bool visible) {
+void FaithViewModel::Update(void* player, FaithAnimState anim, bool visible, bool arms_visible) {
     if (!Ready() || !player) return;
     if (vm_ && vm_player_ != player) OnLevelShutdown();
     if (!vm_) {
@@ -369,10 +472,11 @@ void FaithViewModel::Update(void* player, FaithAnimState anim, bool visible) {
             Put<uint32_t>(player, off_view_model_slot_, handle);
             MarkChanged(player);
         }
-        if (visible != last_visible_) {
+        last_visible_ = visible;
+        if (arms_visible != last_arms_visible_) {
             const int effects = Get<int>(vm_, off_effects_);
-            Put<int>(vm_, off_effects_, visible ? (effects & ~kEffectNoDraw) : (effects | kEffectNoDraw));
-            last_visible_ = visible;
+            Put<int>(vm_, off_effects_, arms_visible ? (effects & ~kEffectNoDraw) : (effects | kEffectNoDraw));
+            last_arms_visible_ = arms_visible;
             changed = true;
         }
         // Sequence index = FaithAnimState: the extractor writes the .qc sequences in that order.
@@ -385,6 +489,32 @@ void FaithViewModel::Update(void* player, FaithAnimState anim, bool visible) {
             changed = true;
         }
         if (changed) MarkChanged(vm_);
+
+        if (!body_ && !body_failed_ && visible) {
+            if (!CreateBody(player)) {
+                body_failed_ = true;
+                ApertureRunnerServerPlugin::LogMsg("[ApertureRunner] G4: sin cuerpo de Faith: %s\n", body_status_);
+            }
+        }
+        if (body_) {
+            // The server keeps the body at its local origin (near the map origin): always send it.
+            void* networkable = VCall<void*(__thiscall*)(void*)>(body_, source::kServerUnknownGetNetworkableSlot)(body_);
+            int* edict = networkable ? VCall<int*(__thiscall*)(void*)>(networkable, kNetworkableGetEdictSlot)(networkable) : nullptr;
+            if (edict) *edict |= kEdictAlways;
+            bool body_changed = false;
+            if (visible != last_body_visible_) {
+                const int effects = Get<int>(body_, off_body_effects_);
+                Put<int>(body_, off_body_effects_, visible ? (effects & ~kEffectNoDraw) : (effects | kEffectNoDraw));
+                last_body_visible_ = visible;
+                body_changed = true;
+            }
+            if (Get<int>(body_, off_body_sequence_) != sequence) {
+                Put<int>(body_, off_body_sequence_, sequence);
+                Put<int>(body_, off_body_new_seq_parity_, (Get<int>(body_, off_body_new_seq_parity_) + 1) & 7);
+                body_changed = true;
+            }
+            if (body_changed) MarkChanged(body_);
+        }
     } __except (1) {
         vm_ = nullptr;
         failed_ = true;
@@ -397,6 +527,7 @@ void FaithViewModel::Update(void* player, FaithAnimState anim, bool visible) {
 }
 
 void FaithViewModel::PrintStatus() const {
+    ApertureRunnerServerPlugin::LogMsg("[AR] cuerpo (G4): %s\n", body_status_);
     ApertureRunnerServerPlugin::LogMsg("[AR] brazos (G4): %s; secuencia=%s\n", status_,
                                        last_sequence_ >= 0 ? SequenceName(static_cast<FaithAnimState>(last_sequence_)) : "-");
 }

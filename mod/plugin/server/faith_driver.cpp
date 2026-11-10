@@ -186,7 +186,7 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
     last_player_ = player;
     if (!enabled_ || !mv) {
         RestorePlayerView();
-        FaithViewModel::Instance().Update(player, FaithAnimState::Idle, false);
+        FaithViewModel::Instance().Update(player, FaithAnimState::Idle, false, false);
         if (original) original(game_movement, player, mv);
         return;
     }
@@ -270,7 +270,11 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
     }
     last_end_origin_ = state_.origin;
     ApplyCamera(r);
-    FaithViewModel::Instance().Update(player, state_.anim, camera_enabled_);
+    // G4: looking down more than this shows Faith's legs; the arms (a viewmodel, which Portal does not
+    // pitch all the way) would otherwise hang right under the camera.
+    constexpr float kArmsMaxPitch = 40.0f;
+    FaithViewModel::Instance().Update(player, state_.anim, camera_enabled_,
+                                      camera_enabled_ && view_pitch_ < kArmsMaxPitch);
 
     if (debug_ >= 2 || (debug_ == 1 && (faith_ticks_ % 33 == 0 || r.events))) {
         ApertureRunnerServerPlugin::LogMsg("[AR] t=%.2f anim=%s vel2d=%.1f vz=%.1f suelo=%d pos=(%.1f %.1f %.1f) eventos=0x%x yaw=%.1f roll=%.1f\n",
@@ -301,6 +305,7 @@ void FaithDriver::ApplyCamera(const FaithStepResult& r) {
             applied_pitch_ = shake;
             ClientView::SetViewAngles(view);
             view_yaw_ = view[1];
+            view_pitch_ = view[0];
         }
     }
     ApplyPlayerView(co);

@@ -108,6 +108,16 @@ def test_anchor() -> None:
     check(near(float(tri[1]), -before[0]) and near(float(tri[2]), -before[1]), "points shifted with the root")
 
 
+def test_skip_materials() -> None:
+    text = smd.reference_smd(sample_psk(), skip_materials=("faith_arms",))
+    tris = text.split("triangles")[1].strip().splitlines()
+    check(tris == ["end"], "skipped material leaves no triangles")
+    text = smd.reference_smd(sample_psk(), near_cull=100.0)
+    check(text.split("triangles")[1].strip().splitlines() == ["end"], "near_cull drops triangles next to the eye")
+    text = smd.reference_smd(sample_psk(), near_cull=0.1)
+    check(len(text.split("triangles")[1].strip().splitlines()) == 5, "near_cull keeps the rest")
+
+
 def test_anim_map() -> None:
     names = ["Idle_Stand", "Run_Fwd", "Sprint_Fwd", "WallRun_Left", "WallRun_Right", "SkillRoll", "Slide_Loop",
              "Grab_Idle", "Grab_PullUp", "SpeedVault", "Jump_Start", "Fall_Loop", "Land_Soft", "Land_Hard"]
@@ -135,6 +145,7 @@ def main() -> int:
     test_conversion()
     test_reference_smd()
     test_anchor()
+    test_skip_materials()
     test_anim_map()
     print("  OK" if FAILS == 0 else f"  {FAILS} fallos")
     return 1 if FAILS else 0

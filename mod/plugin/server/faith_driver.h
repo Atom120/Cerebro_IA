@@ -64,6 +64,7 @@ private:
     bool engine_side_effects_ = true;  // run the original movement too (duck hull, ground, footsteps)
     float applied_pitch_ = 0.0f;  // landing-shake pitch currently added to the view
     float view_yaw_ = 0.0f;       // last view yaw (for the sideways head bob)
+    float view_pitch_ = 0.0f;     // last view pitch (G4: looking down hides the arms, shows the legs)
     int written_fov_ = 0;         // m_iFOV the mod last wrote (0 = none)
     int base_fov_ = 0;            // the player's own FOV when the mod took it over
     float written_bob_[3] = {};   // head-bob offset the mod last added to m_vecViewOffset
