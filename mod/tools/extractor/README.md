@@ -37,8 +37,8 @@ No hace falta Blender: la conversión de PSK/PSA a SMD se hace en Python puro (`
 - **Esqueleto comprobado con números:** en la pose de referencia, los vértices de los brazos quedan a 1 su de su hueso (mediana); con la convención contraria quedarían a 34 su. La convención de `smd.ue_local` es la correcta.
 - **Orientación comprobada:** en el `.psk`, Faith mira hacia +Z, su izquierda está en +X y arriba es +Y. La primera versión reflejaba el eje Y, lo que la dejaba acostada y con la izquierda a la derecha; ahora se rota sin reflejar. En Source la cabeza queda a z ≈ 61, los dedos de los pies hacia +X, la mano izquierda en +Y y `CameraJoint` a 62–65 su (los ojos de Source están a 64). Se revisó también con renders del sprint.
 
-## Qué falta comprobar a ojo
+## Revisión a ojo y pendientes
 
-- Abrir los modelos en `hlmv` para ver los materiales (los renders de la comprobación no tienen texturas).
+- ✅ Revisado en `hlmv` el 2026-11-10: brazos (piel, manga del codo, guante rojo y tatuaje en el brazo derecho) y piernas (pantalón blanco, top negro y zapatillas rojas) con textura; `sprint` y `slide` se animan bien.
 - `MI_SHtest` (material de prueba en `SK_LowerBody`) y la transparencia de la piel (`Female_1p_Trans`) todavía no se convierten.
 - Algunas asignaciones son aproximadas: `wallclimb_jump` usa `JumpTurnFly` y `ledge_climb_up` usa `HangHeaveUp`.

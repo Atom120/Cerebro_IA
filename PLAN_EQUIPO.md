@@ -24,7 +24,7 @@ tags: [plan, equipo, apertureRunner, antigravity]
 > - **Gonzalo:** G4, los brazos y el cuerpo de Faith (la cámara ya está aplicada a la vista). Espera al modelo de Antonio (A3); antes puede usar uno provisional. También FOV y balanceo en la vista (hay que enganchar el cálculo de la vista del cliente).
 > - **Benja:** B2b (grabar trazas reales de Mirror's Edge con `--record`; necesita ME instalado) y B5 (vídeo, H4).
 > - **Peña:** P1–P5 hechos. P5 ✅ (Sebas, 2026-11-09): ajuste con las 9 trazas reales, en `docs/tuning/P5_ajuste.md`.
-> - **Antonio:** A1, A2 y A4 hechos (Sebas, 2026-11-09, `mod/tools/extractor/`). Falta revisar el modelo en `hlmv` (A3) y probar el extractor en otro PC.
+> - **Antonio:** A1–A4 hechos (Sebas, 2026-11-09/10, `mod/tools/extractor/`), revisados en `hlmv`. Falta probar el extractor en otro PC. Ya se puede hacer G4 con el modelo real.
 
 > **Lee esto completo una vez. Después solo busca tu nombre (`Ctrl+F`).**
 > Cada persona tiene sus tareas, sus agentes de Antigravity y la lista de qué puede hacer ya y qué tiene que esperar.
@@ -403,7 +403,7 @@ Si el modelo no existe en el PC, usa el modelo provisional y muestra un aviso en
 |---|---|---|---|
 | A1 ✅ (Sebas, 2026-11-09) | Instalar Mirror's Edge (GOG recomendado) y UEViewer. Exportar a PSK/PSA el cuerpo 1P (`TdGame/CookedPC/Characters/CH_TKY_Crim_Fixer_1P.upk`) y las animaciones (`TdGame/CookedPC/Animations/AS_C1P_Unarmed.upk`, unas 281). Anotar los huesos | 🟢 | `docs/contratos/faith_esqueleto.md` (nombres de huesos y animaciones, sin archivos del juego) |
 | A2 ✅ (Sebas, 2026-11-09; Python puro, sin Blender: `smd.py`) | Script de Blender 5.0 sin interfaz (`blender -b -P`): importar PSK/PSA (addon `io_scene_psk_psa`), corregir escala y ejes y exportar SMD/DMX. Nombrar las animaciones según `FaithAnimState` | 🟡 (S2 para los nombres; antes usa nombres provisionales) | Script en `mod/tools/extractor/` |
-| A3 🟡 compila los 2 modelos con texturas (Sebas, 2026-11-09); falta revisarlos en `hlmv` | `.qc` + compilar con el `studiomdl.exe` de `Portal/bin` hacia `portal/custom/aperture_runner/models/faith/` (en el PC, no en el repo). Máximo 128 huesos (Faith tiene 108 en 3P) | 🟢 tras A2 | El modelo se ve en `hlmv` |
+| A3 ✅ (Sebas, 2026-11-10; revisado en `hlmv`: texturas y animaciones) | `.qc` + compilar con el `studiomdl.exe` de `Portal/bin` hacia `portal/custom/aperture_runner/models/faith/` (en el PC, no en el repo). Máximo 128 huesos (Faith tiene 108 en 3P) | 🟢 tras A2 | El modelo se ve en `hlmv` |
 | A4 ✅ `extract.py` de punta a punta (Sebas, 2026-11-09); falta probarlo en otro PC | Extractor de un solo comando: lee `config/paths.local.json`, detecta la build de ME, ejecuta A1–A3 y verifica | 🟢 tras A3 | `python mod/tools/extractor/extract.py` funciona en otro PC |
 
 **Agentes:**
