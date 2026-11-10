@@ -310,6 +310,8 @@ void ApertureRunnerServerPlugin::OnEdictAllocated(void* /*edict*/) {
 }
 
 void ApertureRunnerServerPlugin::OnEdictFreed(const void* /*edict*/) {
+    // A prop_portal may be gone: drop the list (no dangling pointers) and rebuild it next tick.
+    FaithDriver::Instance().OnEdictFreed();
 }
 
 }  // namespace ar

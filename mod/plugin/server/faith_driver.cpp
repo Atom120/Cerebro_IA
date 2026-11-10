@@ -21,8 +21,20 @@ constexpr float kPortalFrontReach = 40.0f;
 constexpr float kPortalBackReach = 40.0f;
 constexpr float kPortalSideMargin = 8.0f;
 constexpr float kPortalVerticalMargin = 16.0f;
+// Falling onto a floor portal: Portal's own movement takes over so its funnel (sv_player_funnel_into_portals)
+// centres the player on the portal, instead of Faith's air control and Mirror's Edge landing. The handover
+// starts inside a cone above the portal: radius kFunnelRadius at the portal, growing kFunnelSpread per su.
+constexpr float kFunnelMinNormalZ = 0.7f;   // portal facing up
+constexpr float kFunnelMaxHeight = 2048.0f;
+constexpr float kFunnelRadius = 64.0f;
+constexpr float kFunnelSpread = 0.5f;
 // A jump bigger than this between ticks means the engine teleported the player.
 constexpr float kTeleportDistance = 32.0f;
+// Portal gun portals appear after ServerActivate: look for new prop_portal this often (~0.25 s).
+constexpr int kPortalRescanTicks = 16;
+// sv.edicts has MAX_EDICTS entries (public/const.h, 1 << 11).
+constexpr int kMaxEdicts = 2048;
+constexpr int kEdictFreeFlag = 1 << 1;  // FL_EDICT_FREE (public/edict.h)
 
 typedef void*(__thiscall* PtrFn)(void*);
 
@@ -97,11 +109,32 @@ void FaithDriver::SetEnabled(bool enabled) {
 }
 
 void FaithDriver::ScanPortals(void* edict_list, int edict_count) {
+    edict_list_ = edict_list;
+    edict_count_ = edict_count;
+    RescanPortals();
+}
+
+// Walks every edict slot (not just the ones in use at ServerActivate): the Portal gun's portals are
+// allocated later. Free slots are skipped by their FL_EDICT_FREE flag.
+void FaithDriver::RescanPortals() {
     portals_.clear();
-    if (!edict_list) return;
-    for (int i = 0; i < edict_count; ++i) {
-        char* edict = static_cast<char*>(edict_list) + i * source::kEdictSize;
-        void* unknown = *reinterpret_cast<void**>(edict + source::kEdictUnknownOffset);
+    portals_dirty_ = false;
+    ticks_since_scan_ = 0;
+    if (!edict_list_) return;
+    const int count = std::max(edict_count_, kMaxEdicts);
+    for (int i = 0; i < count; ++i) {
+        char* edict = static_cast<char*>(edict_list_) + i * source::kEdictSize;
+        void* unknown = nullptr;
+#ifdef _WIN32
+        __try {
+            if (*reinterpret_cast<const int*>(edict) & kEdictFreeFlag) continue;
+            unknown = *reinterpret_cast<void**>(edict + source::kEdictUnknownOffset);
+        } __except (1) {
+            break;  // past the end of sv.edicts
+        }
+#else
+        unknown = *reinterpret_cast<void**>(edict + source::kEdictUnknownOffset);
+#endif
         if (!unknown) continue;
         const char* name = EdictClassName(unknown);
         if (name && std::strcmp(name, "prop_portal") == 0) portals_.push_back(unknown);
@@ -110,6 +143,9 @@ void FaithDriver::ScanPortals(void* edict_list, int edict_count) {
 
 void FaithDriver::OnLevelShutdown() {
     portals_.clear();
+    edict_list_ = nullptr;
+    edict_count_ = 0;
+    portals_dirty_ = false;
     initialized_ = false;
 }
 
@@ -128,6 +164,26 @@ bool FaithDriver::NearPortal(Vec3 feet) const {
         if (std::fabs(aperture_runner::Dot(d, right)) > kPortalHalfWidth + kPortalSideMargin) continue;
         if (std::fabs(aperture_runner::Dot(d, up)) > kPortalHalfHeight + kPortalVerticalMargin) continue;
         return true;
+    }
+    return false;
+}
+
+// `velocity` is the engine's (CMoveData): while Portal's movement has the player, Faith's own state is not
+// updated, so it must not decide when the fall is over.
+bool FaithDriver::FallingOntoFloorPortal(Vec3 feet, Vec3 velocity) const {
+    if (!initialized_ || velocity.z >= -1.0f) return false;
+    if (!last_tick_portal_ && state_.on_ground) return false;
+    for (void* portal : portals_) {
+        float o[3], a[3];
+        if (!PortalActive(portal) || !PortalTransform(portal, o, a)) continue;
+        const float p = a[0] * aperture_runner::kDegToRad, y = a[1] * aperture_runner::kDegToRad;
+        const Vec3 normal{std::cos(p) * std::cos(y), std::cos(p) * std::sin(y), -std::sin(p)};
+        if (normal.z < kFunnelMinNormalZ) continue;
+        const Vec3 d = feet - Vec3{o[0], o[1], o[2]};
+        const float height = aperture_runner::Dot(d, normal);
+        if (height < 0.0f || height > kFunnelMaxHeight) continue;
+        const float off_axis = aperture_runner::Length(d - normal * height);
+        if (off_axis <= kFunnelRadius + kFunnelSpread * height) return true;
     }
     return false;
 }
@@ -159,7 +215,11 @@ void FaithDriver::Sync(const source::CMoveData* mv, PortalTransportHint* hint) {
     const Vec3 origin{mv->m_vecAbsOrigin[0], mv->m_vecAbsOrigin[1], mv->m_vecAbsOrigin[2]};
     Vec3 velocity{mv->m_vecVelocity[0], mv->m_vecVelocity[1], mv->m_vecVelocity[2]};
     const bool resume = last_tick_portal_ && !last_tick_stuck_;
-    if (!initialized_ || last_tick_stuck_ ||
+    const bool funnel = funnel_handover_;
+    funnel_handover_ = false;
+    // Portal funnelled a fall but the player did not go through: Portal already did the landing, so
+    // start Faith fresh (no Mirror's Edge hard landing or Skill Roll from the height of that fall).
+    if (!initialized_ || last_tick_stuck_ || (funnel && !portal_teleported_) ||
         (!resume && aperture_runner::Length(origin - state_.origin) > kTeleportDistance)) {
         move_->Reset(state_, origin, velocity);
         initialized_ = true;
@@ -208,6 +268,7 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
 
     const Vec3 feet{mv->m_vecAbsOrigin[0], mv->m_vecAbsOrigin[1], mv->m_vecAbsOrigin[2]};
     engine_origin_ = feet;
+    if (portals_dirty_ || ++ticks_since_scan_ >= kPortalRescanTicks) RescanPortals();
     // The engine teleports through a prop_portal when the player touches it, between ticks (after
     // ProcessMovement), so a portal crossing shows up as a jump from where the last tick ended.
     if (last_tick_portal_ && !portal_teleported_ &&
@@ -217,7 +278,10 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
     }
     const FaithHostConfig cfg;
     const bool stuck = trace.TraceHull(feet, feet, cfg.hull_mins, cfg.hull_maxs).start_solid;
-    if (stuck || NearPortal(feet)) {
+    const bool funnel =
+        !stuck && FallingOntoFloorPortal(feet, Vec3{mv->m_vecVelocity[0], mv->m_vecVelocity[1], mv->m_vecVelocity[2]});
+    if (stuck || funnel || NearPortal(feet)) {
+        if (funnel) funnel_handover_ = true;
         // Let Portal carry the player through the portal (or out of a solid, CheckStuck); pick the
         // result up when the player is clear (Sync).
         if (!last_tick_portal_) {
@@ -454,6 +518,13 @@ void FaithDriver::PrintStatus() const {
         state_.ducked ? 1 : 0, state_.origin.x, state_.origin.y, state_.origin.z, engine_origin_.x, engine_origin_.y,
         engine_origin_.z, faith_ticks_, portal_ticks_,
         static_cast<unsigned>(portals_.size()), portal_crossings_, last_events_);
+    for (size_t i = 0; i < portals_.size(); ++i) {
+        float o[3], an[3];
+        if (!PortalTransform(portals_[i], o, an)) continue;
+        ApertureRunnerServerPlugin::LogMsg("[AR] portal %u: abierto=%d pos=(%.1f %.1f %.1f) ang=(%.1f %.1f %.1f)\n",
+                                           static_cast<unsigned>(i), PortalActive(portals_[i]) ? 1 : 0, o[0], o[1], o[2],
+                                           an[0], an[1], an[2]);
+    }
 }
 
 }  // namespace ar
