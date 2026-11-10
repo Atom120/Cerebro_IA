@@ -45,6 +45,11 @@ def load_paths() -> dict[str, Path]:
         raise ExtractError("Falta config/paths.local.json: copia config/paths.example.json y pon tus rutas.")
     raw = json.loads(cfg.read_text(encoding="utf-8-sig"))["paths"]
     paths = {k: Path(v) if Path(v).is_absolute() else REPO / v for k, v in raw.items()}
+    umodel = paths.get("umodel_exe")
+    if umodel and not umodel.exists():  # the zip unpacks into a subfolder (tools/umodel/umodel_win32/)
+        found = sorted(umodel.parent.glob("**/umodel.exe"))
+        if found:
+            paths["umodel_exe"] = found[0]
     return paths
 
 
@@ -105,7 +110,7 @@ def step_a1(paths: dict[str, Path]) -> None:
     cooked = paths["mirrors_edge_cooked_pc"]
     for key in ("body_1p", "anims_1p"):
         pkg = cooked / MANIFEST["source_files_me"][key]
-        run([paths["umodel_exe"], "-game=mirror", f"-path={cooked}", "-export", "-psk", "-nooverwrite",
+        run([paths["umodel_exe"], "-game=medge", f"-path={cooked}", "-export", "-psk", "-nooverwrite",
              f"-out={export}", str(pkg)])
     psks, psas = find_exports()
     print(f"  {len(psks)} mallas (.psk), {len(psas)} sets de animación (.psa)")
@@ -124,6 +129,12 @@ def find_exports() -> tuple[list[Path], list[Path]]:
 def pick_mesh(psks: list[Path]) -> Path:
     """The 1P package may hold several meshes: take the one with the most bones (the full 1P body)."""
     return max(psks, key=lambda p: (len(ue_psk.read_psk(p).bones), p.stat().st_size))
+
+
+def model_mesh(psks: list[Path], model_key: str) -> Path:
+    """The mesh for one model of the manifest (anim_map.json 'meshes'), else the one with the most bones."""
+    want = ANIM_MAP.get("meshes", {}).get(model_key, "").lower()
+    return next((p for p in psks if p.stem.lower() == want), None) or pick_mesh(psks)
 
 
 def write_skeleton_doc(psks: list[Path], psas: list[Path]) -> None:
@@ -180,23 +191,27 @@ def resolve_anims(psas: list[Path]) -> dict[str, tuple[Path, str] | None]:
 def step_a2() -> None:
     print("== A2: PSK/PSA -> SMD")
     psks, psas = find_exports()
-    mesh = ue_psk.read_psk(pick_mesh(psks))
-    out = WORK / "smd"
-    if out.exists():
-        shutil.rmtree(out)
-    (out / "anims").mkdir(parents=True)
-    (out / "faith_ref.smd").write_text(smd.reference_smd(mesh), encoding="utf-8")
+    root = WORK / "smd"
+    if root.exists():
+        shutil.rmtree(root)
     resolved = resolve_anims(psas)
     cache: dict[Path, ue_psk.Psa] = {}
-    missing = []
-    for seq, hit in resolved.items():
-        if not hit:
-            missing.append(seq)
-            continue
-        psa = cache.setdefault(hit[0], ue_psk.read_psa(hit[0]))
-        idx = next(i for i, s in enumerate(psa.sequences) if s.name == hit[1])
-        (out / "anims" / f"{seq}.smd").write_text(smd.animation_smd(mesh, psa, idx), encoding="utf-8")
-    print(f"  {len(resolved) - len(missing)} animaciones convertidas; sin animación propia: {', '.join(missing) or 'ninguna'}")
+    for key in MANIFEST["models"]:
+        mesh_path = model_mesh(psks, key)
+        mesh = ue_psk.read_psk(mesh_path)
+        out = root / key
+        (out / "anims").mkdir(parents=True)
+        (out / "faith_ref.smd").write_text(smd.reference_smd(mesh), encoding="utf-8")
+        missing = []
+        for seq, hit in resolved.items():
+            if not hit:
+                missing.append(seq)
+                continue
+            psa = cache.setdefault(hit[0], ue_psk.read_psa(hit[0]))
+            idx = next(i for i, s in enumerate(psa.sequences) if s.name == hit[1])
+            (out / "anims" / f"{seq}.smd").write_text(smd.animation_smd(mesh, psa, idx), encoding="utf-8")
+        print(f"  {key} ({mesh_path.stem}, {len(mesh.bones)} huesos): {len(resolved) - len(missing)} animaciones; "
+              f"sin animación propia: {', '.join(missing) or 'ninguna'}")
 
 
 # ---------- A3: .qc + studiomdl ----------
@@ -218,7 +233,7 @@ def camera_bone(mesh: ue_psk.Psk) -> str:
 
 
 def write_qc(model_key: str, mesh: ue_psk.Psk) -> Path:
-    smd_dir = WORK / "smd"
+    smd_dir = WORK / "smd" / model_key
     have = {p.stem for p in (smd_dir / "anims").glob("*.smd")}
     if "idle" not in have:  # studiomdl needs at least one sequence
         (smd_dir / "anims" / "idle.smd").write_text((smd_dir / "faith_ref.smd").read_text(encoding="utf-8")
@@ -244,13 +259,13 @@ def write_qc(model_key: str, mesh: ue_psk.Psk) -> Path:
 def step_a3(paths: dict[str, Path]) -> None:
     print("== A3: .qc + studiomdl")
     psks, _ = find_exports()
-    mesh = ue_psk.read_psk(pick_mesh(psks))
-    if len(mesh.bones) > 128:
-        raise ExtractError(f"La malla tiene {len(mesh.bones)} huesos; Source admite 128.")
     portal = paths["portal_root"]
     game = portal / "portal"
     install = Path(MANIFEST["install_root"].replace("<Portal>", str(portal)))
     for key, model in MANIFEST["models"].items():
+        mesh = ue_psk.read_psk(model_mesh(psks, key))
+        if len(mesh.bones) > 128:
+            raise ExtractError(f"{key}: la malla tiene {len(mesh.bones)} huesos; Source admite 128.")
         qc = write_qc(key, mesh)
         run([paths["source_sdk_bin"] / "studiomdl.exe", "-game", game, "-nop4", "-verbose", qc], cwd=qc.parent)
         built = game / Path(model["path"]).parent
@@ -260,6 +275,54 @@ def step_a3(paths: dict[str, Path]) -> None:
         for f in built.glob(stem + ".*"):
             shutil.move(str(f), dest / f.name)
         print(f"  {key}: {dest / (stem + '.mdl')}")
+
+
+def read_mat(name: str) -> dict[str, str]:
+    """UE Viewer's .mat for a material: 'Diffuse=Tex' lines."""
+    f = next((WORK / "export").rglob(f"{name}.mat"), None)
+    if not f:
+        return {}
+    pairs = (l.split("=", 1) for l in f.read_text(encoding="utf-8", errors="replace").splitlines() if "=" in l)
+    return {k.strip(): v.strip() for k, v in pairs}
+
+
+def step_textures(paths: dict[str, Path]) -> None:
+    """Every material of the models: diffuse (+ normal) .tga -> .vtf with Portal's vtex, and a VertexLitGeneric .vmt."""
+    print("== A3: texturas (vtex)")
+    psks, _ = find_exports()
+    portal = paths["portal_root"]
+    game = portal / "portal"
+    rel = Path("models") / MODEL_DIR / "faith"
+    src = game / "materialsrc" / rel        # vtex only accepts files under <game>/materialsrc
+    out = Path(MANIFEST["install_root"].replace("<Portal>", str(portal))) / "materials" / rel
+    out.mkdir(parents=True, exist_ok=True)
+    src.mkdir(parents=True, exist_ok=True)
+    materials = {m for key in MANIFEST["models"] for m in ue_psk.read_psk(model_mesh(psks, key)).materials}
+    done: set[str] = set()
+    try:
+        for mat in sorted(materials):
+            props = read_mat(mat)
+            vmt = ['"VertexLitGeneric"', "{"]
+            for slot, key, normal in (("Diffuse", "$basetexture", False), ("Normal", "$bumpmap", True)):
+                tex = props.get(slot, "")
+                tga = next((WORK / "export").rglob(f"{tex}.tga"), None) if tex else None
+                if not tga:
+                    continue
+                if tex not in done:
+                    shutil.copy(tga, src / tga.name)
+                    if normal:
+                        (src / f"{tex}.txt").write_text("normal 1\n", encoding="ascii")
+                    run([paths["source_sdk_bin"] / "vtex.exe", "-nopause", "-game", game, "-outdir", out, src / tga.name])
+                    done.add(tex)
+                vmt.append(f'\t"{key}" "{(rel / tex).as_posix()}"')
+            if len(vmt) == 2:
+                vmt.append('\t"$basetexture" "dev/dev_measuregeneric01"')
+                print(f"  Aviso: {mat} sin textura difusa; usa una de prueba")
+            vmt += ['\t"$model" "1"', "}"]
+            (out / f"{mat}.vmt").write_text("\n".join(vmt) + "\n", encoding="utf-8")
+    finally:
+        shutil.rmtree(game / "materialsrc" / "models" / MODEL_DIR, ignore_errors=True)
+    print(f"  {len(materials)} materiales, {len(done)} texturas en {out}")
 
 
 def verify(paths: dict[str, Path]) -> bool:
@@ -295,6 +358,7 @@ def main() -> int:
             step_a2()
         if args.step in ("a3", "all"):
             step_a3(paths)
+            step_textures(paths)
         if args.step == "all":
             print("== Verificación")
             if not verify(paths):

@@ -28,8 +28,16 @@ No hace falta Blender: la conversión de PSK/PSA a SMD se hace en Python puro (`
 | `extract.py` | A1–A4 | Orquesta todo: UE Viewer, SMD, `.qc`, `studiomdl`, instalación y verificación |
 | `test_extractor.py` | — | Pruebas con PSK/PSA sintéticos (se registran en `ctest`) |
 
-## Qué falta comprobar con los archivos reales
+## Estado (2026-11-09, ME GOG v1.01)
 
-- Que la convención de rotaciones (conjugar las de los huesos hijos) coincide con lo que exporta UE Viewer para Mirror's Edge. Si el modelo sale con las articulaciones retorcidas en `hlmv`, la culpa está en `smd.ue_local`.
-- Los nombres reales de las animaciones: hay que ajustar `anim_map.json` (con `exact`) después de `--step a1`.
-- Las texturas: todavía no se convierten a VTF (`vtex.exe`), así que el modelo se verá con la textura de cuadros hasta que se haga.
+`python mod/tools/extractor/extract.py` funciona de punta a punta en el PC de Sebas, con UE Viewer en `tools/umodel/umodel_win32/`:
+- **A1:** exporta 5 mallas y 281 animaciones; la lista está en `docs/contratos/faith_esqueleto.md`. La etiqueta de UE Viewer para Mirror's Edge es `-game=medge`.
+- **A2:** `faith_arms` usa `SK_UpperBody` y `faith_body` usa `SK_LowerBody`; cada una tiene 74 huesos y las 24 secuencias asignadas con nombres exactos (`anim_map.json` v2).
+- **A3:** `studiomdl` compila los dos `.mdl` y `vtex` convierte 8 texturas (difusa y normal) de 4 materiales.
+- **Esqueleto comprobado con números:** en la pose de referencia, los vértices de los brazos quedan a 1 su de su hueso (mediana); con la convención contraria quedarían a 34 su. La convención de `smd.ue_local` es la correcta.
+
+## Qué falta comprobar a ojo
+
+- Abrir `faith_arms.mdl` y `faith_body.mdl` en `hlmv` y revisar las animaciones: que no salgan giradas, que la escala esté bien y que los materiales se vean.
+- `MI_SHtest` (material de prueba en `SK_LowerBody`) y la transparencia de la piel (`Female_1p_Trans`) todavía no se convierten.
+- Algunas asignaciones son aproximadas: `wallclimb_jump` usa `JumpTurnFly` y `ledge_climb_up` usa `HangHeaveUp`.
