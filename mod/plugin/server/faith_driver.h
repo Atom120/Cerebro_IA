@@ -46,6 +46,10 @@ public:
     size_t PortalCount() const { return portals_.size(); }
     void SetCamera(bool enabled) { camera_enabled_ = enabled; }
     bool CameraEnabled() const { return camera_enabled_; }
+    // Which character is shown: Faith (arms and legs from Mirror's Edge) or Chell (Portal's own look).
+    // Only the look changes: Faith's movement (parkour) works the same with both.
+    void SetFaithLook(bool faith) { faith_look_ = faith; }
+    bool FaithLook() const { return faith_look_; }
 
 private:
     void ApplyCamera(const FaithStepResult& r);
@@ -61,6 +65,7 @@ private:
     FaithState state_{};
     camera::CameraState camera_{};
     bool camera_enabled_ = true;
+    bool faith_look_ = true;
     bool engine_side_effects_ = true;  // run the original movement too (duck hull, ground, footsteps)
     float applied_pitch_ = 0.0f;  // landing-shake pitch currently added to the view
     float view_yaw_ = 0.0f;       // last view yaw (for the sideways head bob)

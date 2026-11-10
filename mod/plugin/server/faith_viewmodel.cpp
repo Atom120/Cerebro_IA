@@ -7,6 +7,11 @@
 #include "server_plugin.h"
 #include "source_interfaces.h"
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 namespace ar {
 
 namespace {
@@ -16,8 +21,10 @@ namespace {
 // (2026-11-10): [14] pushes (1, -1, name) and calls ::CreateEntityByName, [15] wraps ::DispatchSpawn.
 constexpr int kToolsCreateEntityByNameSlot = 14;
 constexpr int kToolsDispatchSpawnSlot = 15;
-// IVEngineServer (eiface.h, VEngineServer021): 4 PrecacheModel(const char*, bool preload).
+// IVEngineServer (eiface.h, VEngineServer021): 4 PrecacheModel(const char*, bool preload),
+// 36 ServerCommand(const char*) (read from engine.dll: the function that prints "Error, bad server command").
 constexpr int kEnginePrecacheModelSlot = 4;
+constexpr int kEngineServerCommandSlot = 36;
 // IHandleEntity / IServerUnknown / IServerNetworkable.
 constexpr int kUnknownGetRefEHandleSlot = 2;
 constexpr int kNetworkableGetServerClassSlot = 1;
@@ -221,6 +228,36 @@ T Get(void* base, int offset) {
     return offset > 0 ? *reinterpret_cast<T*>(static_cast<char*>(base) + offset) : T{};
 }
 
+// CBaseAnimating::m_pStudioHdr is not networked: find it as the field that points to a CStudioHdr
+// whose studiohdr_t (first member) names the entity's current model (".mdl", version 44..49).
+// True if `p` points to a CStudioHdr whose studiohdr_t names a model (each probe has its own guard, so
+// a field that is not a pointer is just skipped).
+bool LooksLikeStudioHdr(const char* p) {
+#ifdef _WIN32
+    __try {
+        if (!p || reinterpret_cast<uintptr_t>(p) < 0x10000) return false;
+        const char* hdr = *reinterpret_cast<const char* const*>(p);
+        if (!hdr || reinterpret_cast<uintptr_t>(hdr) < 0x10000) return false;
+        const int version = *reinterpret_cast<const int*>(hdr + 4);
+        if (std::memcmp(hdr, "IDST", 4) != 0 || version < 44 || version > 49) return false;
+        return IsName(hdr + 12) && std::strstr(hdr + 12, ".mdl") != nullptr;
+    } __except (1) {
+        return false;
+    }
+#else
+    (void)p;
+    return false;
+#endif
+}
+
+int FindStudioHdr(void* entity) {
+    const char* base = static_cast<const char*>(entity);
+    for (int off = 0x100; off < 0x2000; off += 4) {
+        if (LooksLikeStudioHdr(*reinterpret_cast<const char* const*>(base + off))) return off;
+    }
+    return -1;
+}
+
 // Diagnostics when the calibration fails: the table header and the first props as raw dwords.
 void DumpTable(const RawTable* t) {
 #ifdef _WIN32
@@ -255,6 +292,26 @@ void DumpTable(const RawTable* t) {
 FaithViewModel& FaithViewModel::Instance() {
     static FaithViewModel instance;
     return instance;
+}
+
+void FaithViewModel::ServerCommand(const char* command) {
+#ifdef _WIN32
+    if (!engine_ || !command) return;
+    __try {
+        VCall<void(__thiscall*)(void*, const char*)>(engine_, kEngineServerCommandSlot)(engine_, command);
+    } __except (1) {
+    }
+#else
+    (void)command;
+#endif
+}
+
+void FaithViewModel::Announce(const char* text) {
+    // Console line only: an on-screen game_text would need entity inputs, which IServerTools does not
+    // offer. The switch itself is visible (Faith's arms and legs appear or disappear).
+    char cmd[160];
+    std::snprintf(cmd, sizeof(cmd), "echo \"[ApertureRunner] Personaje: %s\"\n", text);
+    ServerCommand(cmd);
 }
 
 void FaithViewModel::Init(void* server_tools, void* engine_server) {
@@ -352,7 +409,51 @@ bool FaithViewModel::CreateBody(void* player) {
 #endif
 }
 
+void FaithViewModel::UpdatePlayerModel(void* player, bool faith) {
+#ifdef _WIN32
+    __try {
+        if (!player_model_tried_) {
+            player_model_tried_ = true;
+            if (!g_layout.Valid()) return;
+            off_player_model_index_ = SafeFind(TableOf(player), "m_nModelIndex", g_layout);
+            player_model_faith_ =
+                VCall<int(__thiscall*)(void*, const char*, bool)>(engine_, kEnginePrecacheModelSlot)(engine_, kPlayerModel, true);
+            off_player_studio_hdr_ = FindStudioHdr(player);
+            ApertureRunnerServerPlugin::LogMsg("[ApertureRunner] G4 jugador: m_nModelIndex=0x%X faith_player=%d m_pStudioHdr=0x%X\n",
+                                               off_player_model_index_, player_model_faith_, off_player_studio_hdr_);
+        }
+        if (off_player_model_index_ <= 0 || player_model_faith_ <= 0) return;
+        const int16_t current = Get<int16_t>(player, off_player_model_index_);
+        int16_t want = current;
+        if (faith && current != player_model_faith_) {
+            player_model_original_ = current;
+            want = static_cast<int16_t>(player_model_faith_);
+        } else if (!faith && current == player_model_faith_ && player_model_original_ > 0) {
+            want = static_cast<int16_t>(player_model_original_);
+        }
+        if (want != current) {
+            Put<int16_t>(player, off_player_model_index_, want);
+            // Drop the server's cached model header: CBaseAnimating::GetModelPtr() reloads it from the new
+            // m_nModelIndex, so Portal's player animation picks Faith's sequences by activity (run, crouch...).
+            // The old CStudioHdr is left allocated (a few hundred bytes per switch).
+            if (off_player_studio_hdr_ > 0) Put<void*>(player, off_player_studio_hdr_, nullptr);
+            // The current sequence index belongs to the other model ("Bad sequence" warnings): start from 0.
+            const int seq = SafeFind(TableOf(player), "m_nSequence", g_layout);
+            if (seq > 0) Put<int>(player, seq, 0);
+            MarkChanged(player);
+        }
+    } __except (1) {
+        off_player_model_index_ = -1;
+    }
+#else
+    (void)player;
+    (void)faith;
+#endif
+}
+
 void FaithViewModel::OnLevelShutdown() {
+    player_model_tried_ = false;
+    player_model_original_ = -1;
     last_arms_visible_ = false;
     last_body_visible_ = false;
     body_ = nullptr;
@@ -456,6 +557,7 @@ void FaithViewModel::Update(void* player, FaithAnimState anim, bool visible, boo
     if (!Ready() || !player) return;
     if (vm_ && vm_player_ != player) OnLevelShutdown();
     if (!vm_) {
+        if (!visible && player_model_tried_) UpdatePlayerModel(player, false);
         if (failed_ || !visible) return;
         if (!Create(player)) {
             failed_ = true;
@@ -490,6 +592,8 @@ void FaithViewModel::Update(void* player, FaithAnimState anim, bool visible, boo
         }
         if (changed) MarkChanged(vm_);
 
+        UpdatePlayerModel(player, visible);
+
         if (!body_ && !body_failed_ && visible) {
             if (!CreateBody(player)) {
                 body_failed_ = true;
@@ -502,10 +606,13 @@ void FaithViewModel::Update(void* player, FaithAnimState anim, bool visible, boo
             int* edict = networkable ? VCall<int*(__thiscall*)(void*)>(networkable, kNetworkableGetEdictSlot)(networkable) : nullptr;
             if (edict) *edict |= kEdictAlways;
             bool body_changed = false;
-            if (visible != last_body_visible_) {
+            // The first-person legs only while looking down (when the arms hide): elsewhere the player model
+            // (faith_player.mdl) is Faith, and the legs would show twice in portal views.
+            const bool legs = visible && !arms_visible;
+            if (legs != last_body_visible_) {
                 const int effects = Get<int>(body_, off_body_effects_);
-                Put<int>(body_, off_body_effects_, visible ? (effects & ~kEffectNoDraw) : (effects | kEffectNoDraw));
-                last_body_visible_ = visible;
+                Put<int>(body_, off_body_effects_, legs ? (effects & ~kEffectNoDraw) : (effects | kEffectNoDraw));
+                last_body_visible_ = legs;
                 body_changed = true;
             }
             if (Get<int>(body_, off_body_sequence_) != sequence) {
@@ -527,6 +634,24 @@ void FaithViewModel::Update(void* player, FaithAnimState anim, bool visible, boo
 }
 
 void FaithViewModel::PrintStatus() const {
+#ifdef _WIN32
+    __try {
+        if (vm_player_ && g_layout.Valid()) {
+            const RawTable* pt = TableOf(vm_player_);
+            const int seq = SafeFind(pt, "m_nSequence", g_layout), cyc = SafeFind(pt, "m_flCycle", g_layout);
+            const int csa = SafeFind(pt, "m_bClientSideAnimation", g_layout), rate = SafeFind(pt, "m_flPlaybackRate", g_layout);
+            const int ang = SafeFind(pt, "m_angRotation", g_layout);
+            ApertureRunnerServerPlugin::LogMsg(
+                "[AR] jugador: modelo=%d secuencia=%d ciclo=%.2f ritmo=%.2f anim_cliente=%d angulos=(%.1f %.1f %.1f) [0x%X 0x%X 0x%X]\n",
+                off_player_model_index_ > 0 ? Get<int16_t>(vm_player_, off_player_model_index_) : -1,
+                seq > 0 ? Get<int>(vm_player_, seq) : -1, cyc > 0 ? Get<float>(vm_player_, cyc) : -1.0f,
+                rate > 0 ? Get<float>(vm_player_, rate) : -1.0f, csa > 0 ? Get<uint8_t>(vm_player_, csa) : -1,
+                ang > 0 ? Get<float>(vm_player_, ang) : 0.0f, ang > 0 ? Get<float>(vm_player_, ang + 4) : 0.0f,
+                ang > 0 ? Get<float>(vm_player_, ang + 8) : 0.0f, seq, csa, ang);
+        }
+    } __except (1) {
+    }
+#endif
     ApertureRunnerServerPlugin::LogMsg("[AR] cuerpo (G4): %s\n", body_status_);
     ApertureRunnerServerPlugin::LogMsg("[AR] brazos (G4): %s; secuencia=%s\n", status_,
                                        last_sequence_ >= 0 ? SequenceName(static_cast<FaithAnimState>(last_sequence_)) : "-");
