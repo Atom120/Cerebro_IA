@@ -223,7 +223,8 @@ private:
             h = Normalized(h) * speed;
             if (speed < kSlideAbortSpeed || !Held(t.input, kFaithButtonDown)) SetMode(in, Mode::Ground);
         } else if (in.roll_left > 0.0f) {
-            // The roll keeps the landing speed.
+            // P5: Mirror's Edge rolls out at ~240 uu/s whatever the landing speed was.
+            if (Length(h) > 1.0f) h = Normalized(h) * kSkillRollExitSpeed;
         } else {
             if (Held(t.input, kFaithButtonDown)) {
                 s.ducked = true;
@@ -252,7 +253,9 @@ private:
     // sprint and sharp turns lose it.
     static Vec3 GroundAccelerate(Vec3 h, Vec3 wish_dir, float wish_len, float base, bool can_sprint, float dt) {
         if (wish_len < 1e-3f) {
-            const float speed = std::max(0.0f, Length(h) - kGroundDecel * dt);
+            // P5: with no input Mirror's Edge brakes exponentially (715 -> 0 uu/s in ~0.45 s).
+            float speed = Length(h) * std::exp(-dt / kStopTimeConstSec);
+            if (speed < kStopSnapSpeed) speed = 0.0f;
             return Normalized(h) * speed;
         }
         const float base_cap = base * wish_len;
@@ -265,7 +268,9 @@ private:
         if (along < base_cap) {
             along = std::min(base_cap, along + kGroundAccel * dt);
         } else if (along < cap) {
-            along = std::min(cap, along + kSprintAccel * dt);
+            // P5: the sprint approaches its cap exponentially, like the recordings (tau = 1.86 s).
+            along = cap - (cap - along) * std::exp(-dt / kSprintTimeConstSec);
+            if (cap - along < kSprintSnap) along = cap;
         } else if (along > cap) {
             along = std::max(cap, along - kGroundDecel * dt);
         }
@@ -450,7 +455,7 @@ private:
         if (Pressed(t.input, kFaithButtonUp) && in.mode_time > 0.0f) {  // wall jump
             EndWallRun(t);
             const Vec3 out = h + n * kWallrunJumpOut;
-            s.velocity = {out.x, out.y, kJumpSpeed};
+            s.velocity = {out.x, out.y, kWallrunJumpZ};
             in.air_kind = kAirWallRunJump;
             t.result.events |= kFaithEventJumped;
             return MoveAirborne(t, s.velocity.z);

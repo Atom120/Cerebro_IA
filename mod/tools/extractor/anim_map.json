@@ -1,0 +1,36 @@
+{
+  "contract": "anim_map",
+  "version": 1,
+  "notes": [
+    "Para cada secuencia de docs/contratos/asset_manifest.json: palabras que debe tener el nombre de la animación de AS_C1P_Unarmed (sin distinguir mayúsculas).",
+    "Se prueba cada lista en orden y gana la primera animación que tiene todas las palabras. 'exact' fija un nombre concreto y tiene prioridad.",
+    "PROVISIONAL: se escribió antes de tener la lista real. Después de 'extract.py --step a1', revisa docs/contratos/faith_esqueleto.md y pon 'exact' donde haga falta.",
+    "'fallback' indica qué secuencia usar si no se encuentra ninguna (el modelo compila igual)."
+  ],
+  "sequences": {
+    "idle":              {"any": [["idle"], ["stand"]], "loop": true},
+    "walk":              {"any": [["walk", "fwd"], ["walk"]], "loop": true, "fallback": "idle"},
+    "run":               {"any": [["run", "fwd"], ["jog"], ["run"]], "loop": true, "fallback": "walk"},
+    "sprint":            {"any": [["sprint"], ["run", "fast"]], "loop": true, "fallback": "run"},
+    "crouch":            {"any": [["crouch", "idle"], ["crouch"]], "loop": true, "fallback": "idle"},
+    "crouch_walk":       {"any": [["crouch", "walk"], ["crouch", "fwd"]], "loop": true, "fallback": "crouch"},
+    "jump":              {"any": [["jump", "start"], ["jump"]], "fallback": "idle"},
+    "fall":              {"any": [["fall", "loop"], ["fall"], ["inair"]], "loop": true, "fallback": "jump"},
+    "fall_uncontrolled": {"any": [["falluncontrolled"], ["fall", "uncontrolled"]], "loop": true, "fallback": "fall"},
+    "coil":              {"any": [["coil"]], "fallback": "fall"},
+    "land_soft":         {"any": [["land", "soft"], ["softland"], ["land"]], "fallback": "idle"},
+    "land_hard":         {"any": [["land", "hard"], ["hardland"]], "fallback": "land_soft"},
+    "skill_roll":        {"any": [["skillroll"], ["roll"]], "fallback": "land_soft"},
+    "slide":             {"any": [["slide"]], "loop": true, "fallback": "crouch"},
+    "wallrun_left":      {"any": [["wallrun", "left"], ["wallrun", "_l"]], "loop": true, "fallback": "run"},
+    "wallrun_right":     {"any": [["wallrun", "right"], ["wallrun", "_r"]], "loop": true, "fallback": "run"},
+    "wallrun_jump":      {"any": [["wallrun", "jump"]], "fallback": "jump"},
+    "wallclimb":         {"any": [["wallclimb"], ["wall", "climb"]], "loop": true, "fallback": "idle"},
+    "wallclimb_turn":    {"any": [["wallclimb", "180"], ["wallclimb", "turn"]], "fallback": "wallclimb"},
+    "wallclimb_jump":    {"any": [["wallclimb", "jump"]], "fallback": "jump"},
+    "ledge_hang":        {"any": [["grab", "idle"], ["hang", "idle"], ["grab"]], "loop": true, "fallback": "idle"},
+    "ledge_climb_up":    {"any": [["pullup"], ["grab", "up"], ["climb", "up"]], "fallback": "ledge_hang"},
+    "vault":             {"any": [["vault"], ["speedvault"]], "fallback": "jump"},
+    "turn_180":          {"any": [["180"], ["turn"]], "fallback": "idle"}
+  }
+}

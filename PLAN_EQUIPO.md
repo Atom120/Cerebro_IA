@@ -23,8 +23,8 @@ tags: [plan, equipo, apertureRunner, antigravity]
 > - **Zarek:** Z-tareas al día. Pendiente opcional: S5 con Sebas (instalador), y bordes/vault en el mapa (ver `qa/resultados/H3.md`).
 > - **Gonzalo:** G4, los brazos y el cuerpo de Faith (la cámara ya está aplicada a la vista). Espera al modelo de Antonio (A3); antes puede usar uno provisional. También FOV y balanceo en la vista (hay que enganchar el cálculo de la vista del cliente).
 > - **Benja:** B2b (grabar trazas reales de Mirror's Edge con `--record`; necesita ME instalado) y B5 (vídeo, H4).
-> - **Peña:** P5 (ajuste con trazas reales; P4 ya está hecho).
-> - **Antonio:** A1–A4 (modelo de Faith).
+> - **Peña:** P1–P5 hechos. P5 ✅ (Sebas, 2026-11-09): ajuste con las 9 trazas reales, en `docs/tuning/P5_ajuste.md`.
+> - **Antonio:** A1–A4: los scripts están listos (Sebas, 2026-11-09, `mod/tools/extractor/`). Falta correrlos con UE Viewer instalado y revisar el modelo en `hlmv`.
 
 > **Lee esto completo una vez. Después solo busca tu nombre (`Ctrl+F`).**
 > Cada persona tiene sus tareas, sus agentes de Antigravity y la lista de qué puede hacer ya y qué tiene que esperar.
@@ -306,7 +306,7 @@ No cambies la lógica ni los contratos de mod/include/. Explica cada cambio en u
 | P2 ✅ (Sebas, 2026-11-04) | Suelo: caminar, correr, **sprint con inercia** (157.5 → 283.5 u/s), aceleración, salto (248), gravedad de Faith (≈646), caer, aterrizaje suave y duro | 🟢 tras P1 | Pruebas de cada valor de la tabla de la sección 6 |
 | P3 ✅ (Sebas, 2026-11-04) | Parkour: wallrun izq./der., wallclimb, agarrar borde y subir, slide, coil (encoger en el aire), Skill Roll, giro de 180° | 🟢 tras P2 | Máquina de estados + pruebas |
 | P4 ✅ (Sebas, 2026-11-04) | Cruce de portales: conservar la velocidad y continuar el wallrun al pasar, usando `core/math.h` (`T = M_out · R_π · M_in⁻¹`) | 🟡 (S1, para tener `core/` en `mod/`) | Pruebas con portales en suelo y pared |
-| P5 | Ajuste fino comparando con las grabaciones reales de Mirror's Edge (CSV de Benja) | 🔴 (B2) | Tabla de ajuste + gráficas |
+| P5 ✅ (Sebas, 2026-11-09) | Ajuste fino comparando con las grabaciones reales de Mirror's Edge (CSV de Benja) | 🔴 (B2) | Tabla de ajuste + gráficas: `docs/tuning/P5_ajuste.md`, `mod/faith_move/tuning/fit_live.py` |
 
 **Referencias:** `tnrjns/faith-runner` (MIT): valores y lógica de referencia, se puede citar. `docs/` de Benja: conversión de unidades.
 
@@ -401,10 +401,10 @@ Si el modelo no existe en el PC, usa el modelo provisional y muestra un aviso en
 
 | ID | Tarea | Dependencia | Entregable |
 |---|---|---|---|
-| A1 | Instalar Mirror's Edge (GOG recomendado) y UEViewer. Exportar a PSK/PSA el cuerpo 1P (`TdGame/CookedPC/Characters/CH_TKY_Crim_Fixer_1P.upk`) y las animaciones (`TdGame/CookedPC/Animations/AS_C1P_Unarmed.upk`, unas 281). Anotar los huesos | 🟢 | `docs/contratos/faith_esqueleto.md` (nombres de huesos y animaciones, sin archivos del juego) |
-| A2 | Script de Blender 5.0 sin interfaz (`blender -b -P`): importar PSK/PSA (addon `io_scene_psk_psa`), corregir escala y ejes y exportar SMD/DMX. Nombrar las animaciones según `FaithAnimState` | 🟡 (S2 para los nombres; antes usa nombres provisionales) | Script en `mod/tools/extractor/` |
-| A3 | `.qc` + compilar con el `studiomdl.exe` de `Portal/bin` hacia `portal/custom/aperture_runner/models/faith/` (en el PC, no en el repo). Máximo 128 huesos (Faith tiene 108 en 3P) | 🟢 tras A2 | El modelo se ve en `hlmv` |
-| A4 | Extractor de un solo comando: lee `config/paths.local.json`, detecta la build de ME, ejecuta A1–A3 y verifica | 🟢 tras A3 | `python mod/tools/extractor/extract.py` funciona en otro PC |
+| A1 🟡 script listo (Sebas, 2026-11-09); falta UE Viewer | Instalar Mirror's Edge (GOG recomendado) y UEViewer. Exportar a PSK/PSA el cuerpo 1P (`TdGame/CookedPC/Characters/CH_TKY_Crim_Fixer_1P.upk`) y las animaciones (`TdGame/CookedPC/Animations/AS_C1P_Unarmed.upk`, unas 281). Anotar los huesos | 🟢 | `docs/contratos/faith_esqueleto.md` (nombres de huesos y animaciones, sin archivos del juego) |
+| A2 🟡 hecho en Python puro, sin Blender (`smd.py`); falta probarlo con los archivos reales | Script de Blender 5.0 sin interfaz (`blender -b -P`): importar PSK/PSA (addon `io_scene_psk_psa`), corregir escala y ejes y exportar SMD/DMX. Nombrar las animaciones según `FaithAnimState` | 🟡 (S2 para los nombres; antes usa nombres provisionales) | Script en `mod/tools/extractor/` |
+| A3 🟡 `.qc` generado por `extract.py`; falta compilar y revisar en `hlmv` | `.qc` + compilar con el `studiomdl.exe` de `Portal/bin` hacia `portal/custom/aperture_runner/models/faith/` (en el PC, no en el repo). Máximo 128 huesos (Faith tiene 108 en 3P) | 🟢 tras A2 | El modelo se ve en `hlmv` |
+| A4 🟡 `extract.py` listo; falta correrlo de punta a punta | Extractor de un solo comando: lee `config/paths.local.json`, detecta la build de ME, ejecuta A1–A3 y verifica | 🟢 tras A3 | `python mod/tools/extractor/extract.py` funciona en otro PC |
 
 **Agentes:**
 
