@@ -222,6 +222,7 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
             portal_entry_speed_ = initialized_ ? aperture_runner::Length(state_.velocity) : 0.0f;
             portal_teleported_ = false;
         }
+        StripHeadBob(player);  // Portal's own movement would "restore" a bobbed view height (and log it)
         if (original) original(game_movement, player, mv);
         last_end_origin_ = {mv->m_vecAbsOrigin[0], mv->m_vecAbsOrigin[1], mv->m_vecAbsOrigin[2]};
         last_tick_portal_ = true;
@@ -258,16 +259,7 @@ void FaithDriver::Process(void* game_movement, void* player, source::CMoveData* 
     // the position and velocity it computed.
     if (original && engine_side_effects_) {
         mv->m_nButtons = (mv->m_nButtons & ~source::kInDuck) | (state_.ducked ? source::kInDuck : 0);
-        // Take the head bob out first: the engine "restores" any standing view height that is not
-        // exactly view_height (and logs it every tick). ApplyCamera puts it back afterwards.
-        if (player && (written_bob_[0] != 0.0f || written_bob_[1] != 0.0f || written_bob_[2] != 0.0f)) {
-            float* offset = reinterpret_cast<float*>(static_cast<char*>(player) + source::kPlayerViewOffsetOffset);
-            if (std::fabs(offset[2] - (FaithHostConfig{}.view_height + written_bob_[2])) < 0.01f) {
-                offset[0] = 0.0f;
-                offset[1] = 0.0f;
-                offset[2] = FaithHostConfig{}.view_height;
-            }
-        }
+        StripHeadBob(player);
         original(game_movement, player, mv);
     }
     for (int i = 0; i < 3; ++i) {
@@ -348,6 +340,19 @@ void FaithDriver::ApplyPlayerView(const camera::CameraOutput& co) {
         offset[0] = 0.0f;
         offset[1] = 0.0f;
         written_bob_[0] = written_bob_[1] = written_bob_[2] = 0.0f;
+    }
+}
+
+// Takes the head bob out of m_vecViewOffset before the engine's own movement runs: the engine
+// "restores" any standing view height that is not exactly view_height (and logs it every tick).
+// ApplyPlayerView puts it back afterwards.
+void FaithDriver::StripHeadBob(void* player) {
+    if (!player || (written_bob_[0] == 0.0f && written_bob_[1] == 0.0f && written_bob_[2] == 0.0f)) return;
+    float* offset = reinterpret_cast<float*>(static_cast<char*>(player) + source::kPlayerViewOffsetOffset);
+    if (std::fabs(offset[2] - (FaithHostConfig{}.view_height + written_bob_[2])) < 0.01f) {
+        offset[0] = 0.0f;
+        offset[1] = 0.0f;
+        offset[2] = FaithHostConfig{}.view_height;
     }
 }
 

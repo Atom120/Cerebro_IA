@@ -37,6 +37,7 @@ int g_checks = 0;
     } while (0)
 
 constexpr float kDt = source_defaults::kTickInterval;
+constexpr float kFullSprintSec = 9.0f;  // P5: the exponential sprint needs ~7.7 s from a run
 
 int Ticks(float seconds) { return static_cast<int>(std::lround(seconds / kDt)); }
 
@@ -109,15 +110,18 @@ void TestRunAndSprintInertia() {
 
     int sprint_ticks = 0;
     float at_half_second = 0.0f;
-    while (r.s.speed_2d < faith::kSprintMaxSpeed - 0.01f && sprint_ticks < 400) {
+    while (r.s.speed_2d < faith::kSprintMaxSpeed - 0.01f && sprint_ticks < 1000) {
         r.Tick(1);
         ++sprint_ticks;
         if (sprint_ticks == Ticks(0.5f)) at_half_second = r.s.speed_2d;
     }
-    CHECK_NEAR(sprint_ticks * kDt, faith::kSprintRampSec, 0.05);
+    // P5: exponential approach, like Mirror's Edge: tau * ln((283.5 - 157.5) / snap) = 7.7 s.
+    const double ramp = faith::kSprintTimeConstSec *
+                        std::log((faith::kSprintMaxSpeed - faith::kRunSpeed) / faith::kSprintSnap);
+    CHECK_NEAR(sprint_ticks * kDt, ramp, 0.1);
     // Inertia: half a second into the sprint Faith is faster than a run but far from full speed.
     CHECK(at_half_second > faith::kRunSpeed + 10.0f && at_half_second < faith::kSprintMaxSpeed - 40.0f);
-    CHECK(faith::kSprintRampSec >= 1.0f && faith::kSprintRampSec <= 3.0f);
+    CHECK(ramp >= 5.0 && ramp <= 10.0);
     r.Run(Ticks(2.0f), 1);
     CHECK_NEAR(r.s.speed_2d, 283.46, 0.01);  // GroundSpeed 720 uu
     CHECK(r.s.anim == FaithAnimState::Sprint);
@@ -143,54 +147,54 @@ void TestWalkStrafeAndStop() {
 
     Rig stop;
     stop.Settle();
-    stop.Run(Ticks(3.0f), 1);
-    stop.Run(Ticks(0.15f));
-    CHECK_NEAR(stop.s.speed_2d, 0.0, 1e-3);  // 283.5 / 2419 = 0.12 s
+    stop.Run(Ticks(kFullSprintSec), 1);
+    stop.Run(Ticks(0.6f));
+    CHECK_NEAR(stop.s.speed_2d, 0.0, 1e-3);  // P5: 0.12 s * ln(283.5 / 4.7) = 0.49 s
     CHECK(stop.s.anim == FaithAnimState::Idle);
 }
 
 void TestTurnsAndInertia() {
     Rig gentle;  // turning 90 deg/s at full sprint keeps the sprint
     gentle.Settle();
-    gentle.Run(Ticks(3.0f), 1);
+    gentle.Run(Ticks(kFullSprintSec), 1);
     for (int i = 0; i < Ticks(1.0f); ++i) gentle.Tick(1, 0, 0, 0, 90.0f * static_cast<float>(i + 1) * kDt);
     CHECK(gentle.s.speed_2d > 280.0f);
     CHECK(gentle.s.anim == FaithAnimState::Sprint);
 
     Rig sharp;  // a 180 loses it
     sharp.Settle();
-    sharp.Run(Ticks(3.0f), 1);
+    sharp.Run(Ticks(kFullSprintSec), 1);
     sharp.Run(Ticks(0.5f), 1, 0, 0, 180.0f);
     CHECK(sharp.s.velocity.x < 0.0f);
     CHECK(sharp.s.speed_2d < 200.0f);
 }
 
-// Section 6: BaseJumpZ 248, gravity 646 -> apex v^2 / 2g = 47.6 su above the floor.
+// P5: jump 604 uu = 237.8 su, gravity 1597 uu = 628.7 su -> apex v^2 / 2g = 44.9 su above the floor.
 void TestJumpAndGravity() {
     Rig r;
     r.Settle();
     const FaithStepResult jump = r.Tick(0, 0, 0, kFaithButtonUp);
     CHECK(jump.events & kFaithEventJumped);
-    CHECK_NEAR(r.s.velocity.z, 248.03, 0.01);
+    CHECK_NEAR(r.s.velocity.z, 237.80, 0.01);
     CHECK(!r.s.on_ground);
     CHECK(r.s.anim == FaithAnimState::Jump);
 
     float apex = 0.0f;
     const float vz0 = r.s.velocity.z;
     r.Tick();
-    CHECK_NEAR(vz0 - r.s.velocity.z, faith::kGravity * kDt, 1e-3);  // 646 su/s^2
-    CHECK_NEAR(faith::kGravity, 646.06, 0.01);
+    CHECK_NEAR(vz0 - r.s.velocity.z, faith::kGravity * kDt, 1e-3);  // 628.7 su/s^2
+    CHECK_NEAR(faith::kGravity, 628.74, 0.01);
     for (int i = 0; i < 200 && !r.s.on_ground; ++i) {
         apex = std::fmax(apex, r.s.origin.z);
         if (r.s.velocity.z <= 0.0f && !r.s.on_ground) CHECK(r.s.anim == FaithAnimState::Fall);
         r.Tick();
     }
-    CHECK_NEAR(apex, 248.03 * 248.03 / (2.0 * 646.06), 2.0);
+    CHECK_NEAR(apex, 237.80 * 237.80 / (2.0 * 628.74), 2.0);
     CHECK(r.s.on_ground);
     CHECK(r.events & kFaithEventLanded);
     CHECK(!(r.events & kFaithEventHardLanding));
     CHECK(r.s.anim == FaithAnimState::LandSoft);
-    CHECK_NEAR(r.last_impact, 248.0, 12.0);  // lands about as fast as it left
+    CHECK_NEAR(r.last_impact, 237.8, 12.0);  // lands about as fast as it left
 
     // Holding Up does not bunny-hop: only a fresh press jumps.
     r.Run(Ticks(0.5f), 0, 0, kFaithButtonUp);
@@ -207,7 +211,7 @@ void TestSprintJumpAddsSpeed() {
 
     Rig fast;
     fast.Settle();
-    fast.Run(Ticks(3.0f), 1);
+    fast.Run(Ticks(kFullSprintSec), 1);
     fast.Tick(1, 0, 0, kFaithButtonUp);
     CHECK_NEAR(fast.s.speed_2d, faith::kSprintMaxSpeed + faith::kJumpAddXY, 0.5);
     fast.Run(Ticks(0.3f), 1);  // air control does not add more
@@ -509,7 +513,7 @@ void TestLedges() {
 
     r.Tick(0, 0, 0, kFaithButtonUp);
     CHECK(r.s.anim == FaithAnimState::LedgeClimbUp);
-    RunUntil(r, 100, [&] { return r.s.on_ground; }, 0);
+    RunUntil(r, 200, [&] { return r.s.on_ground; }, 0);
     CHECK(r.s.on_ground);
     CHECK_NEAR(r.s.origin.z, 100.0, 0.05);
     CHECK(r.s.origin.x > 100.0f);
@@ -650,7 +654,7 @@ void TestCoilAndSkillRoll() {
     CHECK(roll.s.speed_2d >= roll.last_impact - 0.5f);  // keeps the speed instead of the hard-landing stop
     CHECK(roll.s.speed_2d > faith::kHardLandingMaxSpeed + 50.0f);
     roll.Run(Ticks(faith::kSkillRollSec), 1);
-    CHECK(roll.s.anim == FaithAnimState::Sprint);
+    CHECK(roll.s.anim == FaithAnimState::Run || roll.s.anim == FaithAnimState::Sprint);  // P5: rolls out at 94.5
     CHECK(!roll.s.ducked);
 
     Rig early = tower_fall(280.0f, false);  // Down long before landing: too early, hard landing

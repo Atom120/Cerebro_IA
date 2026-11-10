@@ -79,7 +79,8 @@ for ($k = 1; $k -lt $s.Count; $k++) {
     }
 }
 $slope = if ($slopes.Count) { ($slopes | Measure-Object -Average).Average } else { 0 }
-Result "H2-03" "Sprint con inercia (157.5 -> 283.5 su/s, rampa de ~84 su/s^2)" ($max -gt 157.5 -and $max -le 284 -and $slope -ge 70 -and $slope -le 100) ("velocidad maxima {0:N1} su/s, rampa {1:N1} su/s^2" -f $max, $slope)
+# P5 (2026-11-09): la rampa es exponencial como en Mirror's Edge (tau 1.86 s): ~68 su/s^2 al empezar y luego menos.
+Result "H2-03" "Sprint con inercia (157.5 -> 283.5 su/s, rampa exponencial tau 1.86 s)" ($max -gt 157.5 -and $max -le 284 -and $slope -ge 30 -and $slope -le 75) ("velocidad maxima {0:N1} su/s, rampa {1:N1} su/s^2" -f $max, $slope)
 
 # --- salto --------------------------------------------------------------------------------------
 Send @("setpos -700 -864 140", "setang 0 180 0"); Start-Sleep 1.5
@@ -87,8 +88,9 @@ $m = Mark; Send @("ar_debug 2", "ar_qa_input 0 0 j 3"); Start-Sleep 1.5; Send @(
 $lines = LogFrom $m
 $s = DebugSamples $lines
 $apex = ($s | Measure-Object Z -Maximum).Maximum - 128.0
-$jumped = ($lines -match 'anim=jump vel2d=[\d.]+ vz=248').Count -gt 0
-Result "H2-04" "Salto de Faith (248 su/s, ~47.6 su)" ($jumped -and $apex -ge 40 -and $apex -le 56) ("altura {0:N1} su" -f $apex)
+$jumped = ($lines -match 'anim=jump vel2d=[\d.]+ vz=23[78]').Count -gt 0
+# P5 (2026-11-09): salto medido en Mirror's Edge, 604 uu = 237.8 su/s, gravedad 628.7 -> ~45 su.
+Result "H2-04" "Salto de Faith (237.8 su/s, ~45 su)" ($jumped -and $apex -ge 38 -and $apex -le 54) ("altura {0:N1} su" -f $apex)
 
 # --- agacharse ----------------------------------------------------------------------------------
 $m = Mark; Send @("ar_debug 1", "ar_qa_input 0 0 d 45"); Start-Sleep 1.0; Send @("ar_debug 0"); Start-Sleep 0.5

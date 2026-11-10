@@ -155,7 +155,7 @@ void TestSkillRollSomersault() {
     CameraState cam;
     CameraOutput o = UpdateCamera(cam, Ground(200, FaithAnimState::SkillRoll), kFaithEventLanded | kFaithEventSkillRoll, 300, kDt);
     float max_pitch = o.pitch_offset;
-    for (int i = 0; i < 60; ++i) {
+    for (int i = 0; i < 100; ++i) {  // P5: the roll lasts 1.23 s = 82 ticks
         o = UpdateCamera(cam, Ground(200, FaithAnimState::SkillRoll), 0, 0, kDt);
         if (cam.roll_left > 0.0f) max_pitch = std::fmax(max_pitch, o.pitch_offset);
     }

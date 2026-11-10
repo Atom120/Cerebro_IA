@@ -55,3 +55,6 @@ levels/*/raw_extracted/
 .agents/**/__pycache__/
 .agents/**/*.py[cod]
 !AGENTS.md
+
+# UE Viewer (cada uno lo descarga; no se sube)
+tools/umodel/

@@ -66,7 +66,7 @@ CameraOutput UpdateCamera(CameraState& cam, const FaithState& faith, uint32_t ev
     }
 
     // Skill Roll: the view does one forward somersault (pitch 0 -> 360) over the roll.
-    const float roll_sec = 0.6f;  // faith::kSkillRollSec; the camera keeps its own copy (no faith_move dependency)
+    const float roll_sec = 1.23f;  // faith::kSkillRollSec (P5); the camera keeps its own copy (no faith_move dependency)
     if (events & kFaithEventSkillRoll) cam.roll_left = roll_sec;
     if (cam.roll_left > 0.0f) {
         cam.roll_left = std::max(0.0f, cam.roll_left - dt);

@@ -51,6 +51,7 @@ private:
     void ApplyCamera(const FaithStepResult& r);
     void ApplyPlayerView(const camera::CameraOutput& co);
     void RestorePlayerView();
+    void StripHeadBob(void* player);
 
     bool NearPortal(Vec3 feet) const;
     bool NearestPortalBasis(Vec3 p, Mat3* basis) const;
