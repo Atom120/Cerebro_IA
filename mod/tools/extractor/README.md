@@ -24,7 +24,7 @@ No hace falta Blender: la conversión de PSK/PSA a SMD se hace en Python puro (`
 |---|---|---|
 | `ue_psk.py` | A1/A2 | Lee los `.psk`/`.psa` de ActorX (y los escribe, solo para las pruebas) |
 | `smd.py` | A2 | Convierte de UE3 a Source: ÷2.54, refleja el eje Y, conjuga las rotaciones de los huesos hijos, invierte el orden de los triángulos y voltea la V |
-| `anim_map.json` | A2 | Asigna cada animación de ME a una secuencia de `FaithAnimState`. Es **provisional** hasta tener la lista real que genera A1 |
+| `anim_map.json` | A2 | Asigna cada animación de ME a una secuencia de `FaithAnimState`. Usa nombres exactos revisados contra la lista real de A1, y además qué malla va en cada modelo |
 | `extract.py` | A1–A4 | Orquesta todo: UE Viewer, SMD, `.qc`, `studiomdl`, instalación y verificación |
 | `test_extractor.py` | — | Pruebas con PSK/PSA sintéticos (se registran en `ctest`) |
 
