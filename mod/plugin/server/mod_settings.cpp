@@ -41,6 +41,7 @@ ModSettings LoadModSettings() {
         int value = 0;
         if (std::sscanf(line, "ar_enable=%d", &value) == 1) s.enabled = value != 0;
         if (std::sscanf(line, "ar_camera=%d", &value) == 1) s.camera = value != 0;
+        if (std::sscanf(line, "ar_personaje=%d", &value) == 1) s.faith_look = value != 0;
     }
     std::fclose(f);
     return s;
@@ -51,8 +52,10 @@ bool SaveModSettings(const ModSettings& s) {
     if (path.empty()) return false;
     FILE* f = std::fopen(path.c_str(), "w");
     if (!f) return false;
-    std::fprintf(f, "// ApertureRunner: se guarda solo con los comandos ar_enable / ar_camera de la consola.\n");
-    std::fprintf(f, "ar_enable=%d\nar_camera=%d\n", s.enabled ? 1 : 0, s.camera ? 1 : 0);
+    std::fprintf(f, "// ApertureRunner: se guarda solo con los comandos ar_enable / ar_camera / ar_personaje.\n");
+    std::fprintf(f, "// ar_personaje: 1 = Faith, 0 = Chell (el parkour funciona con las dos).\n");
+    std::fprintf(f, "ar_enable=%d\nar_camera=%d\nar_personaje=%d\n", s.enabled ? 1 : 0, s.camera ? 1 : 0,
+                 s.faith_look ? 1 : 0);
     std::fclose(f);
     return true;
 }

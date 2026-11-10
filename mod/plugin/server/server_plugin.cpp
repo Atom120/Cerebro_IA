@@ -62,6 +62,7 @@ bool ApertureRunnerServerPlugin::Load(source::CreateInterfaceFn interfaceFactory
     const ModSettings settings = LoadModSettings();
     FaithDriver::Instance().SetEnabled(settings.enabled);
     FaithDriver::Instance().SetCamera(settings.camera);
+    FaithDriver::Instance().SetFaithLook(settings.faith_look);
 
     LogMsg(
         "\n======================================================\n"
@@ -182,6 +183,8 @@ void ApertureRunnerServerPlugin::ServerActivate(void* pEdictList, int edictCount
     LogMsg("[ApertureRunner] ServerActivate listo en mapa %s (%u prop_portal)\n", current_map_,
            static_cast<unsigned>(FaithDriver::Instance().PortalCount()));
     RunTraceSelfTest();
+    // Tecla H = ar_personaje (Faith <-> Chell). Portal no usa la H; el bind queda en config.cfg.
+    FaithViewModel::Instance().ServerCommand("bind h ar_personaje\n");
 }
 
 void ApertureRunnerServerPlugin::GameFrame(bool /*simulating*/) {
@@ -229,7 +232,7 @@ source::PluginResult ApertureRunnerServerPlugin::ClientCommand(void* /*pEntity*/
     FaithDriver& faith = FaithDriver::Instance();
     if (std::strcmp(cmd, "ar_enable") == 0) {
         faith.SetEnabled(arg ? std::strcmp(arg, "0") != 0 : !faith.Enabled());
-        const bool saved = SaveModSettings({faith.Enabled(), faith.CameraEnabled()});
+        const bool saved = SaveModSettings({faith.Enabled(), faith.CameraEnabled(), faith.FaithLook()});
         LogMsg("[ApertureRunner] ar_enable = %d (%s)%s\n", faith.Enabled() ? 1 : 0,
                faith.Enabled() ? "movimiento de Faith" : "movimiento original de Portal",
                saved ? ", guardado en addons/aperture_runner.cfg" : "");
@@ -243,6 +246,17 @@ source::PluginResult ApertureRunnerServerPlugin::ClientCommand(void* /*pEntity*/
         }
         return source::kPluginStop;
     }
+    // ar_personaje [faith|chell|1|0]: cambia el personaje que se ve (sin argumento alterna). Tecla H.
+    if (std::strcmp(cmd, "ar_personaje") == 0) {
+        bool faith_look = !faith.FaithLook();
+        if (arg) faith_look = std::strcmp(arg, "chell") != 0 && std::strcmp(arg, "0") != 0;
+        faith.SetFaithLook(faith_look);
+        SaveModSettings({faith.Enabled(), faith.CameraEnabled(), faith.FaithLook()});
+        LogMsg("[ApertureRunner] Personaje: %s (el parkour sigue activo%s)\n", faith_look ? "Faith" : "Chell",
+               faith.Enabled() ? "" : "; activalo con ar_enable 1");
+        FaithViewModel::Instance().Announce(faith_look ? "Faith (Mirror's Edge)" : "Chell (Portal)");
+        return source::kPluginStop;
+    }
     if (std::strcmp(cmd, "ar_brazos_seq") == 0) {  // diagnostico G4: fuerza una secuencia (-1 = la de Faith)
         const int seq = arg ? std::atoi(arg) : -1;
         FaithViewModel::Instance().SetOverride(seq);
@@ -251,7 +265,7 @@ source::PluginResult ApertureRunnerServerPlugin::ClientCommand(void* /*pEntity*/
     }
     if (std::strcmp(cmd, "ar_camera") == 0) {  // ar_camera [0|1]: camara de Faith en la vista (G4)
         faith.SetCamera(!arg || std::strcmp(arg, "0") != 0);
-        SaveModSettings({faith.Enabled(), faith.CameraEnabled()});
+        SaveModSettings({faith.Enabled(), faith.CameraEnabled(), faith.FaithLook()});
         LogMsg("[ApertureRunner] ar_camera = %d\n", faith.CameraEnabled() ? 1 : 0);
         return source::kPluginStop;
     }

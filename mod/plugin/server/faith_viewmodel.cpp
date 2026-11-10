@@ -16,8 +16,10 @@ namespace {
 // (2026-11-10): [14] pushes (1, -1, name) and calls ::CreateEntityByName, [15] wraps ::DispatchSpawn.
 constexpr int kToolsCreateEntityByNameSlot = 14;
 constexpr int kToolsDispatchSpawnSlot = 15;
-// IVEngineServer (eiface.h, VEngineServer021): 4 PrecacheModel(const char*, bool preload).
+// IVEngineServer (eiface.h, VEngineServer021): 4 PrecacheModel(const char*, bool preload),
+// 36 ServerCommand(const char*) (read from engine.dll: the function that prints "Error, bad server command").
 constexpr int kEnginePrecacheModelSlot = 4;
+constexpr int kEngineServerCommandSlot = 36;
 // IHandleEntity / IServerUnknown / IServerNetworkable.
 constexpr int kUnknownGetRefEHandleSlot = 2;
 constexpr int kNetworkableGetServerClassSlot = 1;
@@ -255,6 +257,26 @@ void DumpTable(const RawTable* t) {
 FaithViewModel& FaithViewModel::Instance() {
     static FaithViewModel instance;
     return instance;
+}
+
+void FaithViewModel::ServerCommand(const char* command) {
+#ifdef _WIN32
+    if (!engine_ || !command) return;
+    __try {
+        VCall<void(__thiscall*)(void*, const char*)>(engine_, kEngineServerCommandSlot)(engine_, command);
+    } __except (1) {
+    }
+#else
+    (void)command;
+#endif
+}
+
+void FaithViewModel::Announce(const char* text) {
+    // Console line only: an on-screen game_text would need entity inputs, which IServerTools does not
+    // offer. The switch itself is visible (Faith's arms and legs appear or disappear).
+    char cmd[160];
+    std::snprintf(cmd, sizeof(cmd), "echo \"[ApertureRunner] Personaje: %s\"\n", text);
+    ServerCommand(cmd);
 }
 
 void FaithViewModel::Init(void* server_tools, void* engine_server) {

@@ -28,6 +28,10 @@ public:
     void OnLevelShutdown();
     void PrintStatus() const;
     void SetOverride(int sequence) { override_sequence_ = sequence; }  // diagnostics: -1 = follow Faith
+    // IVEngineServer::ServerCommand (the command buffer is shared with the client in single player).
+    void ServerCommand(const char* command);
+    // Prints which character is active in the console.
+    void Announce(const char* text);
 
     static constexpr const char* kModel = "models/aperture_runner/faith_arms.mdl";
     static constexpr const char* kBodyModel = "models/aperture_runner/faith_body.mdl";
